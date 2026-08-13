@@ -531,6 +531,13 @@ td .row-t { font-weight: 600; }
 /* 空状态 */
 .empty { text-align: center; color: var(--faint); padding: 48px 0; font-size: 14px; }
 
+/* ---- 折叠（全局）---- */
+details.fold { border:1px solid var(--rule); border-radius:10px; margin:12px 0; }
+details.fold summary { padding:14px 18px; font-weight:700; color:var(--accent); cursor:pointer; font-size:14px; user-select:none; border-radius:10px; }
+details.fold summary:hover { background:var(--accent-soft); }
+details.fold[open] summary { border-bottom:1px solid var(--rule); border-radius:10px 10px 0 0; }
+details.fold .fold-body { padding:14px 18px; }
+
 /* ---------- 页脚 ---------- */
 footer {
   border-top: 1px solid var(--rule);
