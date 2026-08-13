@@ -9,12 +9,10 @@
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferredPrompt = e;
-    // 如果 DOM 已就绪，立即显示 banner
     var banner = document.getElementById('install-banner');
     if (banner) {
       try { if (!localStorage.getItem('install-dismissed')) banner.style.display = 'flex'; } catch (err) {}
     }
-    // 显示手动安装按钮
     var manualBtn = document.getElementById('manual-install-btn');
     if (manualBtn) manualBtn.style.display = 'flex';
   });
@@ -92,8 +90,8 @@
     }
   }
 
-  /* ---------- 底部导航（移动端）---------- */
-  function initBottomNav() {
+  /* ---------- 底部导航（移动端）· 立即创建 + 滚动兜底 ---------- */
+  var bottomNavHtml = (function () {
     var pages = [
       { href: 'index.html',      icon: '🏠', label: '首页' },
       { href: 'models.html',     icon: '🤖', label: '模型' },
@@ -108,11 +106,34 @@
       html += '<a href="' + p.href + '"' + active + '><span class="bn-icon">' + p.icon + '</span><span>' + p.label + '</span></a>';
     });
     html += '</div>';
-    var nav = document.createElement('nav');
-    nav.className = 'bottom-nav';
-    nav.innerHTML = html;
-    document.body.appendChild(nav);
+    return html;
+  })();
+
+  function ensureBottomNav() {
+    var existing = document.querySelector('.bottom-nav');
+    if (!existing && document.body) {
+      var nav = document.createElement('nav');
+      nav.className = 'bottom-nav';
+      nav.innerHTML = bottomNavHtml;
+      document.body.appendChild(nav);
+    }
   }
+
+  // 立即创建（script 在 body 末尾，body 已存在）
+  ensureBottomNav();
+
+  // 滚动兜底：如果 nav 被浏览器丢弃，重新创建
+  var scrollTimer = null;
+  window.addEventListener('scroll', function () {
+    if (scrollTimer) return;
+    scrollTimer = setTimeout(function () {
+      scrollTimer = null;
+      ensureBottomNav();
+    }, 200);
+  }, { passive: true });
+
+  // 页面完全加载后再确认一次
+  window.addEventListener('load', ensureBottomNav);
 
   /* ---------- 日期 ---------- */
   function fmtDate(d) {
@@ -131,7 +152,6 @@
 
   /* ---------- PWA 安装引导 ---------- */
   function initInstallPrompt() {
-    // 已安装则跳过
     if (window.matchMedia('(display-mode: standalone)').matches) {
       var banner = document.getElementById('install-banner');
       if (banner) banner.style.display = 'none';
@@ -141,7 +161,6 @@
     var banner = document.getElementById('install-banner');
     var manualBtn = document.getElementById('manual-install-btn');
 
-    // 如果 beforeinstallprompt 已经触发（在 DOMContentLoaded 之前），显示 banner
     if (banner && deferredPrompt) {
       try {
         if (!localStorage.getItem('install-dismissed')) {
@@ -150,15 +169,12 @@
       } catch (e) {}
     }
 
-    // 如果已有 deferredPrompt，显示手动安装按钮
     if (manualBtn && deferredPrompt) {
       manualBtn.style.display = 'flex';
     }
 
-    // 安装按钮点击
     function triggerInstall() {
       if (!deferredPrompt) {
-        // 如果没有 beforeinstallprompt，提示用户手动安装
         alert('请点击浏览器右上角菜单 (⋮) → "添加到主屏幕" 来安装此应用');
         return;
       }
@@ -192,10 +208,10 @@
   document.addEventListener('DOMContentLoaded', function () {
     initTheme();
     initServiceWorker();
-    initBottomNav();
     initGlossary();
     initTabs();
     initDates();
     initInstallPrompt();
+    ensureBottomNav(); // 再确认一次
   });
 })();
