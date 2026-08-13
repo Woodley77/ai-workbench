@@ -726,6 +726,12 @@ var domesticMcps = [
 ];
 
 renderMcpCards('domestic-mcps', domesticMcps);
+
+// 动态渲染完成后强制刷新布局（解决安卓 Chrome 固定元素定位异常）
+setTimeout(function() {
+  window.scrollTo(window.scrollX, window.scrollY + 1);
+  window.scrollTo(window.scrollX, window.scrollY - 1);
+}, 50);
 </script>
 </body>
 </html>
