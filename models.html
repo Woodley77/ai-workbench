@@ -310,14 +310,14 @@ const MODELS = [
   },
   // ---- 国产力量 ----
   {
-    cat:'domestic', name:'DeepSeek V4', vendor:'深度求索', date:'2026-04-24',
-    tags:['开源推理之王','1M 上下文'],
-    summary:'极致性价比 + 推理性价比之王，全系开源（MIT）',
-    metric:'Flash 缓存 ¥0.2/百万token',
+    cat:'domestic', name:'DeepSeek V4', vendor:'深度求索', date:'2026-08-13 正式版',
+    tags:['开源推理之王','1M 上下文','Agent 暴涨'],
+    summary:'V4-Pro 正式版（0813）Agent 能力暴涨 4.9 倍，开源首次硬刚闭源旗舰',
+    metric:'DeepSWE 62.7 · SWE-bench 80.6%',
     rank:{ coding:4, reasoning:3, value:1 },
-    kv:[['版本','V4-Pro（1.6T / 激活 49B）/ V4-Flash（284B / 激活 13B），全系开源'],['上下文','1M token 全系标配'],['核心能力','数学/STEM/竞赛代码推理全球顶级；Agentic Coding 内部体验优于 Sonnet 4.5']],
-    desc:'极致性价比（Flash 缓存命中输入 0.2 元/百万 token）+ 推理性价比之王。弱项：无原生视觉、Pro 吞吐受限。明确下半年支持华为昇腾算力。',
-    fact:'V3（2024-12）到 V4 相隔 484 天，官方宣言「全民开源」；V4-Pro 单 token FLOPs 仅为 V3.2 的 27%。'
+    kv:[['版本','V4-Pro-0813 正式版（1.6T / 激活 49B）/ V4-Flash（284B / 激活 13B），全系 MIT 开源'],['上下文','1M token · 最大输出 384K'],['正式版升级','DeepSWE 12.8→62.7（4.9 倍）；Terminal Bench 87.9；Cybergym 83.3；NL2Repo 61.5'],['双协议兼容','同时支持 OpenAI 和 Anthropic API 格式，可直接接入 Claude Code'],['思考模式','thinking / non-thinking 双模式，默认开启思考'],['定价','Pro: 输入 3 元 / 输出 6 元每百万 token（仅 GPT-5.5 的 1/8）'],['国产算力','已适配华为昇腾 A2/A3/950，20ms 低时延，Decode 吞吐 4700 TPS'],['核心能力','SWE-bench 80.6% 开源最高；HumanEval 89.2% 超越 GPT-5.5；Codeforces 3206；Agentic Coding 内部默认模型']],
+    desc:'2026-08-13 凌晨无预告转正，从预览版到正式版相隔 108 天。9 项 Agent/代码基准全线大涨，前端审美发生质变（36 氪实测"告别 AI 一眼假"），长周期工程任务可连续三轮自修 bug。开源模型首次正面硬刚闭源旗舰，性能逼近 Claude Fable 5。弱项：鹈鹕/月亮等简单图形偶有低级失误；无原生视觉。',
+    fact:'DeepSWE 从 12.8 提升到 62.7（4.9 倍）是本次最大亮点——测的不是"会不会写代码"，而是"能不能像工程师一样持续干活"。与 Grok 4.6 同日发布，开源 vs 闭源正面对决。'
   },
   {
     cat:'domestic', name:'Qwen3.8-Max', vendor:'阿里巴巴', date:'2026-08-03',
