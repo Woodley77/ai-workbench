@@ -105,7 +105,7 @@
 
   <!-- ============ 速查词典 ============ -->
   <section class="sec" data-glossary-section>
-    <div class="sec-head"><h2>🔍 速查词典</h2><div class="rule"></div><span class="hint">遇到不懂的词随手查 · 点击「↑ 深度解释」跳转回概念</span></div>
+    <div class="sec-head"><h2>🔍 速查词典</h2><div class="rule"></div><span class="hint">遇到不懂的词随手查 · 点击「↓ 深度解释」跳转到概念</span></div>
     <div class="gloss-list" data-gloss-list>
       <div class="gloss-item" data-gloss-item data-hay="token 词元 分词 计费单位"><span class="gt">Token 词元</span><span class="gd">模型处理文本的最小单位，一切能力的起点。计费、上下文窗口、速度都按 Token 算。<b>中文约 1 字 ≈ 1-2 Token，英文约 1 词 ≈ 1-2 Token</b>。</span></div>
       <div class="gloss-item" data-gloss-item data-hay="context window 上下文窗口 长上下文 1m"><span class="gt">Context Window 上下文窗口</span><span class="gd">模型单次能「同时看到」的输入量。<b>1M token ≈ 几十万汉字</b>，2026 年已成旗舰标配。</span></div>
@@ -163,7 +163,7 @@
 
   <!-- ============ 深度概念 ============ -->
   <section class="sec" data-concept-section>
-    <div class="sec-head"><h2>📖 深度概念</h2><div class="rule"></div><span class="hint">建立完整认知体系 · 关键术语可跳转词典</span></div>
+    <div class="sec-head"><h2>📖 深度概念</h2><div class="rule"></div><span class="hint">建立完整认知体系 · 关键术语可↑ 跳转词典</span></div>
     <div class="grid grid-2" data-concept-grid>
 
       <div class="concept-card">
@@ -368,7 +368,7 @@ document.querySelectorAll('.concept-card').forEach(function(card) {
   if (glossEntry) {
     var btn = document.createElement('button');
     btn.className = 'gloss-ref';
-    btn.textContent = '📖 词典速查 ↓';
+    btn.textContent = '📖 词典速查 ↑';
     btn.addEventListener('click', function() {
       glossEntry.element.scrollIntoView({ behavior:'smooth', block:'center' });
       glossEntry.element.classList.add('highlight');
@@ -394,7 +394,7 @@ document.querySelectorAll('[data-gloss-item]').forEach(function(item) {
   if (conceptCard) {
     var btn = document.createElement('button');
     btn.className = 'gloss-ref';
-    btn.textContent = '↑ 深度解释';
+    btn.textContent = '↓ 深度解释';
     btn.addEventListener('click', function() {
       conceptCard.scrollIntoView({ behavior:'smooth', block:'center' });
       conceptCard.classList.add('highlight');
