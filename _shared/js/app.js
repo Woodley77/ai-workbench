@@ -70,9 +70,7 @@
     var pages = [
       { href: 'index.html',      icon: '🏠', label: '首页' },
       { href: 'models.html',     icon: '🤖', label: '模型' },
-      { href: 'concepts.html',   icon: '📖', label: '概念' },
-      { href: 'comparison.html', icon: '📊', label: '对比' },
-      { href: 'glossary.html',   icon: '📚', label: '词典' },
+      { href: 'concepts.html',   icon: '📖', label: '百科' },
       { href: 'news.html',       icon: '📰', label: '动态' }
     ];
     var current = location.pathname.split('/').pop() || 'index.html';

@@ -10,8 +10,31 @@
 <meta name="apple-mobile-web-app-title" content="AI工作台">
 <link rel="apple-touch-icon" href="./assets/ai-workbench.ico">
 <link rel="icon" type="image/x-icon" href="./assets/ai-workbench.ico">
-<title>概念入门 · AI 学习工作台</title>
+<title>知识百科 · AI 学习工作台</title>
 <link rel="stylesheet" href="./_shared/css/app.css">
+<style>
+.view-tabs { display:flex; gap:0; margin:0 0 20px; border-bottom:2px solid var(--rule); overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.view-tab {
+  padding:10px 16px; border:none; background:none; cursor:pointer;
+  font-size:14px; font-weight:600; color:var(--muted); white-space:nowrap;
+  border-bottom:3px solid transparent; transition:color .15s,border-color .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.view-tab:hover { color:var(--ink); }
+.view-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.view-pane { display:none; }
+.view-pane.active { display:block; }
+.gloss-search {
+  width:100%; padding:12px 16px; border:1px solid var(--rule); border-radius:12px;
+  font-size:15px; background:var(--bg2); color:var(--ink); margin-bottom:16px;
+}
+.gloss-search:focus { outline:none; border-color:var(--accent); }
+.gloss-list { display:flex; flex-direction:column; gap:10px; }
+.gloss-item { padding:14px 18px; border:1px solid var(--rule); border-radius:12px; background:var(--bg2); }
+.gloss-item .gt { font-weight:700; font-size:15px; color:var(--accent); margin-right:8px; }
+.gloss-item .gd { font-size:14px; color:var(--muted); line-height:1.6; }
+.gloss-item.hidden { display:none; }
+</style>
 </head>
 <body>
 
@@ -23,10 +46,8 @@
     </a>
     <div class="nav-links">
       <a href="index.html">首页</a>
-      <a href="models.html">模型知识库</a>
-      <a href="concepts.html" class="active">概念入门</a>
-      <a href="comparison.html">模型对比</a>
-      <a href="glossary.html">术语词典</a>
+      <a href="models.html">模型总览</a>
+      <a href="concepts.html" class="active">知识百科</a>
       <a href="news.html">动态区</a>
     </div>
     <div class="nav-actions">
@@ -38,10 +59,19 @@
 <div class="wrap">
 
   <section class="page-head">
-    <span class="kicker">AI Concepts Explained</span>
-    <h1>概念入门</h1>
-    <p class="sub">把 AI 圈的高频概念用「人话」讲清楚。每个概念配一句通俗解释 + 一个例子。即使你已经用过很多 AI 工具，这些底层概念也会帮你建立更完整的认知地图。</p>
+    <span class="kicker">Concepts & Glossary</span>
+    <h1>知识百科</h1>
+    <p class="sub">深度概念解析 + 速查术语词典，二合一。先看「深度概念」建立认知体系，遇到不懂的词切到「速查词典」随手查——支持中英文搜索。</p>
   </section>
+
+  <!-- ============ 视图切换 ============ -->
+  <div class="view-tabs">
+    <button class="view-tab active" data-view="concepts">📖 深度概念</button>
+    <button class="view-tab" data-view="glossary">🔍 速查词典</button>
+  </div>
+
+  <!-- ============ 视图：深度概念 ============ -->
+  <div class="view-pane active" id="view-concepts">
 
   <section class="sec">
     <div class="grid grid-2">
@@ -225,12 +255,108 @@
     </div>
   </section>
 
+  </div><!-- /view-concepts -->
+
+  <!-- ============ 视图：速查词典 ============ -->
+  <div class="view-pane" id="view-glossary">
+    <input class="gloss-search" data-gloss-search type="search" placeholder="🔍 搜索术语，如：token / 微调 / RAG / agent / MCP…">
+    <div class="gloss-list">
+      <div class="gloss-item" data-gloss-item data-hay="token 词元 分词 计费单位"><span class="gt">Token 词元</span><span class="gd">模型处理文本的最小单位，一切能力的起点。计费、上下文窗口、速度都按 Token 算。<b>中文约 1 字 ≈ 1-2 Token，英文约 1 词 ≈ 1-2 Token</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="context window 上下文窗口 长上下文 1m"><span class="gt">Context Window 上下文窗口</span><span class="gd">模型单次能「同时看到」的输入量。<b>1M token ≈ 几十万汉字</b>，2026 年已成旗舰标配。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="transformer 变换器 架构 注意力"><span class="gt">Transformer</span><span class="gd">2017 年提出的深度学习架构，<b>几乎所有现代大模型的基础</b>。核心是自注意力机制。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="attention 注意力机制 自注意力 self-attention"><span class="gt">Attention 注意力机制</span><span class="gd">模型在处理每个词时动态「关注」其他词的相关度。<b>注意力决定模型如何理解上下文关系</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="moe mixture of experts 混合专家 激活参数"><span class="gt">MoE 混合专家</span><span class="gd">把模型拆成大量「专家」子网络，<b>每次推理只激活一小部分</b>。2026 年大模型绝对主流架构。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="reasoning 推理模型 思维链 cot chain of thought"><span class="gt">Reasoning 推理模型</span><span class="gd">先内部展开推理再回答的模型。<b>思维链（CoT）是其核心机制</b>，数学/代码/逻辑题显著更强。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="chain of thought 思维链 cot"><span class="gt">Chain-of-Thought 思维链</span><span class="gd">让模型把解题过程「写出来」再给答案。<b>把复杂问题拆成一步步推理</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="rag retrieval-augmented 检索增强 知识库"><span class="gt">RAG 检索增强生成</span><span class="gd">回答前先从外部资料库检索相关内容再生成。<b>解决知识过时与幻觉两大痛点</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="fine-tuning 微调 精调 sft"><span class="gt">Fine-tuning 微调</span><span class="gd">在预训练模型基础上用特定数据继续训练。<b>让模型在某个领域更专业</b>，成本远低于从零训练。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="lora 低秩 参数高效微调 peft"><span class="gt">LoRA 低秩适配</span><span class="gd">参数高效微调的代表技术：<b>只训练少量新增参数</b>（原参数的 1% 左右）。普通显卡也能微调大模型。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="rlhf 人类反馈强化学习 对齐 alignment"><span class="gt">RLHF 人类反馈强化学习</span><span class="gd">用人类偏好反馈训练模型「说人话、听指令、不胡说」。<b>让模型变得有用且安全的对齐技术</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="rl 强化学习 reinforcement"><span class="gt">RL 强化学习</span><span class="gd">通过「尝试-奖励」循环训练模型。<b>DeepSeek-R1 用大规模 RL 训练出推理能力</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="distillation 蒸馏 教师学生"><span class="gt">Distillation 蒸馏</span><span class="gd">用大模型（教师）的输出训练小模型（学生）。<b>小模型体积小得多、能力保有大半</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="agent 智能体 自主 agentic"><span class="gt">Agent 智能体</span><span class="gd">能自主完成任务的 AI：<b>理解目标→拆解→调用工具→检查→循环</b>直到完成。2025-2026 年竞争主战场。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="agentic coding 编程智能体 自动写代码"><span class="gt">Agentic Coding 编程智能体</span><span class="gd">AI 自主完成软件工程任务。<b>Kimi K3 前端代码全球第一，Claude Code 是最流行的编程 Agent 工具</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="multimodal 多模态 全模态 原生多模态"><span class="gt">Multimodal 多模态</span><span class="gd">同时理解文本/图像/音频/视频等多种输入。<b>原生多模态指架构一体化处理</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="hallucination 幻觉 一本正经 编造"><span class="gt">Hallucination 幻觉</span><span class="gd">模型「一本正经地胡说八道」——<b>本质是预测下一个词而非查数据库</b>。RAG 与工具调用是主要抑制手段。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="quantization 量化 int4 fp8 压缩"><span class="gt">Quantization 量化</span><span class="gd">降低参数存储精度（32 位→8/4 位）。<b>4-bit 量化显存降约 75%、质量损失仅 1-3%</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="sparse attention 稀疏注意力 稀疏"><span class="gt">Sparse Attention 稀疏注意力</span><span class="gd">只对「重要位置」做注意力，打破平方级开销。<b>1M 上下文普及的底层原因</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="linear attention 线性注意力 注意力 复杂度"><span class="gt">Linear Attention 线性注意力</span><span class="gd">把注意力复杂度从平方级降到线性级，<b>让超长上下文（1M+）在工程上可行</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="kv cache 缓存 键值 推理加速"><span class="gt">KV Cache 键值缓存</span><span class="gd">推理时缓存已算过的注意力键值对，避免重复计算。<b>直接决定长上下文的显存成本</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="latency 延迟 响应速度 吞吐 throughput tps"><span class="gt">Latency / Throughput 延迟 / 吞吐</span><span class="gd">延迟：发出请求到收到第一个字的耗时；吞吐：单位时间处理的 Token 数（TPS）。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="maas model as a service 模型即服务 api"><span class="gt">MaaS 模型即服务</span><span class="gd">模型以 API 形式按量付费提供服务。<b>火山引擎中国公有云 MaaS 份额 49.5% 第一</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="license 许可证 mit apache 开源协议"><span class="gt">开源许可证</span><span class="gd">决定模型能否商用、能否修改。<b>MIT（DeepSeek）与 Apache 2.0（Qwen/Mistral）最宽松</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="benchmark 基准测试 榜单 leaderboard 跑分"><span class="gt">Benchmark 基准测试</span><span class="gd">标准化的能力测试集。<b>不同榜单测不同能力</b>：SWE-bench 测编程、ARC-AGI 测抽象推理。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="swe-bench 软件工程基准 编程测试"><span class="gt">SWE-bench</span><span class="gd">软件工程基准：让模型修复真实 GitHub 仓库的 issue。<b>Claude Fable 5 以 95.0% 领先</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="arc-agi 抽象推理 通用智能"><span class="gt">ARC-AGI</span><span class="gd">抽象推理基准，被视为「逼近 AGI」的风向标。<b>Gemini 3.1 Deep Think 达 84.6%</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="elo 评分 竞技场 盲测"><span class="gt">Elo 评分</span><span class="gd">源自国际象棋的配对评分法，AI 社区用它做<b>模型盲测排名</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="vibe coding 氛围编程 自然语言编程"><span class="gt">Vibe Coding 氛围编程</span><span class="gd">用自然语言描述需求让 AI 直接写代码。<b>开发者只审阅和微调，不逐行手写</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="prompt engineering 提示词工程 提示技巧"><span class="gt">Prompt Engineering 提示词工程</span><span class="gd">通过设计提问方式提升模型输出质量。<b>关键技巧：给角色、给示例、拆解步骤、明确输出格式</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="long-horizon 长程任务 自主运行 多步"><span class="gt">Long-horizon 长程任务</span><span class="gd">需要模型长时间自主执行的多步任务。<b>Kimi K2.6 曾支持 12 小时 4000 步、300 个子 Agent 协同</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="tool use function calling 工具调用 函数调用"><span class="gt">Tool Use 工具调用</span><span class="gd">模型在对话中主动调用外部工具（搜索、代码执行、数据库）。<b>Agent 的基础能力</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="deep research 深度研究 联网搜索"><span class="gt">Deep Research 深度研究</span><span class="gd">模型联网自主搜索、阅读、交叉验证并产出研究报告。<b>文心 5.1 深度搜索全球第四、国产第一</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="on-device 端侧 本地部署 小模型"><span class="gt">On-device 端侧模型</span><span class="gd">在手机/电脑本地运行的小模型。<b>优势：隐私、离线、零延迟</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="inference cost 推理成本 单位经济 算力"><span class="gt">Inference Cost 推理成本</span><span class="gd">模型每次回答消耗的算力成本。<b>「单位经济模型决定产品存亡」</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="alignment 对齐 安全护栏 价值观"><span class="gt">Alignment 对齐</span><span class="gd">让模型行为符合人类意图与价值观。<b>RLHF 是对齐的核心技术</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="effort 思考档位 深度思考 力度"><span class="gt">Effort 思考档位</span><span class="gd">让用户选择模型思考多深。<b>浅档快而便宜、深档慢而准</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="vlm 视觉语言模型 多模态理解"><span class="gt">VLM 视觉语言模型</span><span class="gd">能「看图说话」的模型。更强的 VLM 能理解图表、截图甚至操作电脑界面。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="world knowledge 世界知识 参数记忆 知识截止"><span class="gt">World Knowledge 世界知识</span><span class="gd">模型训练时「长进参数里」的事实知识。<b>有截止日期、不知道训练后的事</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="autoregressive 自回归 预测下一个"><span class="gt">Autoregressive 自回归</span><span class="gd">逐 token 生成：<b>每次只预测「下一个 Token」</b>。所有主流 LLM 都是自回归生成。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="agent skill 智能体技能 skill 技能包 技能"><span class="gt">Agent Skill 智能体技能</span><span class="gd">模块化、可复用的智能体能力单元。将提示词、代码、模板和 API 连接<b>封装成完整的「技能包」</b>。2026 年从 Prompt Engineering 演变为 Skill Engineering。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="skill.md 技能文件 技能描述 yaml 元数据"><span class="gt">SKILL.md</span><span class="gd">Anthropic 技能标准的核心文件。<b>头部是 YAML 元数据</b>，正文是操作流程+示例+资源引用。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="progressive disclosure 渐进式披露 分层加载 元数据"><span class="gt">Progressive Disclosure 渐进式披露</span><span class="gd">技能的分层加载机制：<b>先只读元数据（省 Token），确定需要才加载完整指令和脚本</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="mcp model context protocol 模型上下文协议 usb-c"><span class="gt">MCP 模型上下文协议</span><span class="gd">Anthropic 2024 年 11 月开源的协议，被称为<b>「AI 世界的 USB-C 接口」</b>。月 SDK 下载量超 4 亿次。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="mcp server mcp client mcp host 客户端 服务器 主机"><span class="gt">MCP Server / Client / Host</span><span class="gd">MCP 三层架构：<b>Host</b>管理 Client；<b>Client</b>维护连接；<b>Server</b>提供工具和数据。通信基于 JSON-RPC 2.0。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="stateless 无状态 有状态 mcp v5 水平扩展"><span class="gt">Stateless 无状态</span><span class="gd">MCP v5（2026-07-28）核心变化：每个请求完全独立，<b>不再需要握手和会话 ID</b>。可水平扩展，支持 Serverless。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="semantic kernel 语义内核 planner 插件 微软"><span class="gt">Semantic Kernel 语义内核</span><span class="gd">微软的智能体编排框架：Plugin + Planner 自动生成执行计划。<b>适合企业级异构系统大规模编排</b>。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="confused deputy 糊涂代理人 间接注入 安全"><span class="gt">Confused Deputy 糊涂代理人</span><span class="gd">Agent 安全首要威胁：攻击者通过<b>间接提示注入</b>诱骗智能体执行恶意操作。防御：沙盒隔离、人机回环、最小权限。</span></div>
+      <div class="gloss-item" data-gloss-item data-hay="skill economy 技能经济 技能市场 技能商店"><span class="gt">Skill Economy 技能经济</span><span class="gd">2026 年新经济形态：领域专家将知识固化为 SKILL.md 售卖，<b>定价从按人头转向按结果付费</b>。</span></div>
+    </div>
+    <div class="empty hidden" data-gloss-empty style="padding:40px;text-align:center;color:var(--muted)">没有找到匹配的术语，换个关键词试试～</div>
+  </div><!-- /view-glossary -->
+
 </div>
 
 <footer>
-  <div>概念入门 · 概念解释基于 2026 年主流模型的公开技术介绍整理</div>
+  <div>知识百科 · 概念解释 + 术语词典 · 基于 2026 年主流模型的公开技术介绍整理</div>
 </footer>
 
 <script src="./_shared/js/app.js"></script>
+<script>
+// ==================== 视图切换 ====================
+document.querySelectorAll('.view-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.view-tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.view-pane').forEach(function(p) { p.classList.remove('active'); });
+    tab.classList.add('active');
+    var pane = document.getElementById('view-' + tab.dataset.view);
+    if (pane) pane.classList.add('active');
+  });
+});
+
+// ==================== 词典搜索 ====================
+var searchInput = document.querySelector('[data-gloss-search]');
+if (searchInput) {
+  searchInput.addEventListener('input', function() {
+    var q = this.value.trim().toLowerCase();
+    var items = document.querySelectorAll('[data-gloss-item]');
+    var empty = document.querySelector('[data-gloss-empty]');
+    var visible = 0;
+    items.forEach(function(item) {
+      var hay = item.getAttribute('data-hay').toLowerCase();
+      var text = item.textContent.toLowerCase();
+      if (q === '' || hay.indexOf(q) !== -1 || text.indexOf(q) !== -1) {
+        item.classList.remove('hidden');
+        visible++;
+      } else {
+        item.classList.add('hidden');
+      }
+    });
+    if (empty) {
+      if (visible === 0) empty.classList.remove('hidden');
+      else empty.classList.add('hidden');
+    }
+  });
+}
+</script>
 </body>
 </html>
