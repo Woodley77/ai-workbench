@@ -3,10 +3,131 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="theme-color" content="#059669">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AI工作台">
+<link rel="apple-touch-icon" href="./assets/ai-workbench.ico">
 <link rel="icon" type="image/x-icon" href="./assets/ai-workbench.ico">
 <title>模型知识库 · AI 学习工作台</title>
 <link rel="stylesheet" href="./_shared/css/app.css">
+<style>
+/* ---- 排行榜 ---- */
+.rank-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin-top:16px; }
+.rank-box {
+  background: color-mix(in srgb, var(--bg2) 88%, transparent);
+  border:1px solid var(--rule);
+  border-radius:var(--radius-lg);
+  padding:20px;
+  box-shadow:var(--shadow);
+}
+.rank-box h3 { font-size:15px; margin:0 0 14px; display:flex; align-items:center; gap:8px; }
+.rank-list { display:flex; flex-direction:column; gap:8px; }
+.rank-sub { display:flex; flex-direction:column; gap:6px; }
+.rank-sub + .rank-sub { margin-top:10px; padding-top:10px; border-top:1px dashed var(--rule); }
+.rank-sub-label { font-size:12px; font-weight:700; color:var(--faint); margin-bottom:2px; }
+.rank-row {
+  display:flex; align-items:center; gap:10px;
+  padding:7px 10px; border-radius:8px;
+  background: color-mix(in srgb, var(--bg) 50%, transparent);
+  transition: background .15s;
+}
+.rank-row:hover { background: var(--accent-soft); }
+.rank-num {
+  flex:none; width:24px; height:24px; border-radius:50%;
+  display:grid; place-items:center; font-size:12px; font-weight:700;
+  background:var(--accent-soft); color:var(--accent);
+}
+.rank-sub .rank-row:nth-of-type(1) .rank-num { background:linear-gradient(135deg,#F59E0B,#D97706); color:#fff; }
+.rank-sub .rank-row:nth-of-type(2) .rank-num { background:linear-gradient(135deg,#9CA3AF,#6B7280); color:#fff; }
+.rank-sub .rank-row:nth-of-type(3) .rank-num { background:linear-gradient(135deg,#D97706,#92400E); color:#fff; }
+.rank-name { flex:1; font-size:13.5px; font-weight:600; color:var(--ink); }
+.rank-score { font-family:var(--font-mono); font-size:12px; color:var(--accent); font-weight:600; flex:none; }
+.rank-bar-bg { flex:none; width:80px; height:6px; border-radius:3px; background:var(--rule); overflow:hidden; }
+.rank-bar-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--accent),var(--accent2)); }
+
+/* ---- 紧凑卡片 ---- */
+.mini-card {
+  background: color-mix(in srgb, var(--bg2) 88%, transparent);
+  border:1px solid var(--rule);
+  border-radius:var(--radius-lg);
+  padding:16px 18px;
+  box-shadow:var(--shadow);
+  cursor:pointer;
+  transition: transform .18s, box-shadow .18s, border-color .18s;
+  display:flex; flex-direction:column; gap:8px;
+}
+.mini-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-lg); border-color:var(--accent); }
+.mini-card .mc-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.mini-card .mc-name { font-size:16px; font-weight:700; color:var(--ink); }
+.mini-card .mc-vendor { font-size:12px; color:var(--faint); margin-top:2px; }
+.mini-card .mc-badge {
+  flex:none; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;
+  background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent);
+}
+.mini-card .mc-tags { display:flex; flex-wrap:wrap; gap:5px; }
+.mini-card .mc-tags .tag { font-size:11px; padding:2px 8px; }
+.mini-card .mc-summary { font-size:13px; color:var(--muted); line-height:1.55; flex:1; }
+.mini-card .mc-metric {
+  font-size:12px; font-family:var(--font-mono); color:var(--accent);
+  padding-top:8px; border-top:1px dashed var(--rule);
+  display:flex; justify-content:space-between; align-items:center;
+}
+.mini-card .mc-metric .arrow { color:var(--accent); font-weight:700; }
+
+/* ---- 分类标签 ---- */
+.cat-tabs { display:flex; gap:4px; border-bottom:1px solid var(--rule); margin-bottom:18px; overflow-x:auto; scrollbar-width:none; }
+.cat-tabs::-webkit-scrollbar { display:none; }
+.cat-tab {
+  border:none; background:none; padding:9px 16px; font-size:14px; font-weight:600;
+  color:var(--muted); cursor:pointer; border-bottom:2px solid transparent;
+  margin-bottom:-1px; white-space:nowrap; transition:color .15s; font-family:var(--font-sans);
+}
+.cat-tab:hover { color:var(--ink); }
+.cat-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* ---- 详情弹窗 ---- */
+.modal-overlay {
+  position:fixed; inset:0; z-index:200; display:none;
+  background:rgba(0,0,0,0.45); backdrop-filter:blur(4px);
+  align-items:flex-start; justify-content:center; padding:40px 20px;
+  overflow-y:auto;
+}
+.modal-overlay.open { display:flex; }
+.modal-box {
+  background:var(--bg2); border:1px solid var(--rule);
+  border-radius:var(--radius-lg); max-width:640px; width:100%;
+  box-shadow:var(--shadow-lg); padding:28px 30px; margin:auto;
+  animation: modalIn .25s ease;
+}
+@keyframes modalIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+.modal-close {
+  float:right; width:32px; height:32px; border-radius:50%;
+  border:1px solid var(--rule); background:var(--bg); color:var(--muted);
+  cursor:pointer; font-size:16px; display:grid; place-items:center;
+  transition:all .15s;
+}
+.modal-close:hover { color:var(--danger); border-color:var(--danger); }
+.modal-box h2 { font-size:22px; margin:0 0 4px; }
+.modal-box .modal-vendor { font-size:13px; color:var(--faint); margin-bottom:14px; }
+.modal-box .modal-tags { margin-bottom:16px; }
+.modal-box .modal-kv { display:grid; grid-template-columns:80px 1fr; gap:8px 12px; font-size:14px; margin-bottom:16px; }
+.modal-box .modal-kv dt { color:var(--faint); font-size:13px; }
+.modal-box .modal-kv dd { margin:0; color:var(--ink); }
+.modal-box .modal-desc { font-size:14px; color:var(--muted); line-height:1.75; margin-bottom:14px; }
+.modal-box .modal-fact {
+  background:var(--accent-soft); border-left:3px solid var(--accent);
+  border-radius:0 8px 8px 0; padding:12px 16px; font-size:13.5px; color:var(--ink);
+}
+.modal-box .modal-fact b { color:var(--accent); }
+
+@media (max-width:700px) {
+  .rank-grid { grid-template-columns:1fr; }
+  .modal-overlay { padding:16px 10px; }
+  .modal-box { padding:20px; }
+}
+</style>
 </head>
 <body>
 
@@ -35,406 +156,48 @@
   <section class="page-head">
     <span class="kicker">Model Knowledge Base</span>
     <h1>模型知识库</h1>
-    <p class="sub">截至 2026 年 8 月的 AI 大模型全景盘点。分四类：海外旗舰、国产力量、开源生态、多模态生成。信息均来自官方公告与权威报道，标注「未披露」的即为厂商未公开的数据。</p>
+    <p class="sub">截至 2026 年 8 月的 AI 大模型全景盘点。先看排名把握全局，再点卡片查看详情。</p>
   </section>
 
-  <!-- ============ 海外旗舰 ============ -->
+  <!-- ============ 排行榜 ============ -->
   <section class="sec">
-    <div class="sec-head"><h2>🌍 海外旗舰</h2><div class="rule"></div><span class="hint">OpenAI · Anthropic · Google</span></div>
-    <div class="grid grid-2">
+    <div class="sec-head"><h2>📊 能力排行榜</h2><div class="rule"></div><span class="hint">点击卡片查看完整信息</span></div>
+    <div class="rank-grid">
 
-      <div class="model-card">
-        <div class="head">
-          <div><h3>GPT-5.6 系列</h3><div class="en">OpenAI · 2026-07-09</div></div>
-          <div class="tags"><span class="tag t-accent">旗舰</span><span class="tag">文本/图像/语音</span></div>
-        </div>
-        <dl class="kv">
-          <dt>版本梯队</dt><dd>Sol（旗舰）/ Terra（均衡）/ Luna（性价比，$1/$6 每百万 token）</dd>
-          <dt>参数量</dt><dd>未披露</dd>
-          <dt>核心能力</dt><dd>编程智能体指数 80 分创 SOTA；端到端产出演示文稿/文档/表格；网络安全 ExploitBench 73.5%</dd>
-        </dl>
-        <div class="desc">擅长复杂编程智能体、长周期 Agent 工作流、知识型交付物（设计审美大幅提升）。纯推理基准上仍落后 Claude Fable 5，靠 Luna/Terra 打性价比。</div>
-        <div class="fact"><b>亮点</b>：Agents' Last Exam 53.6 分领先 Fable 5 达 13.1 分；2026-07-30 Luna 降价 80% 直接开打价格战。</div>
+      <div class="rank-box">
+        <h3>🏆 综合智能</h3>
+        <div class="rank-list" id="rank-overall"></div>
       </div>
 
-      <div class="model-card">
-        <div class="head">
-          <div><h3>Claude Fable 5</h3><div class="en">Anthropic · 2026-06-09</div></div>
-          <div class="tags"><span class="tag t-accent">能力最强</span><span class="tag">文本+图像</span></div>
-        </div>
-        <dl class="kv">
-          <dt>上下文</dt><dd>1M token，单次输出 128K</dd>
-          <dt>参数量</dt><dd>未披露</dd>
-          <dt>核心能力</dt><dd>SWE-bench Verified 95.0%、Pro 80.3%；从截图重建 Web 源码；50M 行代码库一天迁移</dd>
-        </dl>
-        <div class="desc">当前纯能力最强的公开发行模型。擅长长而复杂的端到端任务（软件迁移、法律研究、金融分析）。定价高（$10/$50 每百万 token），且受美国出口管制与数据留存要求约束。</div>
-        <div class="fact"><b>亮点</b>：与 Claude Mythos 5 共享同一基础权重，仅安全护栏不同——「同模型、分级发布」成为能力治理新范式。</div>
+      <div class="rank-box">
+        <h3>💻 编程能力 · SWE-bench</h3>
+        <div class="rank-list" id="rank-coding"></div>
       </div>
 
-      <div class="model-card">
-        <div class="head">
-          <div><h3>Claude Opus 5 / Sonnet 5</h3><div class="en">Anthropic · 2026-06/07</div></div>
-          <div class="tags"><span class="tag">新旗舰</span><span class="tag">性价比</span></div>
-        </div>
-        <dl class="kv">
-          <dt>层级体系</dt><dd>Haiku &lt; Sonnet &lt; Opus &lt; Mythos（新顶层）</dd>
-          <dt>Opus 5</dt><dd>2026-07-25 发布，能力逼近 Fable 5，价格约为其一半（$5/$25）</dd>
-          <dt>Sonnet 5</dt><dd>2026-06-30 发布，「最具 Agent 能力的 Sonnet」，性能接近 Opus 4.8、定价为其 60%</dd>
-        </dl>
-        <div class="desc">Opus 层面向企业旗舰用途（Claude Code、Agent 任务），刷新 ARC-AGI-3 纪录；Sonnet 层是免费版与 Pro 版的默认模型，五档思考强度可选。</div>
-        <div class="fact"><b>亮点</b>：Sonnet 4.6 曾以「Opus 级能力 1/3 价格」奠定性价比之王口碑，这条产品线一路延续。</div>
+      <div class="rank-box">
+        <h3>🧠 推理能力</h3>
+        <div class="rank-list" id="rank-reasoning"></div>
       </div>
 
-      <div class="model-card">
-        <div class="head">
-          <div><h3>Gemini 3.5 / 3.6 Flash</h3><div class="en">Google DeepMind · 2026-05/07</div></div>
-          <div class="tags"><span class="tag t-teal">原生多模态</span><span class="tag">速度之王</span></div>
-        </div>
-        <dl class="kv">
-          <dt>上下文</dt><dd>1M token（输出 64K）</dd>
-          <dt>模态</dt><dd>原生文本/图像/音频/视频输入</dd>
-          <dt>核心能力</dt><dd>输出速度约为其他前沿模型的 4 倍；Terminal-Bench 2.1 76.2%；MCP Atlas 83.6%</dd>
-        </dl>
-        <div class="desc">Gemini App 与 Google 搜索 AI Mode 的全球默认模型。适合高吞吐 Agent 工作流、vibe coding、100+ 页复杂文档推理。综合智能低于未发布的 3.5 Pro，最难任务上仍逊于 GPT-5.6 / Fable 5。</div>
-        <div class="fact"><b>亮点</b>：Gemini 是唯一原生四模态输入的系列；3.5 Pro 预计 2026 年 8 月发布（已现身 LM Arena）。</div>
-      </div>
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>Gemini 3.1 Pro</h3><div class="en">Google DeepMind · 2026-02-19</div></div>
-          <div class="tags"><span class="tag">GA 旗舰</span><span class="tag">科研</span></div>
-        </div>
-        <dl class="kv">
-          <dt>上下文</dt><dd>1M token</dd>
-          <dt>推理</dt><dd>约为 Gemini 3 Pro 的 2.5 倍（ARC-AGI-2 77.1%）</dd>
-          <dt>核心能力</dt><dd>GPQA Diamond 94.3%；SWE-bench Verified 80.6%；博士级科学研究</dd>
-        </dl>
-        <div class="desc">擅长科学推理、全栈开发、长文档与多源数据分析。部分长程智能体基准落后于竞品新旗舰，处于被 3.5 系列边缘化的过渡期。</div>
-        <div class="fact"><b>亮点</b>：3.1 Deep Think 模式 ARC-AGI-2 达 84.6%，2025 数理奥赛金牌级。</div>
-      </div>
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>生态模型</h3><div class="en">Nano Banana · Omni · Sora</div></div>
-          <div class="tags"><span class="tag">图像</span><span class="tag">视频</span></div>
-        </div>
-        <dl class="kv">
-          <dt>Nano Banana</dt><dd>Google 图像生成系列，2 代已 GA（2026-06）</dd>
-          <dt>Gemini Omni Flash</dt><dd>预览版：3-10 秒 720p 视频生成与对话式视频编辑</dd>
-          <dt>Sora 2</dt><dd>2025-09-30 发布后于 2026-03 官宣停运——算力成本过高，视频生成由 Sora 生态独立承担的格局终结</dd>
-        </dl>
-        <div class="desc">Google 的图像与视频生态依托 TPU 算力优势，视频业务成本压力小于对手；OpenAI 则把算力重心转向 GPT Image 2（DALL-E 品牌退役）。</div>
+      <div class="rank-box">
+        <h3>💰 性价比</h3>
+        <div class="rank-list" id="rank-value"></div>
       </div>
 
     </div>
   </section>
 
-  <!-- ============ 国产力量 ============ -->
+  <!-- ============ 模型卡片 ============ -->
   <section class="sec">
-    <div class="sec-head"><h2>🇨🇳 国产力量</h2><div class="rule"></div><span class="hint">开源军备竞赛 · 与海外差距压缩到 2-3 个月</span></div>
-    <div class="grid grid-2">
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>DeepSeek V4</h3><div class="en">深度求索 · 2026-04-24</div></div>
-          <div class="tags"><span class="tag t-accent">开源推理之王</span><span class="tag">1M 上下文</span></div>
-        </div>
-        <dl class="kv">
-          <dt>版本</dt><dd>V4-Pro（1.6T / 激活 49B）/ V4-Flash（284B / 激活 13B），全系开源</dd>
-          <dt>上下文</dt><dd>1M token 全系标配</dd>
-          <dt>核心能力</dt><dd>数学/STEM/竞赛代码推理全球顶级；Agentic Coding 内部体验优于 Sonnet 4.5</dd>
-        </dl>
-        <div class="desc">极致性价比（Flash 缓存命中输入 0.2 元/百万 token）+ 推理性价比之王。弱项：无原生视觉、Pro 吞吐受限。明确下半年支持华为昇腾算力。</div>
-        <div class="fact"><b>亮点</b>：V3（2024-12）到 V4 相隔 484 天，官方宣言「全民开源」；V4-Pro 单 token FLOPs 仅为 V3.2 的 27%。</div>
-      </div>
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>通义千问 Qwen3.8-Max</h3><div class="en">阿里巴巴 · 2026-08-03</div></div>
-          <div class="tags"><span class="tag t-teal">开源生态之王</span><span class="tag">全模态</span></div>
-        </div>
-        <dl class="kv">
-          <dt>参数量</dt><dd>2.4T / 激活约 95B / 1M 上下文</dd>
-          <dt>模态</dt><dd>原生全模态：图像、视频、文档、文本</dd>
-          <dt>核心能力</dt><dd>混合注意力（MHA+线性注意力）；思考/非思考双模式；内置 code_interpreter、web_search</dd>
-        </dl>
-        <div class="desc">衍生模型超 20 万款、下载量破 10 亿的开源生态第一。宣布下周开源——千问史上首个开源 Max 级权重。API 价格约为 GPT-5.2 的 1/15。</div>
-        <div class="fact"><b>亮点</b>：Qwen3 曾随国星宇航部署至在轨卫星，完成全球首次大模型太空在轨推理（2025-11）。</div>
-      </div>
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>Kimi K3</h3><div class="en">月之暗面 · 2026-07-16</div></div>
-          <div class="tags"><span class="tag t-accent">全球最大开源</span><span class="tag">Agentic Coding</span></div>
-        </div>
-        <dl class="kv">
-          <dt>参数量</dt><dd>2.8T（全球最大开源模型）/ 896 专家激活 16 / 原生 1M 上下文</dd>
-          <dt>模态</dt><dd>原生视觉理解（图像/视频输入）</dd>
-          <dt>核心能力</dt><dd>KDA 线性注意力；Frontend Code Arena 1679 分全球第一（超 Fable 5 与 GPT-5.6 Sol）</dd>
-        </dl>
-        <div class="desc">前端编程与 3D/视觉生成惊艳，48 小时无人值守长程任务。最大短板是推理速度慢（「强得意外，慢得着急」），日常简单任务易「替用户做决定」。</div>
-        <div class="fact"><b>亮点</b>：2026-07-29 完成 35 亿美元 F 轮融资，估值 350 亿美元；7-27 全链路开源（权重+技术报告+三大 Infra）。</div>
-      </div>
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>智谱 GLM-5.2</h3><div class="en">智谱 AI · 2026-06-15</div></div>
-          <div class="tags"><span class="tag">MIT 开源</span><span class="tag">工程 Agent</span></div>
-        </div>
-        <dl class="kv">
-          <dt>参数量</dt><dd>约 745B / 激活 40B / 1M 无损上下文</dd>
-          <dt>核心能力</dt><dd>GLM-5.1 曾以 SWE-Bench Pro 58.4 全球第一击败所有闭源旗舰；单次任务独立工作 8 小时</dd>
-          <dt>模态</dt><dd>文本为主；配套 GLM-5V-Turbo、GLM-OCR、GLM-Image</dd>
-        </dl>
-        <div class="desc">清华系「工程 Agent」代表，MIT 协议最宽松、交付稳定。2026-01 完成香港 IPO，募资约 43.5 亿港元。</div>
-        <div class="fact"><b>亮点</b>：GLM-5 全程在 10 万颗华为昇腾 910B 上训练，实现从美国制程硬件的完全独立。</div>
-      </div>
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>豆包 2.1 / Seed 系列</h3><div class="en">字节跳动 · 2026-06-24</div></div>
-          <div class="tags"><span class="tag t-teal">多模态全家桶</span><span class="tag">MaaS 第一</span></div>
-        </div>
-        <dl class="kv">
-          <dt>核心</dt><dd>豆包 2.1 Pro：Coding/Agent 对标 Claude Opus 4.6，定价低约 80%</dd>
-          <dt>多模态矩阵</dt><dd>SeedRealtime（音视频全双工）、Seedance 2.5（30 秒视频）、Seedream 5.0 Pro（分层设计图）、Seed Audio 1.0</dd>
-          <dt>生态</dt><dd>日均 token 调用 180 万亿；火山引擎中国公有云 MaaS 份额 49.5% 第一</dd>
-        </dl>
-        <div class="desc">国产多模态最全的一家。从对话模型到视频/图像/音频/实时语音全覆盖，企业级 Agent 落地能力强。弱项：开源力度弱于 DeepSeek/Qwen。</div>
-        <div class="fact"><b>亮点</b>：豆包 2.0 旗舰数学达 IMO/CMO 金牌水平，编程 Codeforces Elo 3020 对标 GPT-5.2。</div>
-      </div>
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>MiniMax M2.7</h3><div class="en">MiniMax · 2026-03-18</div></div>
-          <div class="tags"><span class="tag">Agent 经济</span><span class="tag">自进化</span></div>
-        </div>
-        <dl class="kv">
-          <dt>参数量</dt><dd>230B / 激活 10B / 200K 上下文</dd>
-          <dt>核心能力</dt><dd>SWE-bench Verified 80.2%；推理成本为主流 1/10-1/20，「每小时 1 美元」</dd>
-          <dt>模态</dt><dd>文本单模态（图像/语音/视频走平台 API）</dd>
-        </dl>
-        <div class="desc">Agent 生产级任务的「经济模型颠覆者」。M2.7 首次将模型引入自身训练循环（承担研发工作流 30-50% 工作量），论文题为《Early Echoes of Self-Evolution》。</div>
-        <div class="fact"><b>亮点</b>：公司 80% 新代码由自家 M2.5 生成；语音产品 MiniMax Audio 在 TTS 盲测双榜第一。</div>
-      </div>
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>腾讯混元 Hy3</h3><div class="en">腾讯 · 2026-07-06</div></div>
-          <div class="tags"><span class="tag">实用主义</span><span class="tag">智能密度</span></div>
-        </div>
-        <dl class="kv">
-          <dt>参数量</dt><dd>295B / 激活 21B / 256K 上下文（2-5 倍小参数比肩更大旗舰）</dd>
-          <dt>核心能力</dt><dd>快慢思考融合 MoE；495 步复杂工作流稳定运行；中文生态深度耦合（元宝、CodeBuddy、QQ）</dd>
-          <dt>价格</dt><dd>输入 1 元 / 输出 4 元每百万 token，极低</dd>
-        </dl>
-        <div class="desc">不追参数堆砌、追「智能密度」的实用主义路线。270 位专家真实工作盲测优于 GLM-5.1。另有 Hy-MT2 翻译模型（33 语种互译）。</div>
-        <div class="fact"><b>亮点</b>：2026-02 起重建预训练与 RL 基础设施，确立「能力体系化、评测真实性、性价比」三原则。</div>
-      </div>
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>百度文心 5.1</h3><div class="en">百度 · 2026-05-09</div></div>
-          <div class="tags"><span class="tag">搜索壁垒</span><span class="tag">全模态</span></div>
-        </div>
-        <dl class="kv">
-          <dt>参数量</dt><dd>约 8000 亿总参（5.0 的 1/3），激活减半</dd>
-          <dt>模态</dt><dd>原生全模态统一建模（文本/图像/音频/视频）</dd>
-          <dt>核心能力</dt><dd>深度搜索全球第四、国产第一（Arena 搜索榜 1223 分）；AIME26 带工具 99.6 分</dd>
-        </dl>
-        <div class="desc">「大基座蒸馏」路线：预训练成本仅为业界同规模约 6%。搜索整合与 Agent 能力国产领先。坚持闭源，外界无法独立核验跑分。</div>
-        <div class="fact"><b>亮点</b>：ERNIE 4.5 曾开源 10 款模型（0.3B 端侧→424B 旗舰），旗舰 28 项基准中 22 项超 DeepSeek-V3。</div>
-      </div>
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>阶跃星辰 Step</h3><div class="en">阶跃星辰 · 2026-05-29</div></div>
-          <div class="tags"><span class="tag t-teal">多模态卷王</span><span class="tag">终端突围</span></div>
-        </div>
-        <dl class="kv">
-          <dt>最新</dt><dd>Step 3.7 Flash（196B / 激活 11B + 1.8B ViT，Apache 2.0 开源）</dd>
-          <dt>模态</dt><dd>文本+图像原生；视频 Step-Video-T2V（300 亿参数）、Step-Audio 全家桶</dd>
-          <dt>速度</dt><dd>最高 400 tokens/s，定位「Agent 加速器」</dd>
-        </dl>
-        <div class="desc">国产多模态开源力度第一梯队。2026-07 发布 AI 终端品牌 STEPX 手机与智能体原生系统 Step AOS，从模型公司走向终端。</div>
-        <div class="fact"><b>亮点</b>：Step-2（2024-07）是国内创业公司首个万亿 MoE；正在推进港股 IPO。</div>
-      </div>
-
+    <div class="sec-head"><h2>🎴 全部模型</h2><div class="rule"></div><span class="hint">点击任意卡片展开详情</span></div>
+    <div class="cat-tabs">
+      <button class="cat-tab active" data-cat="all">全部</button>
+      <button class="cat-tab" data-cat="overseas">🌍 海外旗舰</button>
+      <button class="cat-tab" data-cat="domestic">🇨🇳 国产力量</button>
+      <button class="cat-tab" data-cat="opensource">🔓 开源生态</button>
+      <button class="cat-tab" data-cat="multimodal">🎨 多模态生成</button>
     </div>
-  </section>
-
-  <!-- ============ 开源生态 ============ -->
-  <section class="sec">
-    <div class="sec-head"><h2>🔓 开源生态</h2><div class="rule"></div><span class="hint">开源与闭源差距基本抹平 · 可本地部署</span></div>
-    <div class="grid grid-2">
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>Meta Llama 4</h3><div class="en">Meta · 2025-04-05</div></div>
-          <div class="tags"><span class="tag">超长上下文</span><span class="tag">多语言</span></div>
-        </div>
-        <dl class="kv">
-          <dt>版本</dt><dd>Scout（109B/17B 激活，10M 上下文）/ Maverick（400B/17B 激活，1M）</dd>
-          <dt>模态</dt><dd>原生多模态（文本+图像，早融合架构）</dd>
-          <dt>特点</dt><dd>200 种语言；Scout 可把整个代码仓库装入上下文</dd>
-        </dl>
-        <div class="desc">上下文长度冠绝开源。许可证限制最多（月活超 7 亿需另签协议、禁止用输出训练其他 LLM）。2026 年 Meta 推出闭源旗舰 Muse Spark，Llama 4 仍是开源主力。</div>
-        <div class="fact"><b>亮点</b>：Scout INT4 量化后约 54GB，可单卡 H100 部署。</div>
-      </div>
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>Mistral</h3><div class="en">Mistral AI（法国）· 2026-04</div></div>
-          <div class="tags"><span class="tag">欧洲合规</span><span class="tag">Apache 2.0</span></div>
-        </div>
-        <dl class="kv">
-          <dt>最新</dt><dd>Medium 3.5（128B 稠密，SWE-bench Verified 77.6%）；Small 4（统一产品线）</dd>
-          <dt>特点</dt><dd>欧洲本地化部署、EU 数据合规的首选；绝对性能在头部开源中相对落后</dd>
-        </dl>
-        <div class="desc">唯一来自欧盟、可满足 EU 数据驻留要求的头部开源厂商。适合欧洲企业部署与数据合规场景。</div>
-      </div>
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>小模型军团</h3><div class="en">Gemma · Phi · 开源推理谱系</div></div>
-          <div class="tags"><span class="tag">端侧</span><span class="tag">消费级显卡</span></div>
-        </div>
-        <dl class="kv">
-          <dt>Gemma 3/4</dt><dd>Google 小模型王者，27B 单卡可跑、140+ 语言</dd>
-          <dt>Phi-4</dt><dd>微软 14B，小参数高推理，消费级显卡可跑</dd>
-          <dt>推理谱系</dt><dd>DeepSeek-R1（671B）开创 RL 推理路线并带动蒸馏小模型</dd>
-        </dl>
-        <div class="desc">本地部署入门路线：Ollama（新手）/ llama.cpp（性能）/ vLLM（生产）；4-bit 量化显存降 75%、质量损失约 1-3%。</div>
-        <div class="fact"><b>建议</b>：本地部署入门首选 Qwen3.5-9B/32B（Apache 2.0、中文好、量化后消费卡可跑）。</div>
-      </div>
-
-      <div class="model-card">
-        <div class="head">
-          <div><h3>格局观察</h3><div class="en">2026 开源双雄</div></div>
-          <div class="tags"><span class="tag t-accent">DeepSeek</span><span class="tag t-teal">Qwen</span></div>
-        </div>
-        <dl class="kv">
-          <dt>双雄</dt><dd>DeepSeek（推理/代码/极致性价比）× Qwen（中文/多模态/效率）</dd>
-          <dt>守位者</dt><dd>Llama 4 靠长上下文、Mistral 靠合规</dd>
-          <dt>标配</dt><dd>MoE + 稀疏注意力 + 1M 上下文成为开源标配</dd>
-        </dl>
-        <div class="desc">许可证光谱：完全开源（DeepSeek MIT / Qwen Apache 2.0 / Mistral Apache 2.0）vs 开放权重受限（Llama 4）。架构趋势：「总参数大、激活参数小」的 MoE 成为降低成本关键。</div>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ============ 多模态生成 ============ -->
-  <section class="sec">
-    <div class="sec-head"><h2>🎨 多模态生成</h2><div class="rule"></div><span class="hint">文生图 · 文生视频 · 音频语音</span></div>
-
-    <h3 style="margin:18px 0 12px">🖼️ 文生图</h3>
-    <div class="grid grid-3">
-      <div class="model-card">
-        <div class="head"><div><h3 style="font-size:16px">FLUX 2 / 3</h3><div class="en">Black Forest Labs</div></div></div>
-        <dl class="kv">
-          <dt>最新</dt><dd>FLUX 3（2026-08-04）首个视频模型：图+视频+音频一次生成</dd>
-          <dt>优势</dt><dd>照片级写实盲测超 Midjourney V7；FLUX 2 Klein 开源（消费级亚秒级生成）</dd>
-          <dt>弱势</dt><dd>中文与亚洲人像弱于国产模型</dd>
-        </dl>
-      </div>
-      <div class="model-card">
-        <div class="head"><div><h3 style="font-size:16px">Stable Diffusion 3.5</h3><div class="en">Stability AI</div></div></div>
-        <dl class="kv">
-          <dt>定位</dt><dd>社区生态最成熟的本地绘画（LoRA/ControlNet/ComfyUI）</dd>
-          <dt>优势</dt><dd>开放生态与可控性无出其右；社区授权可免费商用（年收入 &lt;100 万美元）</dd>
-          <dt>弱势</dt><dd>基础写实度已落后 FLUX 2</dd>
-        </dl>
-      </div>
-      <div class="model-card">
-        <div class="head"><div><h3 style="font-size:16px">GPT Image 2</h3><div class="en">OpenAI / Midjourney V7</div></div></div>
-        <dl class="kv">
-          <dt>GPT Image 2</dt><dd>2026-04 底发布，DALL-E 品牌退役，并入 ChatGPT 订阅</dd>
-          <dt>Midjourney V7</dt><dd>闭源，绘画/风格化美学仍最强</dd>
-          <dt>国产</dt><dd>Qwen-Image-3.0（10 像素级文字渲染）；字节 Z-Image（中文/亚洲人像口碑好）</dd>
-        </dl>
-      </div>
-    </div>
-
-    <h3 style="margin:26px 0 12px">🎬 文生视频（后 Sora 时代）</h3>
-    <div class="grid grid-3">
-      <div class="model-card">
-        <div class="head"><div><h3 style="font-size:16px">Veo 3.1</h3><div class="en">Google · 质量标杆</div></div></div>
-        <dl class="kv">
-          <dt>规格</dt><dd>4K 原生、60fps、竖屏原生、首尾帧锁定；单片段约 8 秒</dd>
-          <dt>优势</dt><dd>指令遵循与镜头语言最强、物理真实度最高；原生音画同步</dd>
-          <dt>价格</dt><dd>约 $3.75/5 秒，较贵</dd>
-        </dl>
-      </div>
-      <div class="model-card">
-        <div class="head"><div><h3 style="font-size:16px">Kling 3.0</h3><div class="en">快手 · 长片性价比之王</div></div></div>
-        <dl class="kv">
-          <dt>规格</dt><dd>最长 60 秒单片段（行业最长）、4K 输出、原生音频</dd>
-          <dt>优势</dt><dd>物理真实感、人物一致性、复杂动作；价格仅 Veo 约 1/6</dd>
-          <dt>地位</dt><dd>Sora 停运后最大受益者，第三方平台「长视频」默认引擎</dd>
-        </dl>
-      </div>
-      <div class="model-card">
-        <div class="head"><div><h3 style="font-size:16px">Seedance 2.5</h3><div class="en">字节 · 好莱坞走红</div></div></div>
-        <dl class="kv">
-          <dt>规格</dt><dd>30 秒单段视频直出、50 个多模态素材联合生成</dd>
-          <dt>地位</dt><dd>即梦/Dreamina/CapCut 官方引擎；Sora 关停前后大量影视从业者转向</dd>
-          <dt>评价</dt><dd>全球首个跨过视频生成「质变点」的模型</dd>
-        </dl>
-      </div>
-      <div class="model-card">
-        <div class="head"><div><h3 style="font-size:16px">Vidu Q2</h3><div class="en">生数科技 · 微表情演技流</div></div></div>
-        <dl class="kv">
-          <dt>规格</dt><dd>首创「演技生成」（嘴角抽动、眼神犹豫细腻度行业领先）；最长 5 分钟</dd>
-          <dt>控制</dt><dd>多主体控制最多 7 张参考图</dd>
-          <dt>地位</dt><dd>广告/电商/动画高一致性；2026-08 API 全面开放</dd>
-        </dl>
-      </div>
-      <div class="model-card">
-        <div class="head"><div><h3 style="font-size:16px">Runway Gen-4.5</h3><div class="en">Runway · 专业工作流</div></div></div>
-        <dl class="kv">
-          <dt>优势</dt><dd>运镜控制（motion brush）、类 ControlNet 控制、inpainting 工具链最成熟</dd>
-          <dt>定位</dt><dd>专业影视后期工作流首选，与 Getty 合作解决商用版权</dd>
-        </dl>
-      </div>
-      <div class="model-card">
-        <div class="head"><div><h3 style="font-size:16px">其他选手</h3><div class="en">Wan / Hailuo / LTX</div></div></div>
-        <dl class="kv">
-          <dt>Wan 3.0</dt><dd>阿里 2026-08-06，文生/图生/参考生视频一体化，中文影视化风格强</dd>
-          <dt>Hailuo 2.3</dt><dd>MiniMax，进步最快的国产模型之一</dd>
-          <dt>LTX-2.3</dt><dd>22B 开源权重，FP8 量化 32GB 显卡可跑——开源视频代表</dd>
-        </dl>
-      </div>
-    </div>
-
-    <h3 style="margin:26px 0 12px">🗣️ 音频与语音</h3>
-    <div class="grid grid-3">
-      <div class="model-card">
-        <div class="head"><div><h3 style="font-size:16px">MiniMax Audio</h3><div class="en">TTS 盲测第一</div></div></div>
-        <dl class="kv">
-          <dt>最新</dt><dd>Speech 2.8 HD（旗舰）+ Turbo（延迟 &lt;250ms）</dd>
-          <dt>优势</dt><dd>Artificial Analysis 与 Hugging Face TTS Arena 双榜第一，超 OpenAI 与 ElevenLabs；10 秒克隆相似度最高 99%</dd>
-          <dt>价格</dt><dd>免费额度大（10000 字符/月），价格战激进</dd>
-        </dl>
-      </div>
-      <div class="model-card">
-        <div class="head"><div><h3 style="font-size:16px">ElevenLabs</h3><div class="en">生态最全</div></div></div>
-        <dl class="kv">
-          <dt>最新</dt><dd>Eleven v3（情感最丰富、70+ 语言）；Dubbing v2（2026-08-06 上线 API）</dd>
-          <dt>优势</dt><dd>10000+ 音色库、配音/克隆/转写/Agent 全套产品线；Twilio、迪士尼等企业客户</dd>
-          <dt>弱势</dt><dd>2026 年 TTS 盲测被 MiniMax 反超</dd>
-        </dl>
-      </div>
-      <div class="model-card">
-        <div class="head"><div><h3 style="font-size:16px">其他音频</h3><div class="en">Stable Audio · Qwen-Audio</div></div></div>
-        <dl class="kv">
-          <dt>Stable Audio 3.0</dt><dd>2026-05-20，全授权数据训练的音乐生成，最长 6 分钟</dd>
-          <dt>Qwen-Audio 3.0</dt><dd>2026-07-14，Plus 版专业场景 / Flash 版实时交互</dd>
-          <dt>趋势</dt><dd>「音画同步原生生成」已成为视频模型标配（Veo 3.1、FLUX 3、Kling 3 均已跟进）</dd>
-        </dl>
-      </div>
-    </div>
-
+    <div class="grid grid-3" id="card-grid"></div>
   </section>
 
   <section class="sec">
@@ -448,24 +211,464 @@
 
 </div>
 
+<!-- ============ 详情弹窗 ============ -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box" id="modal-content"></div>
+</div>
+
 <footer>
   <div class="sources">
-    <div>模型知识库 · 数据截至 2026-08-12，来源包括官方公告（OpenAI / Anthropic / DeepMind / 各厂商官网）与权威媒体报道（36氪、量子位、IT之家、新浪财经等）。主要信息来源：</div>
+    <div>模型知识库 · 数据截至 2026-08-13，来源包括官方公告（OpenAI / Anthropic / DeepMind / 各厂商官网）与权威媒体报道（36氪、量子位、IT之家、新浪财经等）。主要信息来源：</div>
     <ol>
-      <li id="cite-1"><span class="src-title">OpenAI, GPT-5.6 官方发布页</span><a class="src-url" href="https://openai.com/zh-Hans-CN/index/gpt-5-6/" target="_blank" rel="noopener">https://openai.com/zh-Hans-CN/index/gpt-5-6/</a></li>
-      <li id="cite-2"><span class="src-title">Anthropic, Claude Fable 5 and Claude Mythos 5</span><a class="src-url" href="https://www.anthropic.com/news/claude-fable-5-mythos-5" target="_blank" rel="noopener">https://www.anthropic.com/news/claude-fable-5-mythos-5</a></li>
-      <li id="cite-3"><span class="src-title">Google DeepMind, Gemini 3.5: frontier intelligence with action</span><a class="src-url" href="https://deepmind.google/blog/gemini-3-5-frontier-intelligence-with-action/" target="_blank" rel="noopener">https://deepmind.google/blog/gemini-3-5-frontier-intelligence-with-action/</a></li>
-      <li id="cite-4"><span class="src-title">36氪/量子位, DeepSeek V4 发布，明确携手华为芯片</span><a class="src-url" href="https://m.36kr.com/p/3780290045121801" target="_blank" rel="noopener">https://m.36kr.com/p/3780290045121801</a></li>
-      <li id="cite-5"><span class="src-title">Qwen Cloud, Model Releases 官方变更日志</span><a class="src-url" href="https://docs.qwencloud.com/changelog/models" target="_blank" rel="noopener">https://docs.qwencloud.com/changelog/models</a></li>
-      <li id="cite-6"><span class="src-title">新浪财经/界面新闻, Kimi K3 实测</span><a class="src-url" href="https://finance.sina.com.cn/jjxw/2026-07-18/doc-iniieweh1603196.shtml" target="_blank" rel="noopener">https://finance.sina.com.cn/jjxw/2026-07-18/doc-iniieweh1603196.shtml</a></li>
-      <li id="cite-7"><span class="src-title">智谱开放平台, GLM-5.2 官方公告</span><a class="src-url" href="https://docs.bigmodel.cn/cn/update/new-releases" target="_blank" rel="noopener">https://docs.bigmodel.cn/cn/update/new-releases</a></li>
-      <li id="cite-8"><span class="src-title">豆包官方研究站, Seed 系列</span><a class="src-url" href="https://research.doubao.com/zh/" target="_blank" rel="noopener">https://research.doubao.com/zh/</a></li>
-      <li id="cite-9"><span class="src-title">Black Forest Labs, FLUX 3 Release Notes</span><a class="src-url" href="https://docs.bfl.ml/release-notes" target="_blank" rel="noopener">https://docs.bfl.ml/release-notes</a></li>
-      <li id="cite-10"><span class="src-title">MiniMax 开放平台, 接口概览</span><a class="src-url" href="https://platform.minimaxi.com/docs/api-reference/api-overview" target="_blank" rel="noopener">https://platform.minimaxi.com/docs/api-reference/api-overview</a></li>
+      <li><span class="src-title">OpenAI, GPT-5.6 官方发布页</span><a class="src-url" href="https://openai.com/zh-Hans-CN/index/gpt-5-6/" target="_blank" rel="noopener">https://openai.com/zh-Hans-CN/index/gpt-5-6/</a></li>
+      <li><span class="src-title">Anthropic, Claude Fable 5 and Claude Mythos 5</span><a class="src-url" href="https://www.anthropic.com/news/claude-fable-5-mythos-5" target="_blank" rel="noopener">https://www.anthropic.com/news/claude-fable-5-mythos-5</a></li>
+      <li><span class="src-title">Google DeepMind, Gemini 3.5</span><a class="src-url" href="https://deepmind.google/blog/gemini-3-5-frontier-intelligence-with-action/" target="_blank" rel="noopener">https://deepmind.google/blog/gemini-3-5-frontier-intelligence-with-action/</a></li>
+      <li><span class="src-title">36氪/量子位, DeepSeek V4 发布</span><a class="src-url" href="https://m.36kr.com/p/3780290045121801" target="_blank" rel="noopener">https://m.36kr.com/p/3780290045121801</a></li>
+      <li><span class="src-title">Qwen Cloud 官方变更日志</span><a class="src-url" href="https://docs.qwencloud.com/changelog/models" target="_blank" rel="noopener">https://docs.qwencloud.com/changelog/models</a></li>
+      <li><span class="src-title">智谱开放平台, GLM-5.2 官方公告</span><a class="src-url" href="https://docs.bigmodel.cn/cn/update/new-releases" target="_blank" rel="noopener">https://docs.bigmodel.cn/cn/update/new-releases</a></li>
+      <li><span class="src-title">豆包官方研究站, Seed 系列</span><a class="src-url" href="https://research.doubao.com/zh/" target="_blank" rel="noopener">https://research.doubao.com/zh/</a></li>
+      <li><span class="src-title">Black Forest Labs, FLUX 3 Release Notes</span><a class="src-url" href="https://docs.bfl.ml/release-notes" target="_blank" rel="noopener">https://docs.bfl.ml/release-notes</a></li>
+      <li><span class="src-title">MiniMax 开放平台</span><a class="src-url" href="https://platform.minimaxi.com/docs/api-reference/api-overview" target="_blank" rel="noopener">https://platform.minimaxi.com/docs/api-reference/api-overview</a></li>
     </ol>
   </div>
 </footer>
 
 <script src="./_shared/js/app.js"></script>
+<script>
+// ==================== 模型数据 ====================
+const MODELS = [
+  // ---- 海外旗舰 ----
+  {
+    cat:'overseas', name:'GPT-5.6 系列', vendor:'OpenAI', date:'2026-07-09',
+    tags:['旗舰','文本/图像/语音'],
+    summary:'编程智能体指数 80 分创 SOTA，擅长复杂编程 Agent 与知识型交付物',
+    metric:'编程 Agent 指数 80',
+    rank:{ overall:2, coding:2 },
+    kv:[['版本梯队','Sol（旗舰）/ Terra（均衡）/ Luna（性价比 $1/$6）'],['参数量','未披露'],['核心能力','编程智能体指数 80 分 SOTA；端到端产出演示文稿/文档/表格；ExploitBench 73.5%']],
+    desc:'擅长复杂编程智能体、长周期 Agent 工作流、知识型交付物（设计审美大幅提升）。纯推理基准上仍落后 Claude Fable 5，靠 Luna/Terra 打性价比。',
+    fact:'Agents\' Last Exam 53.6 分领先 Fable 5 达 13.1 分；2026-07-30 Luna 降价 80% 直接开打价格战。'
+  },
+  {
+    cat:'overseas', name:'Claude Fable 5', vendor:'Anthropic', date:'2026-06-09',
+    tags:['能力最强','文本+图像'],
+    summary:'当前纯能力最强的公开发行模型，SWE-bench 95.0% 领跑',
+    metric:'SWE-bench 95.0%',
+    rank:{ overall:1, coding:1, reasoning:1 },
+    kv:[['上下文','1M token，单次输出 128K'],['参数量','未披露'],['核心能力','SWE-bench Verified 95.0%、Pro 80.3%；从截图重建 Web 源码；50M 行代码库一天迁移']],
+    desc:'当前纯能力最强的公开发行模型。擅长长而复杂的端到端任务（软件迁移、法律研究、金融分析）。定价高（$10/$50 每百万 token），且受美国出口管制与数据留存要求约束。',
+    fact:'与 Claude Mythos 5 共享同一基础权重，仅安全护栏不同——「同模型、分级发布」成为能力治理新范式。'
+  },
+  {
+    cat:'overseas', name:'Claude Opus 5', vendor:'Anthropic', date:'2026-07-25',
+    tags:['新旗舰','性价比'],
+    summary:'能力逼近 Fable 5，价格约为其一半，刷新 ARC-AGI-3 纪录',
+    metric:'价格 $5/$25',
+    rank:{ overall:3 },
+    kv:[['层级体系','Haiku < Sonnet < Opus < Mythos（新顶层）'],['Opus 5','2026-07-25 发布，能力逼近 Fable 5，价格约为其一半（$5/$25）'],['Sonnet 5','2026-06-30 发布，「最具 Agent 能力的 Sonnet」，性能接近 Opus 4.8、定价为其 60%']],
+    desc:'Opus 层面向企业旗舰用途（Claude Code、Agent 任务），刷新 ARC-AGI-3 纪录；Sonnet 层是免费版与 Pro 版的默认模型，五档思考强度可选。',
+    fact:'Sonnet 4.6 曾以「Opus 级能力 1/3 价格」奠定性价比之王口碑，这条产品线一路延续。'
+  },
+  {
+    cat:'overseas', name:'Gemini 3.5 / 3.6 Flash', vendor:'Google DeepMind', date:'2026-05/07',
+    tags:['原生多模态','速度之王'],
+    summary:'输出速度约为其他前沿模型 4 倍，唯一原生四模态输入',
+    metric:'速度 4× 同行',
+    rank:{ overall:5, value:4 },
+    kv:[['上下文','1M token（输出 64K）'],['模态','原生文本/图像/音频/视频输入'],['核心能力','输出速度约为其他前沿模型 4 倍；Terminal-Bench 2.1 76.2%；MCP Atlas 83.6%']],
+    desc:'Gemini App 与 Google 搜索 AI Mode 的全球默认模型。适合高吞吐 Agent 工作流、vibe coding、100+ 页复杂文档推理。综合智能低于未发布的 3.5 Pro，最难任务上仍逊于 GPT-5.6 / Fable 5。',
+    fact:'Gemini 是唯一原生四模态输入的系列；3.5 Pro 预计 2026 年 8 月发布（已现身 LM Arena）。'
+  },
+  {
+    cat:'overseas', name:'Gemini 3.1 Pro', vendor:'Google DeepMind', date:'2026-02-19',
+    tags:['GA 旗舰','科研'],
+    summary:'推理约为 3 Pro 的 2.5 倍，ARC-AGI-2 Deep Think 达 84.6%',
+    metric:'ARC-AGI-2 84.6%',
+    rank:{ reasoning:4 },
+    kv:[['上下文','1M token'],['推理','约为 Gemini 3 Pro 的 2.5 倍（ARC-AGI-2 77.1%）'],['核心能力','GPQA Diamond 94.3%；SWE-bench Verified 80.6%；博士级科学研究']],
+    desc:'擅长科学推理、全栈开发、长文档与多源数据分析。部分长程智能体基准落后于竞品新旗舰，处于被 3.5 系列边缘化的过渡期。',
+    fact:'3.1 Deep Think 模式 ARC-AGI-2 达 84.6%，2025 数理奥赛金牌级。'
+  },
+  {
+    cat:'overseas', name:'Grok 4.6', vendor:'SpaceXAI (xAI)', date:'2026-08-13',
+    tags:['智能指数 61','性价比'],
+    summary:'智能指数 61 分追平 GPT-5.6 Sol，500K 上下文主打性价比',
+    metric:'智能指数 61 · 500K 上下文',
+    rank:{ overall:3 },
+    kv:[['智能指数','61 分（追平 GPT-5.6 Sol）'],['上下文','500K token'],['核心能力','数学与物理推理强；X 平台实时数据整合；API 价格低于 GPT-5.6 系列']],
+    desc:'xAI 旗下 Grok 系列最新旗舰，智能指数追平 GPT-5.6 Sol 但价格更低。与 X 平台深度整合，拥有实时信息优势。',
+    fact:'Grok 4.6 是首个在智能指数上追平 GPT-5.6 Sol 的非 OpenAI 模型。'
+  },
+  // ---- 国产力量 ----
+  {
+    cat:'domestic', name:'DeepSeek V4', vendor:'深度求索', date:'2026-04-24',
+    tags:['开源推理之王','1M 上下文'],
+    summary:'极致性价比 + 推理性价比之王，全系开源（MIT）',
+    metric:'Flash 缓存 ¥0.2/百万token',
+    rank:{ coding:4, reasoning:3, value:1 },
+    kv:[['版本','V4-Pro（1.6T / 激活 49B）/ V4-Flash（284B / 激活 13B），全系开源'],['上下文','1M token 全系标配'],['核心能力','数学/STEM/竞赛代码推理全球顶级；Agentic Coding 内部体验优于 Sonnet 4.5']],
+    desc:'极致性价比（Flash 缓存命中输入 0.2 元/百万 token）+ 推理性价比之王。弱项：无原生视觉、Pro 吞吐受限。明确下半年支持华为昇腾算力。',
+    fact:'V3（2024-12）到 V4 相隔 484 天，官方宣言「全民开源」；V4-Pro 单 token FLOPs 仅为 V3.2 的 27%。'
+  },
+  {
+    cat:'domestic', name:'Qwen3.8-Max', vendor:'阿里巴巴', date:'2026-08-03',
+    tags:['开源生态之王','全模态'],
+    summary:'2.4T 参数首个开源 Max 级权重，衍生模型超 20 万款',
+    metric:'2.4T · 即将开源',
+    rank:{ reasoning:5, value:5 },
+    kv:[['参数量','2.4T / 激活约 95B / 1M 上下文'],['模态','原生全模态：图像、视频、文档、文本'],['核心能力','混合注意力（MHA+线性注意力）；思考/非思考双模式；内置 code_interpreter、web_search']],
+    desc:'衍生模型超 20 万款、下载量破 10 亿的开源生态第一。宣布下周开源——千问史上首个开源 Max 级权重。API 价格约为 GPT-5.2 的 1/15。',
+    fact:'Qwen3 曾随国星宇航部署至在轨卫星，完成全球首次大模型太空在轨推理（2025-11）。'
+  },
+  {
+    cat:'domestic', name:'Kimi K3', vendor:'月之暗面', date:'2026-07-16',
+    tags:['全球最大开源','Agentic Coding'],
+    summary:'2.8T 全球最大开源模型，前端代码 Arena 1679 分全球第一',
+    metric:'前端代码 1679 分 #1',
+    rank:{ overall:4, coding:5 },
+    kv:[['参数量','2.8T（全球最大开源模型）/ 896 专家激活 16 / 原生 1M 上下文'],['模态','原生视觉理解（图像/视频输入）'],['核心能力','KDA 线性注意力；Frontend Code Arena 1679 分全球第一（超 Fable 5 与 GPT-5.6 Sol）']],
+    desc:'前端编程与 3D/视觉生成惊艳，48 小时无人值守长程任务。最大短板是推理速度慢（「强得意外，慢得着急」），日常简单任务易「替用户做决定」。',
+    fact:'2026-07-29 完成 35 亿美元 F 轮融资，估值 350 亿美元；7-27 全链路开源（权重+技术报告+三大 Infra）。'
+  },
+  {
+    cat:'domestic', name:'智谱 GLM-5.2', vendor:'智谱 AI', date:'2026-06-15',
+    tags:['MIT 开源','工程 Agent'],
+    summary:'745B 参数 MIT 协议最宽松，单任务独立工作 8 小时',
+    metric:'SWE-bench Pro 58.4 #1',
+    rank:{ coding:6 },
+    kv:[['参数量','约 745B / 激活 40B / 1M 无损上下文'],['核心能力','GLM-5.1 曾以 SWE-Bench Pro 58.4 全球第一击败所有闭源旗舰；单次任务独立工作 8 小时'],['模态','文本为主；配套 GLM-5V-Turbo、GLM-OCR、GLM-Image']],
+    desc:'清华系「工程 Agent」代表，MIT 协议最宽松、交付稳定。2026-01 完成香港 IPO，募资约 43.5 亿港元。',
+    fact:'GLM-5 全程在 10 万颗华为昇腾 910B 上训练，实现从美国制程硬件的完全独立。'
+  },
+  {
+    cat:'domestic', name:'豆包 2.1 / Seed 系列', vendor:'字节跳动', date:'2026-06-24',
+    tags:['多模态全家桶','MaaS 第一'],
+    summary:'国产多模态最全，火山引擎 MaaS 份额 49.5% 第一',
+    metric:'MaaS 份额 49.5%',
+    rank:{ value:3 },
+    kv:[['核心','豆包 2.1 Pro：Coding/Agent 对标 Claude Opus 4.6，定价低约 80%'],['多模态矩阵','SeedRealtime（音视频全双工）、Seedance 2.5（30 秒视频）、Seedream 5.0 Pro、Seed Audio 1.0'],['生态','日均 token 调用 180 万亿；火山引擎中国公有云 MaaS 份额 49.5% 第一']],
+    desc:'国产多模态最全的一家。从对话模型到视频/图像/音频/实时语音全覆盖，企业级 Agent 落地能力强。弱项：开源力度弱于 DeepSeek/Qwen。',
+    fact:'豆包 2.0 旗舰数学达 IMO/CMO 金牌水平，编程 Codeforces Elo 3020 对标 GPT-5.2。'
+  },
+  {
+    cat:'domestic', name:'MiniMax M2.7', vendor:'MiniMax', date:'2026-03-18',
+    tags:['Agent 经济','自进化'],
+    summary:'推理成本为主流 1/10-1/20，「每小时 1 美元」经济模型颠覆者',
+    metric:'SWE-bench 80.2%',
+    rank:{ coding:5, value:5 },
+    kv:[['参数量','230B / 激活 10B / 200K 上下文'],['核心能力','SWE-bench Verified 80.2%；推理成本为主流 1/10-1/20'],['模态','文本单模态（图像/语音/视频走平台 API）']],
+    desc:'Agent 生产级任务的「经济模型颠覆者」。M2.7 首次将模型引入自身训练循环（承担研发工作流 30-50% 工作量），论文题为《Early Echoes of Self-Evolution》。',
+    fact:'公司 80% 新代码由自家 M2.5 生成；语音产品 MiniMax Audio 在 TTS 盲测双榜第一。'
+  },
+  {
+    cat:'domestic', name:'腾讯混元 Hy3', vendor:'腾讯', date:'2026-07-06',
+    tags:['实用主义','智能密度'],
+    summary:'295B/21B 激活，270 位专家盲测优于 GLM-5.1，价格极低',
+    metric:'输入 ¥1 / 输出 ¥4',
+    rank:{ value:2 },
+    kv:[['参数量','295B / 激活 21B / 256K 上下文（2-5 倍小参数比肩更大旗舰）'],['核心能力','快慢思考融合 MoE；495 步复杂工作流稳定运行；中文生态深度耦合'],['价格','输入 1 元 / 输出 4 元每百万 token，极低']],
+    desc:'不追参数堆砌、追「智能密度」的实用主义路线。270 位专家真实工作盲测优于 GLM-5.1。另有 Hy-MT2 翻译模型（33 语种互译）。',
+    fact:'2026-02 起重建预训练与 RL 基础设施，确立「能力体系化、评测真实性、性价比」三原则。'
+  },
+  {
+    cat:'domestic', name:'百度文心 5.1', vendor:'百度', date:'2026-05-09',
+    tags:['搜索壁垒','全模态'],
+    summary:'深度搜索全球第四、国产第一，预训练成本仅业界同规模约 6%',
+    metric:'搜索 Arena 1223 分',
+    rank:{ reasoning:6 },
+    kv:[['参数量','约 8000 亿总参（5.0 的 1/3），激活减半'],['模态','原生全模态统一建模（文本/图像/音频/视频）'],['核心能力','深度搜索全球第四、国产第一（Arena 搜索榜 1223 分）；AIME26 带工具 99.6 分']],
+    desc:'「大基座蒸馏」路线：预训练成本仅为业界同规模约 6%。搜索整合与 Agent 能力国产领先。坚持闭源，外界无法独立核验跑分。',
+    fact:'ERNIE 4.5 曾开源 10 款模型（0.3B 端侧→424B 旗舰），旗舰 28 项基准中 22 项超 DeepSeek-V3。'
+  },
+  {
+    cat:'domestic', name:'阶跃星辰 Step 3.7', vendor:'阶跃星辰', date:'2026-05-29',
+    tags:['多模态卷王','终端突围'],
+    summary:'196B/11B 开源，最高 400 tokens/s 定位「Agent 加速器」',
+    metric:'400 tokens/s',
+    kv:[['最新','Step 3.7 Flash（196B / 激活 11B + 1.8B ViT，Apache 2.0 开源）'],['模态','文本+图像原生；视频 Step-Video-T2V（300 亿参数）、Step-Audio 全家桶'],['速度','最高 400 tokens/s，定位「Agent 加速器」']],
+    desc:'国产多模态开源力度第一梯队。2026-07 发布 AI 终端品牌 STEPX 手机与智能体原生系统 Step AOS，从模型公司走向终端。',
+    fact:'Step-2（2024-07）是国内创业公司首个万亿 MoE；正在推进港股 IPO。'
+  },
+  // ---- 开源生态 ----
+  {
+    cat:'opensource', name:'Meta Llama 4', vendor:'Meta', date:'2025-04-05',
+    tags:['超长上下文','多语言'],
+    summary:'Scout 10M 上下文冠绝开源，200 种语言，单卡 H100 可部署',
+    metric:'10M 上下文',
+    kv:[['版本','Scout（109B/17B 激活，10M 上下文）/ Maverick（400B/17B 激活，1M）'],['模态','原生多模态（文本+图像，早融合架构）'],['特点','200 种语言；Scout 可把整个代码仓库装入上下文']],
+    desc:'上下文长度冠绝开源。许可证限制最多（月活超 7 亿需另签协议、禁止用输出训练其他 LLM）。2026 年 Meta 推出闭源旗舰 Muse Spark，Llama 4 仍是开源主力。',
+    fact:'Scout INT4 量化后约 54GB，可单卡 H100 部署。'
+  },
+  {
+    cat:'opensource', name:'Mistral Medium 3.5', vendor:'Mistral AI（法国）', date:'2026-04',
+    tags:['欧洲合规','Apache 2.0'],
+    summary:'128B 稠密，SWE-bench Verified 77.6%，唯一满足 EU 数据驻留的头部开源',
+    metric:'SWE-bench 77.6%',
+    kv:[['最新','Medium 3.5（128B 稠密，SWE-bench Verified 77.6%）；Small 4（统一产品线）'],['特点','欧洲本地化部署、EU 数据合规的首选；绝对性能在头部开源中相对落后']],
+    desc:'唯一来自欧盟、可满足 EU 数据驻留要求的头部开源厂商。适合欧洲企业部署与数据合规场景。',
+    fact:'Apache 2.0 许可证，无商用限制。'
+  },
+  {
+    cat:'opensource', name:'小模型军团', vendor:'Gemma · Phi · 推理谱系', date:'持续更新',
+    tags:['端侧','消费级显卡'],
+    summary:'Gemma 27B 单卡可跑、Phi-4 14B 消费级显卡，本地部署入门首选',
+    metric:'Gemma 27B / Phi-4 14B',
+    kv:[['Gemma 3/4','Google 小模型王者，27B 单卡可跑、140+ 语言'],['Phi-4','微软 14B，小参数高推理，消费级显卡可跑'],['推理谱系','DeepSeek-R1（671B）开创 RL 推理路线并带动蒸馏小模型']],
+    desc:'本地部署入门路线：Ollama（新手）/ llama.cpp（性能）/ vLLM（生产）；4-bit 量化显存降 75%、质量损失约 1-3%。',
+    fact:'建议：本地部署入门首选 Qwen3.5-9B/32B（Apache 2.0、中文好、量化后消费卡可跑）。'
+  },
+  {
+    cat:'opensource', name:'格局观察', vendor:'2026 开源双雄', date:'2026',
+    tags:['DeepSeek','Qwen'],
+    summary:'DeepSeek（推理/代码/性价比）× Qwen（中文/多模态/效率）双雄格局',
+    metric:'MoE + 1M 成标配',
+    kv:[['双雄','DeepSeek（推理/代码/极致性价比）× Qwen（中文/多模态/效率）'],['守位者','Llama 4 靠长上下文、Mistral 靠合规'],['标配','MoE + 稀疏注意力 + 1M 上下文成为开源标配']],
+    desc:'许可证光谱：完全开源（DeepSeek MIT / Qwen Apache 2.0 / Mistral Apache 2.0）vs 开放权重受限（Llama 4）。架构趋势：「总参数大、激活参数小」的 MoE 成为降低成本关键。',
+    fact:'2026 年开源与闭源差距已基本抹平，可本地部署。'
+  },
+  // ---- 多模态生成 ----
+  {
+    cat:'multimodal', name:'FLUX 2 / 3', vendor:'Black Forest Labs', date:'2026-08-04',
+    tags:['文生图','视频+音频'],
+    summary:'FLUX 3 首个带声音的视频模型，照片级写实盲测超 Midjourney V7',
+    metric:'图+视频+音频一次生成',
+    kv:[['最新','FLUX 3（2026-08-04）首个视频模型：图+视频+音频一次生成'],['优势','照片级写实盲测超 Midjourney V7；FLUX 2 Klein 开源（消费级亚秒级生成）'],['弱势','中文与亚洲人像弱于国产模型']],
+    desc:'BFL 从文生图进军视频领域，FLUX 3 是首个带同步声音的视频生成模型。',
+    fact:'FLUX 2 Klein 开源版本可在消费级显卡上亚秒级生成。'
+  },
+  {
+    cat:'multimodal', name:'Stable Diffusion 3.5', vendor:'Stability AI', date:'2025',
+    tags:['社区生态','本地绘画'],
+    summary:'社区生态最成熟的本地绘画（LoRA/ControlNet/ComfyUI）',
+    metric:'LoRA + ControlNet 生态',
+    kv:[['定位','社区生态最成熟的本地绘画（LoRA/ControlNet/ComfyUI）'],['优势','开放生态与可控性无出其右；社区授权可免费商用（年收入 <100 万美元）'],['弱势','基础写实度已落后 FLUX 2']],
+    desc:'Stability AI 的开源图像生成模型，拥有最庞大的社区生态和可控生成工具链。',
+    fact:'ComfyUI 工作流 + LoRA 微调是本地绘画的标配组合。'
+  },
+  {
+    cat:'multimodal', name:'Veo 3.1', vendor:'Google', date:'2026',
+    tags:['文生视频','质量标杆'],
+    summary:'4K 60fps 原生、物理真实度最高、原生音画同步，约 $3.75/5 秒',
+    metric:'4K 60fps · 质量顶',
+    kv:[['规格','4K 原生、60fps、竖屏原生、首尾帧锁定；单片段约 8 秒'],['优势','指令遵循与镜头语言最强、物理真实度最高；原生音画同步'],['价格','约 $3.75/5 秒，较贵']],
+    desc:'Google 的旗舰视频生成模型，质量标杆。适合对画面质量和物理真实度要求最高的场景。',
+    fact:'Veo 3.1 是后 Sora 时代质量第一的视频模型。'
+  },
+  {
+    cat:'multimodal', name:'Kling 3.0', vendor:'快手', date:'2026',
+    tags:['文生视频','长片性价比'],
+    summary:'最长 60 秒单片段（行业最长），4K 输出，价格仅 Veo 约 1/6',
+    metric:'60 秒 · Veo 1/6 价格',
+    kv:[['规格','最长 60 秒单片段（行业最长）、4K 输出、原生音频'],['优势','物理真实感、人物一致性、复杂动作；价格仅 Veo 约 1/6'],['地位','Sora 停运后最大受益者，第三方平台「长视频」默认引擎']],
+    desc:'快手的视频生成模型，Sora 关停后最大受益者。长片 + 性价比的组合使其成为第三方平台默认引擎。',
+    fact:'Sora 2026-03 关停后，Kling 3.0 成为长视频生成首选。'
+  },
+  {
+    cat:'multimodal', name:'Seedance 2.5', vendor:'字节跳动', date:'2026',
+    tags:['文生视频','好莱坞走红'],
+    summary:'30 秒单段视频直出，即梦/CapCut 官方引擎，全球首个跨过视频「质变点」',
+    metric:'30 秒直出 · 质变点',
+    kv:[['规格','30 秒单段视频直出、50 个多模态素材联合生成'],['地位','即梦/Dreamina/CapCut 官方引擎；Sora 关停前后大量影视从业者转向'],['评价','全球首个跨过视频生成「质变点」的模型']],
+    desc:'字节跳动的视频生成模型，在好莱坞影视行业获得认可。即梦/CapCut 的官方引擎。',
+    fact:'Sora 关停前后大量影视从业者转向 Seedance。'
+  },
+  {
+    cat:'multimodal', name:'MiniMax Audio', vendor:'MiniMax', date:'2026',
+    tags:['TTS 语音','盲测第一'],
+    summary:'TTS 盲测双榜第一（超 OpenAI 与 ElevenLabs），10 秒克隆相似度 99%',
+    metric:'TTS 双榜 #1',
+    kv:[['最新','Speech 2.8 HD（旗舰）+ Turbo（延迟 <250ms）'],['优势','Artificial Analysis 与 Hugging Face TTS Arena 双榜第一；10 秒克隆相似度最高 99%'],['价格','免费额度大（10000 字符/月），价格战激进']],
+    desc:'MiniMax 的语音合成模型，在盲测中超越 OpenAI 和 ElevenLabs，成为 TTS 领域新王者。',
+    fact:'国产 TTS 首次在双榜登顶，价格战激进。'
+  },
+  {
+    cat:'multimodal', name:'ElevenLabs v3', vendor:'ElevenLabs', date:'2026',
+    tags:['TTS 语音','生态最全'],
+    summary:'10000+ 音色库、70+ 语言、配音/克隆/转写/Agent 全套产品线',
+    metric:'10000+ 音色',
+    kv:[['最新','Eleven v3（情感最丰富、70+ 语言）；Dubbing v2（2026-08-06 上线 API）'],['优势','10000+ 音色库、配音/克隆/转写/Agent 全套产品线；Twilio、迪士尼等企业客户'],['弱势','2026 年 TTS 盲测被 MiniMax 反超']],
+    desc:'ElevenLabs 拥有最全的语音产品生态，但 2026 年在盲测中被 MiniMax 反超。',
+    fact:'Dubbing v2 于 2026-08-06 上线 API，支持更多语言的配音。'
+  },
+  {
+    cat:'multimodal', name:'Vidu Q2', vendor:'生数科技', date:'2026',
+    tags:['文生视频','微表情演技'],
+    summary:'首创「演技生成」，嘴角抽动、眼神犹豫细腻度行业领先，最长 5 分钟',
+    metric:'演技生成 · 5 分钟',
+    kv:[['规格','首创「演技生成」（嘴角抽动、眼神犹豫细腻度行业领先）；最长 5 分钟'],['控制','多主体控制最多 7 张参考图'],['地位','广告/电商/动画高一致性；2026-08 API 全面开放']],
+    desc:'生数科技的视频生成模型，以「演技生成」为特色，在微表情细腻度上行业领先。',
+    fact:'2026-08 API 全面开放，广告/电商/动画场景高一致性。'
+  },
+  {
+    cat:'multimodal', name:'Runway Gen-4.5', vendor:'Runway', date:'2026',
+    tags:['文生视频','专业工作流'],
+    summary:'运镜控制（motion brush）、类 ControlNet 控制、inpainting 工具链最成熟',
+    metric:'专业工具链最成熟',
+    kv:[['优势','运镜控制（motion brush）、类 ControlNet 控制、inpainting 工具链最成熟'],['定位','专业影视后期工作流首选，与 Getty 合作解决商用版权']],
+    desc:'Runway 的视频生成模型，面向专业影视后期工作流，工具链最成熟。',
+    fact:'与 Getty 合作解决商用版权问题。'
+  }
+];
+
+// ==================== 排行数据 ====================
+const RANKINGS = {
+  overall: {
+    overseas: [
+      { name:'Claude Fable 5', score:'最强', pct:100 },
+      { name:'GPT-5.6 Sol', score:'第 2', pct:92 },
+      { name:'Grok 4.6', score:'61 分', pct:85 }
+    ],
+    domestic: [
+      { name:'Kimi K3', score:'开源最强', pct:88 },
+      { name:'DeepSeek V4', score:'推理王', pct:85 },
+      { name:'Qwen3.8-Max', score:'全模态', pct:80 }
+    ]
+  },
+  coding: {
+    overseas: [
+      { name:'Claude Fable 5', score:'95.0%', pct:95 },
+      { name:'Claude Opus 4.8', score:'88.6%', pct:89 },
+      { name:'Gemini 3.1 Pro', score:'80.6%', pct:81 }
+    ],
+    domestic: [
+      { name:'DeepSeek V4-Pro', score:'80.6%', pct:81 },
+      { name:'MiniMax M2.7', score:'80.2%', pct:80 },
+      { name:'Kimi K3', score:'Arena 1679', pct:83 }
+    ]
+  },
+  reasoning: {
+    overseas: [
+      { name:'Claude Fable 5', score:'最强', pct:100 },
+      { name:'GPT-5.6 Sol', score:'第 2', pct:90 },
+      { name:'Gemini 3.1 Pro', score:'ARC 84.6%', pct:84 }
+    ],
+    domestic: [
+      { name:'DeepSeek V4-Pro', score:'数学顶级', pct:88 },
+      { name:'Qwen3.8-Max', score:'全模态', pct:80 },
+      { name:'百度文心 5.1', score:'AIME 99.6', pct:78 }
+    ]
+  },
+  value: {
+    overseas: [
+      { name:'GPT-5.6 Luna', score:'$1/$6', pct:80 },
+      { name:'Gemini 3.6 Flash', score:'$1.5/$7.5', pct:72 },
+      { name:'Claude Opus 5', score:'$5/$25', pct:60 }
+    ],
+    domestic: [
+      { name:'DeepSeek V4-Flash', score:'¥0.2 缓存', pct:100 },
+      { name:'混元 Hy3', score:'¥1/¥4', pct:90 },
+      { name:'MiniMax M2.7', score:'1/10 价格', pct:85 }
+    ]
+  }
+};
+
+// ==================== 渲染排行榜 ====================
+function renderRankRow(r, i) {
+  return '<div class="rank-row">' +
+    '<span class="rank-num">' + (i+1) + '</span>' +
+    '<span class="rank-name">' + r.name + '</span>' +
+    '<span class="rank-bar-bg"><span class="rank-bar-fill" style="width:' + r.pct + '%"></span></span>' +
+    '<span class="rank-score">' + r.score + '</span>' +
+  '</div>';
+}
+function renderRankings() {
+  var labels = { overall:'rank-overall', coding:'rank-coding', reasoning:'rank-reasoning', value:'rank-value' };
+  Object.keys(RANKINGS).forEach(function(key) {
+    var el = document.getElementById(labels[key]);
+    if (!el) return;
+    var d = RANKINGS[key];
+    el.innerHTML =
+      '<div class="rank-sub"><span class="rank-sub-label">🌍 海外</span>' +
+        d.overseas.map(function(r,i){ return renderRankRow(r,i); }).join('') +
+      '</div>' +
+      '<div class="rank-sub"><span class="rank-sub-label">🇨🇳 国内</span>' +
+        d.domestic.map(function(r,i){ return renderRankRow(r,i); }).join('') +
+      '</div>';
+  });
+}
+
+// ==================== 渲染卡片 ====================
+function renderCards(cat) {
+  var grid = document.getElementById('card-grid');
+  var list = cat === 'all' ? MODELS : MODELS.filter(function(m) { return m.cat === cat; });
+  grid.innerHTML = list.map(function(m, idx) {
+    var rankBadge = '';
+    if (m.rank) {
+      var bestRank = Math.min.apply(null, Object.values(m.rank));
+      if (bestRank <= 3) rankBadge = '<span class="mc-badge">#' + bestRank + '</span>';
+    }
+    var tags = m.tags.map(function(t, i) {
+      var cls = i === 0 ? 'tag t-accent' : (i === 1 ? 'tag t-teal' : 'tag');
+      return '<span class="' + cls + '">' + t + '</span>';
+    }).join('');
+    return '<div class="mini-card" data-idx="' + MODELS.indexOf(m) + '">' +
+      '<div class="mc-top">' +
+        '<div><div class="mc-name">' + m.name + '</div><div class="mc-vendor">' + m.vendor + ' · ' + m.date + '</div></div>' +
+        rankBadge +
+      '</div>' +
+      '<div class="mc-tags">' + tags + '</div>' +
+      '<div class="mc-summary">' + m.summary + '</div>' +
+      '<div class="mc-metric"><span>' + m.metric + '</span><span class="arrow">详情 →</span></div>' +
+    '</div>';
+  }).join('');
+
+  // bind click
+  grid.querySelectorAll('.mini-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      openModal(parseInt(card.dataset.idx));
+    });
+  });
+}
+
+// ==================== 详情弹窗 ====================
+function openModal(idx) {
+  var m = MODELS[idx];
+  var tags = m.tags.map(function(t, i) {
+    var cls = i === 0 ? 'tag t-accent' : (i === 1 ? 'tag t-teal' : 'tag');
+    return '<span class="' + cls + '">' + t + '</span>';
+  }).join('');
+  var kv = m.kv.map(function(item) {
+    return '<dt>' + item[0] + '</dt><dd>' + item[1] + '</dd>';
+  }).join('');
+  var rankInfo = '';
+  if (m.rank) {
+    var rankLabels = { overall:'综合', coding:'编程', reasoning:'推理', value:'性价比' };
+    rankInfo = '<div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap">' +
+      Object.keys(m.rank).map(function(k) {
+        var r = m.rank[k];
+        var badge = r <= 3 ? 't-accent' : '';
+        return '<span class="tag ' + badge + '">' + rankLabels[k] + ' #' + r + '</span>';
+      }).join('') + '</div>';
+  }
+  document.getElementById('modal-content').innerHTML =
+    '<button class="modal-close" onclick="closeModal()">✕</button>' +
+    '<h2>' + m.name + '</h2>' +
+    '<div class="modal-vendor">' + m.vendor + ' · 发布于 ' + m.date + '</div>' +
+    '<div class="modal-tags" style="margin-bottom:14px">' + tags + '</div>' +
+    rankInfo +
+    '<dl class="modal-kv">' + kv + '</dl>' +
+    '<p class="modal-desc">' + m.desc + '</p>' +
+    '<div class="modal-fact"><b>亮点</b>：' + m.fact + '</div>';
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+
+// ==================== 分类切换 ====================
+document.querySelectorAll('.cat-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.cat-tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    renderCards(tab.dataset.cat);
+  });
+});
+
+// ==================== 初始化 ====================
+renderRankings();
+renderCards('all');
+</script>
 </body>
 </html>

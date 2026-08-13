@@ -1,0 +1,18 @@
+{
+  "name": "AI 学习工作台",
+  "short_name": "AI工作台",
+  "description": "AI 大模型知识库、概念入门、模型对比与每日动态",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4FBF7",
+  "theme_color": "#059669",
+  "icons": [
+    {
+      "src": "./assets/ai-workbench-preview.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

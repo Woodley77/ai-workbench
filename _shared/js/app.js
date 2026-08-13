@@ -57,6 +57,37 @@
     });
   }
 
+  /* ---------- PWA manifest ---------- */
+  function initManifest() {
+    var link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = './manifest.json';
+    document.head.appendChild(link);
+  }
+
+  /* ---------- 底部导航（移动端）---------- */
+  function initBottomNav() {
+    var pages = [
+      { href: 'index.html',      icon: '🏠', label: '首页' },
+      { href: 'models.html',     icon: '🤖', label: '模型' },
+      { href: 'concepts.html',   icon: '📖', label: '概念' },
+      { href: 'comparison.html', icon: '📊', label: '对比' },
+      { href: 'glossary.html',   icon: '📚', label: '词典' },
+      { href: 'news.html',       icon: '📰', label: '动态' }
+    ];
+    var current = location.pathname.split('/').pop() || 'index.html';
+    var html = '<div class="bottom-nav-inner">';
+    pages.forEach(function(p) {
+      var active = p.href === current ? ' class="active"' : '';
+      html += '<a href="' + p.href + '"' + active + '><span class="bn-icon">' + p.icon + '</span><span>' + p.label + '</span></a>';
+    });
+    html += '</div>';
+    var nav = document.createElement('nav');
+    nav.className = 'bottom-nav';
+    nav.innerHTML = html;
+    document.body.appendChild(nav);
+  }
+
   /* ---------- 日期 ---------- */
   function fmtDate(d) {
     var p = function (n) { return n < 10 ? '0' + n : '' + n; };
@@ -74,6 +105,8 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     initTheme();
+    initManifest();
+    initBottomNav();
     initGlossary();
     initTabs();
     initDates();
