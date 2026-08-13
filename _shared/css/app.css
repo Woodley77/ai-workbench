@@ -554,9 +554,7 @@ footer .sources .src-url { display: block; color: var(--accent); font-size: 12px
   position: fixed;
   bottom: 0; left: 0; right: 0;
   z-index: 9999;
-  background: color-mix(in srgb, var(--bg2) 92%, transparent);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: var(--bg2);
   border-top: 1px solid var(--rule);
   padding-bottom: env(safe-area-inset-bottom, 0);
   transform: translateZ(0);
