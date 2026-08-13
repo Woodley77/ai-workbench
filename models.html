@@ -196,6 +196,37 @@
   .compare-bar { bottom:56px; padding:8px 12px; }
   .compare-bar .cb-label { font-size:12px; }
 }
+
+/* ---- DeepSeek V4 峰谷定价对比 ---- */
+.pricing-alert {
+  background: color-mix(in srgb, #FEF3C7 80%, transparent);
+  border: 1px solid #F59E0B;
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+:root[data-theme="dark"] .pricing-alert {
+  background: color-mix(in srgb, #78350F 30%, var(--bg2));
+}
+.pricing-alert h3 { font-size: 16px; margin: 0 0 8px; color: #92400E; }
+:root[data-theme="dark"] .pricing-alert h3 { color: #FCD34D; }
+.pricing-alert p { font-size: 13.5px; margin: 0; color: #78350F; line-height: 1.65; }
+:root[data-theme="dark"] .pricing-alert p { color: #FDE68A; }
+.pricing-compare-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 640px; }
+.pricing-compare-table th, .pricing-compare-table td { padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--rule); }
+.pricing-compare-table th { background: var(--accent-soft); color: var(--accent); font-weight: 700; white-space: nowrap; }
+.pricing-compare-table th small { font-weight: 400; font-size: 11px; color: var(--faint); }
+.pricing-compare-table td:first-child { text-align: left; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.pricing-compare-table .model-group { background: color-mix(in srgb, var(--accent-soft) 50%, transparent); font-weight: 700; color: var(--accent); text-align: center; }
+.pricing-compare-table .price-current { color: var(--accent); font-weight: 600; }
+.pricing-compare-table .price-offpeak { color: #D97706; font-weight: 600; }
+.pricing-compare-table .price-peak { color: #DC2626; font-weight: 700; }
+.pricing-compare-table .increase-low { color: #D97706; font-size: 12px; }
+.pricing-compare-table .increase-high { color: #DC2626; font-size: 12px; font-weight: 700; }
+.pricing-compare-table .increase-extreme {
+  color: #fff; background: #DC2626; font-size: 11px; font-weight: 700;
+  padding: 2px 8px; border-radius: 999px; display: inline-block;
+}
 </style>
 </head>
 <body>
@@ -338,7 +369,7 @@
             <tr><td class="row-t">Claude Opus 5</td><td>1M</td><td>$5</td><td>$25</td><td>否</td><td>逼近 Fable 5、价格减半</td></tr>
             <tr><td class="row-t">GPT-5.6 Luna</td><td>未披露</td><td>$1</td><td>$6</td><td>否</td><td>降价 80% 主打性价比</td></tr>
             <tr><td class="row-t">Gemini 3.6 Flash</td><td>1M</td><td>$1.5</td><td>$7.5</td><td>否</td><td>输出价再降 17%</td></tr>
-            <tr><td class="row-t">DeepSeek V4-Flash</td><td>1M</td><td>¥0.2（缓存命中）</td><td>¥2</td><td>✅ MIT</td><td>国产性价比之王</td></tr>
+            <tr><td class="row-t">DeepSeek V4-Flash</td><td>1M</td><td>¥0.02（缓存命中）</td><td>¥2</td><td>✅ MIT</td><td>国产性价比之王 · 8/17 起峰谷调价</td></tr>
             <tr><td class="row-t">Kimi K3</td><td>1M</td><td>¥20</td><td>¥100</td><td>✅ 全链路</td><td>全球最大开源（2.8T）</td></tr>
             <tr><td class="row-t">Qwen3.8-Max</td><td>1M</td><td>约 GPT-5.2 的 1/15</td><td>—</td><td>✅ 即将开源</td><td>千问首个开源 Max 级</td></tr>
             <tr><td class="row-t">GLM-5.2</td><td>1M</td><td>—</td><td>—</td><td>✅ MIT</td><td>1M 无损上下文</td></tr>
@@ -346,6 +377,97 @@
             <tr><td class="row-t">MiniMax M2.7</td><td>200K</td><td>主流 1/10-1/20</td><td>—</td><td>否（M2.5 开源）</td><td>「每小时 1 美元」经济模型</td></tr>
           </tbody>
         </table>
+      </div>
+    </section>
+    <!-- ============ DeepSeek V4 峰谷定价对比 ============ -->
+    <section class="sec" id="ds-pricing-section">
+      <div class="sec-head"><h2>💰 DeepSeek V4 峰谷定价对比</h2><div class="rule"></div><span class="hint">2026-08-17 起生效 · 每百万 token</span></div>
+
+      <div class="pricing-alert">
+        <h3>⚠️ 重要：API 定价大幅调整</h3>
+        <p>DeepSeek 于 2026-08-13 宣布 V4 Pro 正式版同步调价，8月17日起执行峰谷定价。<b>高峰时段（9:00-12:00、14:00-18:00）恰好覆盖白天办公时段</b>，输出价格最高涨幅达 350%。V4-Pro 高峰输出价从 ¥6 涨至 ¥27，V4-Flash 从 ¥2 涨至 ¥9。空闲时段价格为高峰的 50%，适合非紧急批量任务。</p>
+      </div>
+
+      <div class="table-wrap">
+        <table class="pricing-compare-table">
+          <thead>
+            <tr>
+              <th>模型</th>
+              <th>计费项</th>
+              <th>现行价格</th>
+              <th>空闲时段<br><small>8/17 起</small></th>
+              <th>高峰时段<br><small>8/17 起</small></th>
+              <th>空闲涨幅</th>
+              <th>高峰涨幅</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="model-group" rowspan="3">V4-Flash</td>
+              <td style="text-align:left">缓存命中输入</td>
+              <td class="price-current">¥0.02</td>
+              <td class="price-offpeak">¥0.05</td>
+              <td class="price-peak">¥0.10</td>
+              <td class="increase-high">+150%</td>
+              <td><span class="increase-extreme">+400%</span></td>
+            </tr>
+            <tr>
+              <td style="text-align:left">缓存未命中输入</td>
+              <td class="price-current">¥1</td>
+              <td class="price-offpeak">¥1.5</td>
+              <td class="price-peak">¥3.0</td>
+              <td class="increase-low">+50%</td>
+              <td class="increase-high">+200%</td>
+            </tr>
+            <tr>
+              <td style="text-align:left">输出</td>
+              <td class="price-current">¥2</td>
+              <td class="price-offpeak">¥4.5</td>
+              <td class="price-peak">¥9.0</td>
+              <td class="increase-high">+125%</td>
+              <td><span class="increase-extreme">+350%</span></td>
+            </tr>
+            <tr>
+              <td class="model-group" rowspan="3">V4-Pro</td>
+              <td style="text-align:left">缓存命中输入</td>
+              <td class="price-current">¥0.025</td>
+              <td class="price-offpeak">¥0.15</td>
+              <td class="price-peak">¥0.30</td>
+              <td><span class="increase-extreme">+500%</span></td>
+              <td><span class="increase-extreme">+1100%</span></td>
+            </tr>
+            <tr>
+              <td style="text-align:left">缓存未命中输入</td>
+              <td class="price-current">¥3</td>
+              <td class="price-offpeak">¥4.5</td>
+              <td class="price-peak">¥9.0</td>
+              <td class="increase-low">+50%</td>
+              <td class="increase-high">+200%</td>
+            </tr>
+            <tr>
+              <td style="text-align:left">输出</td>
+              <td class="price-current">¥6</td>
+              <td class="price-offpeak">¥13.5</td>
+              <td class="price-peak">¥27.0</td>
+              <td class="increase-high">+125%</td>
+              <td><span class="increase-extreme">+350%</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="font-size:13px;color:var(--faint);margin-top:12px">高峰时段：北京时间 9:00-12:00、14:00-18:00 ｜ 空闲时段：其余时间 ｜ 空闲时段价格为高峰时段的 50%</p>
+
+      <figure class="chart-figure" style="margin-top:20px">
+        <figcaption>DeepSeek V4 峰谷定价对比（每百万 token · 元 · 对数轴）</figcaption>
+        <div id="chart-ds-pricing" style="width:100%;min-height:420px"></div>
+      </figure>
+
+      <div class="card" style="background:var(--accent-soft);border-color:var(--accent);margin-top:16px">
+        <h3 style="font-size:15px;margin-bottom:12px">💡 对日常使用的影响</h3>
+        <p style="font-size:14px;margin-bottom:8px"><b>白天办公时段（高峰）</b>：V4-Pro 输出价从 ¥6 涨至 ¥27（+350%），V4-Flash 输出价从 ¥2 涨至 ¥9（+350%）。日均 100 万 token 输出的场景，V4-Pro 月成本从约 ¥180 增至约 ¥810（按 22 个工作日计）。</p>
+        <p style="font-size:14px;margin-bottom:8px"><b>夜间/凌晨（空闲）</b>：V4-Pro 输出价 ¥13.5，V4-Flash 输出价 ¥4.5，适合批量处理和非紧急任务。</p>
+        <p style="font-size:14px;margin:0"><b>建议</b>：非紧急任务尽量安排在空闲时段；高峰时段可考虑混用 V4-Flash（价格更低）替代 V4-Pro；善用缓存命中机制可大幅降低输入成本。</p>
       </div>
     </section>
     <section class="sec">
@@ -414,6 +536,7 @@
       <li><span class="src-title">豆包官方研究站, Seed 系列</span><a class="src-url" href="https://research.doubao.com/zh/" target="_blank" rel="noopener">https://research.doubao.com/zh/</a></li>
       <li><span class="src-title">Black Forest Labs, FLUX 3 Release Notes</span><a class="src-url" href="https://docs.bfl.ml/release-notes" target="_blank" rel="noopener">https://docs.bfl.ml/release-notes</a></li>
       <li><span class="src-title">MiniMax 开放平台</span><a class="src-url" href="https://platform.minimaxi.com/docs/api-reference/api-overview" target="_blank" rel="noopener">https://platform.minimaxi.com/docs/api-reference/api-overview</a></li>
+      <li><span class="src-title">DeepSeek API 官方定价页（峰谷定价）</span><a class="src-url" href="https://api-docs.deepseek.com/zh-cn/quick_start/pricing/" target="_blank" rel="noopener">https://api-docs.deepseek.com/zh-cn/quick_start/pricing/</a></li>
     </ol>
   </div>
 </footer>
@@ -492,7 +615,7 @@ const MODELS = [
     summary:'V4-Pro 正式版（0813）Agent 能力暴涨 4.9 倍，开源首次硬刚闭源旗舰',
     metric:'DeepSWE 62.7 · SWE-bench 80.6%',
     rank:{ coding:4, reasoning:3, value:1 },
-    kv:[['版本','V4-Pro-0813 正式版（1.6T / 激活 49B）/ V4-Flash（284B / 激活 13B），全系 MIT 开源'],['上下文','1M token · 最大输出 384K'],['正式版升级','DeepSWE 12.8→62.7（4.9 倍）；Terminal Bench 87.9；Cybergym 83.3；NL2Repo 61.5'],['双协议兼容','同时支持 OpenAI 和 Anthropic API 格式，可直接接入 Claude Code'],['思考模式','thinking / non-thinking 双模式，默认开启思考'],['定价','Pro: 输入 3 元 / 输出 6 元每百万 token（仅 GPT-5.5 的 1/8）'],['国产算力','已适配华为昇腾 A2/A3/950，20ms 低时延，Decode 吞吐 4700 TPS'],['核心能力','SWE-bench 80.6% 开源最高；HumanEval 89.2% 超越 GPT-5.5；Codeforces 3206；Agentic Coding 内部默认模型']],
+    kv:[['版本','V4-Pro-0813 正式版（1.6T / 激活 49B）/ V4-Flash（284B / 激活 13B），全系 MIT 开源'],['上下文','1M token · 最大输出 384K'],['正式版升级','DeepSWE 12.8→62.7（4.9 倍）；Terminal Bench 87.9；Cybergym 83.3；NL2Repo 61.5'],['双协议兼容','同时支持 OpenAI 和 Anthropic API 格式，可直接接入 Claude Code'],['思考模式','thinking / non-thinking 双模式，默认开启思考'],['定价','8/17 起峰谷定价 — V4-Pro: 高峰 ¥9/¥27、空闲 ¥4.5/¥13.5；V4-Flash: 高峰 ¥3/¥9、空闲 ¥1.5/¥4.5（缓存未命中输入/输出，每百万token）。高峰时段 9:00-12:00、14:00-18:00'],['国产算力','已适配华为昇腾 A2/A3/950，20ms 低时延，Decode 吞吐 4700 TPS'],['核心能力','SWE-bench 80.6% 开源最高；HumanEval 89.2% 超越 GPT-5.5；Codeforces 3206；Agentic Coding 内部默认模型']],
     desc:'2026-08-13 凌晨无预告转正，从预览版到正式版相隔 108 天。9 项 Agent/代码基准全线大涨，前端审美发生质变（36 氪实测"告别 AI 一眼假"），长周期工程任务可连续三轮自修 bug。开源模型首次正面硬刚闭源旗舰，性能逼近 Claude Fable 5。弱项：鹈鹕/月亮等简单图形偶有低级失误；无原生视觉。',
     fact:'DeepSWE 从 12.8 提升到 62.7（4.9 倍）是本次最大亮点——测的不是"会不会写代码"，而是"能不能像工程师一样持续干活"。与 Grok 4.6 同日发布，开源 vs 闭源正面对决。'
   },
@@ -1068,7 +1191,68 @@ document.getElementById('cb-clear-btn').addEventListener('click', function() {
 // 窗口 resize 时重绘对比图
 window.addEventListener('resize', function() {
   if (compareChart) compareChart.resize();
+  if (dsPricingChart) dsPricingChart.resize();
 });
+
+// ==================== DeepSeek V4 峰谷定价对比图 ====================
+var dsPricingChart = null;
+function renderDSPricingChart() {
+  var chartDom = document.getElementById('chart-ds-pricing');
+  if (!chartDom) return;
+  if (typeof echarts === 'undefined') return;
+  dsPricingChart = echarts.init(chartDom);
+  var categories = [
+    'Flash\n缓存命中', 'Flash\n缓存未命中', 'Flash\n输出',
+    'Pro\n缓存命中', 'Pro\n缓存未命中', 'Pro\n输出'
+  ];
+  dsPricingChart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: function(params) {
+        var str = params[0].name.replace(/\n/g, ' ') + '<br/>';
+        params.forEach(function(p) {
+          str += p.marker + ' ' + p.seriesName + ': ¥' + p.value + '/百万token<br/>';
+        });
+        return str;
+      }
+    },
+    legend: { top: 0, textStyle: { fontSize: 12 } },
+    grid: { left: '3%', right: '4%', bottom: '8%', top: '15%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: categories,
+      axisLabel: { fontSize: 11, interval: 0 }
+    },
+    yAxis: {
+      type: 'log',
+      name: '元/百万token',
+      axisLabel: { fontSize: 11 }
+    },
+    series: [
+      {
+        name: '现行价格',
+        type: 'bar',
+        data: [0.02, 1, 2, 0.025, 3, 6],
+        itemStyle: { color: '#059669', borderRadius: [4, 4, 0, 0] },
+        barGap: '10%'
+      },
+      {
+        name: '空闲时段 (8/17起)',
+        type: 'bar',
+        data: [0.05, 1.5, 4.5, 0.15, 4.5, 13.5],
+        itemStyle: { color: '#F59E0B', borderRadius: [4, 4, 0, 0] }
+      },
+      {
+        name: '高峰时段 (8/17起)',
+        type: 'bar',
+        data: [0.10, 3.0, 9.0, 0.30, 9.0, 27.0],
+        itemStyle: { color: '#EF4444', borderRadius: [4, 4, 0, 0] }
+      }
+    ]
+  });
+}
+renderDSPricingChart();
 </script>
 </body>
 </html>
