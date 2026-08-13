@@ -121,6 +121,16 @@
   border-radius:0 8px 8px 0; padding:12px 16px; font-size:13.5px; color:var(--ink);
 }
 .modal-box .modal-fact b { color:var(--accent); }
+.modal-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 16px; padding: 10px 18px;
+  background: var(--accent); color: #fff !important;
+  border-radius: 10px; font-size: 14px; font-weight: 600;
+  text-decoration: none; transition: opacity .15s, transform .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.modal-link:hover { opacity: 0.85; }
+.modal-link:active { transform: scale(0.97); }
 
 @media (max-width:700px) {
   .rank-grid { grid-template-columns:1fr; }
@@ -561,6 +571,33 @@ const RANKINGS = {
   }
 };
 
+// ==================== 厂商官网映射 ====================
+var VENDOR_URLS = {
+  'OpenAI':'https://openai.com',
+  'Anthropic':'https://www.anthropic.com',
+  'Google DeepMind':'https://deepmind.google',
+  'Google':'https://deepmind.google',
+  'SpaceXAI (xAI)':'https://x.ai',
+  '深度求索':'https://www.deepseek.com',
+  '阿里巴巴':'https://qwen.ai',
+  '月之暗面':'https://kimi.com',
+  '智谱 AI':'https://www.zhipuai.cn',
+  '字节跳动':'https://www.doubao.com',
+  'MiniMax':'https://www.minimaxi.com',
+  '腾讯':'https://hunyuan.tencent.com',
+  '百度':'https://yiyan.baidu.com',
+  '阶跃星辰':'https://www.stepfun.com',
+  'Meta':'https://ai.meta.com',
+  'Mistral AI（法国）':'https://mistral.ai',
+  'Gemma · Phi · 推理谱系':'https://ai.google.dev/gemma',
+  'Black Forest Labs':'https://blackforestlabs.ai',
+  'Stability AI':'https://stability.ai',
+  '快手':'https://kling.kuaishou.com',
+  'ElevenLabs':'https://elevenlabs.io',
+  '生数科技':'https://www.vidu.cn',
+  'Runway':'https://runwayml.com'
+};
+
 // ==================== 渲染排行榜 ====================
 function renderRankRow(r, i) {
   return '<div class="rank-row">' +
@@ -639,6 +676,9 @@ function openModal(idx) {
         return '<span class="tag ' + badge + '">' + rankLabels[k] + ' #' + r + '</span>';
       }).join('') + '</div>';
   }
+  var vendorUrl = VENDOR_URLS[m.vendor];
+  var linkHtml = vendorUrl ?
+    '<a class="modal-link" href="' + vendorUrl + '" target="_blank" rel="noopener">🔗 访问 ' + m.vendor + ' 官网 →</a>' : '';
   document.getElementById('modal-content').innerHTML =
     '<button class="modal-close" onclick="closeModal()">✕</button>' +
     '<h2>' + m.name + '</h2>' +
@@ -647,7 +687,8 @@ function openModal(idx) {
     rankInfo +
     '<dl class="modal-kv">' + kv + '</dl>' +
     '<p class="modal-desc">' + m.desc + '</p>' +
-    '<div class="modal-fact"><b>亮点</b>：' + m.fact + '</div>';
+    '<div class="modal-fact"><b>亮点</b>：' + m.fact + '</div>' +
+    linkHtml;
   document.getElementById('modal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
