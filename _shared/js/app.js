@@ -4,6 +4,21 @@
 (function () {
   'use strict';
 
+  /* ---------- PWA: 立即捕获 beforeinstallprompt（不等 DOMContentLoaded） ---------- */
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    // 如果 DOM 已就绪，立即显示 banner
+    var banner = document.getElementById('install-banner');
+    if (banner) {
+      try { if (!localStorage.getItem('install-dismissed')) banner.style.display = 'flex'; } catch (err) {}
+    }
+    // 显示手动安装按钮
+    var manualBtn = document.getElementById('manual-install-btn');
+    if (manualBtn) manualBtn.style.display = 'flex';
+  });
+
   /* ---------- 主题切换 ---------- */
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
@@ -62,12 +77,10 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
         navigator.serviceWorker.register('./sw.js').then(function (reg) {
-          // 检查更新
           reg.addEventListener('updatefound', function () {
             var newWorker = reg.installing;
             newWorker.addEventListener('statechange', function () {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // 新版本就绪，下次刷新生效
                 console.log('[PWA] 新版本已就绪，刷新页面更新');
               }
             });
@@ -119,47 +132,60 @@
   /* ---------- PWA 安装引导 ---------- */
   function initInstallPrompt() {
     // 已安装则跳过
-    if (window.matchMedia('(display-mode: standalone)').matches) return;
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      var banner = document.getElementById('install-banner');
+      if (banner) banner.style.display = 'none';
+      return;
+    }
 
-    var deferredPrompt = null;
     var banner = document.getElementById('install-banner');
-    if (!banner) return;
+    var manualBtn = document.getElementById('manual-install-btn');
 
-    window.addEventListener('beforeinstallprompt', function (e) {
-      e.preventDefault();
-      deferredPrompt = e;
-      banner.style.display = 'flex';
-    });
+    // 如果 beforeinstallprompt 已经触发（在 DOMContentLoaded 之前），显示 banner
+    if (banner && deferredPrompt) {
+      try {
+        if (!localStorage.getItem('install-dismissed')) {
+          banner.style.display = 'flex';
+        }
+      } catch (e) {}
+    }
 
-    var btn = document.getElementById('install-btn');
-    if (btn) {
-      btn.addEventListener('click', function () {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(function () {
-          deferredPrompt = null;
-          banner.style.display = 'none';
-        });
+    // 如果已有 deferredPrompt，显示手动安装按钮
+    if (manualBtn && deferredPrompt) {
+      manualBtn.style.display = 'flex';
+    }
+
+    // 安装按钮点击
+    function triggerInstall() {
+      if (!deferredPrompt) {
+        // 如果没有 beforeinstallprompt，提示用户手动安装
+        alert('请点击浏览器右上角菜单 (⋮) → "添加到主屏幕" 来安装此应用');
+        return;
+      }
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function () {
+        deferredPrompt = null;
+        if (banner) banner.style.display = 'none';
+        if (manualBtn) manualBtn.style.display = 'none';
       });
     }
+
+    var btn = document.getElementById('install-btn');
+    if (btn) btn.addEventListener('click', triggerInstall);
+
+    if (manualBtn) manualBtn.addEventListener('click', triggerInstall);
 
     var closeBtn = document.getElementById('install-close');
     if (closeBtn) {
       closeBtn.addEventListener('click', function () {
-        banner.style.display = 'none';
+        if (banner) banner.style.display = 'none';
         try { localStorage.setItem('install-dismissed', '1'); } catch (e) {}
       });
     }
 
-    // 已关闭过则不显示
-    try {
-      if (localStorage.getItem('install-dismissed')) {
-        banner.style.display = 'none';
-      }
-    } catch (e) {}
-
     window.addEventListener('appinstalled', function () {
-      banner.style.display = 'none';
+      if (banner) banner.style.display = 'none';
+      if (manualBtn) manualBtn.style.display = 'none';
     });
   }
 
