@@ -57,12 +57,26 @@
     });
   }
 
-  /* ---------- PWA manifest ---------- */
-  function initManifest() {
-    var link = document.createElement('link');
-    link.rel = 'manifest';
-    link.href = './manifest.json';
-    document.head.appendChild(link);
+  /* ---------- PWA Service Worker 注册 ---------- */
+  function initServiceWorker() {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js').then(function (reg) {
+          // 检查更新
+          reg.addEventListener('updatefound', function () {
+            var newWorker = reg.installing;
+            newWorker.addEventListener('statechange', function () {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // 新版本就绪，下次刷新生效
+                console.log('[PWA] 新版本已就绪，刷新页面更新');
+              }
+            });
+          });
+        }).catch(function (err) {
+          console.warn('[PWA] Service Worker 注册失败:', err);
+        });
+      });
+    }
   }
 
   /* ---------- 底部导航（移动端）---------- */
@@ -71,7 +85,8 @@
       { href: 'index.html',      icon: '🏠', label: '首页' },
       { href: 'models.html',     icon: '🤖', label: '模型' },
       { href: 'concepts.html',   icon: '📖', label: '百科' },
-      { href: 'news.html',       icon: '📰', label: '动态' }
+      { href: 'skill.html',      icon: '⚡', label: 'Skill' },
+      { href: 'mcp.html',        icon: '🔌', label: 'MCP' }
     ];
     var current = location.pathname.split('/').pop() || 'index.html';
     var html = '<div class="bottom-nav-inner">';
@@ -101,12 +116,60 @@
     }
   }
 
+  /* ---------- PWA 安装引导 ---------- */
+  function initInstallPrompt() {
+    // 已安装则跳过
+    if (window.matchMedia('(display-mode: standalone)').matches) return;
+
+    var deferredPrompt = null;
+    var banner = document.getElementById('install-banner');
+    if (!banner) return;
+
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      banner.style.display = 'flex';
+    });
+
+    var btn = document.getElementById('install-btn');
+    if (btn) {
+      btn.addEventListener('click', function () {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function () {
+          deferredPrompt = null;
+          banner.style.display = 'none';
+        });
+      });
+    }
+
+    var closeBtn = document.getElementById('install-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function () {
+        banner.style.display = 'none';
+        try { localStorage.setItem('install-dismissed', '1'); } catch (e) {}
+      });
+    }
+
+    // 已关闭过则不显示
+    try {
+      if (localStorage.getItem('install-dismissed')) {
+        banner.style.display = 'none';
+      }
+    } catch (e) {}
+
+    window.addEventListener('appinstalled', function () {
+      banner.style.display = 'none';
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     initTheme();
-    initManifest();
+    initServiceWorker();
     initBottomNav();
     initGlossary();
     initTabs();
     initDates();
+    initInstallPrompt();
   });
 })();
