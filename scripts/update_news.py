@@ -191,23 +191,27 @@ def main():
     now_bj = datetime.now(beijing_tz)
     date_str = now_bj.strftime("%Y-%m-%d")
 
-    # Skip if today's entry already exists
+    # Determine period: morning (before 14:00) or evening (after 14:00)
+    period = "早间" if now_bj.hour < 14 else "晚间"
+    date_label = f"{date_str} {period}更新"
+
+    # Skip if this period's entry already exists
     news_path = Path("news.html")
     content = news_path.read_text(encoding="utf-8")
-    if f'class="news-date">{date_str}<' in content:
-        print(f"News for {date_str} already exists, skipping.")
+    if date_label in content:
+        print(f"News for {date_label} already exists, skipping.")
         return
 
-    print(f"Fetching AI news for {date_str}...")
+    print(f"Fetching AI news for {date_label}...")
     items = fetch_news()
     if not items:
-        print("No AI news found today, skipping.")
+        print("No AI news found, skipping.")
         return
 
     print(f"Found {len(items)} relevant items")
-    block = generate_block(items, date_str)
+    block = generate_block(items, date_label)
     if update_news_html(block):
-        print(f"✓ news.html updated for {date_str}")
+        print(f"✓ news.html updated for {date_label}")
     else:
         print("✗ Failed to update news.html")
 

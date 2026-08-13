@@ -1,9 +1,11 @@
-name: Daily AI News Update
+name: AI News Update (Twice Daily)
 
 on:
   schedule:
-    # UTC 00:00 = Beijing 08:00
+    # Beijing 08:00 (UTC 00:00) — 早间更新
     - cron: '0 0 * * *'
+    # Beijing 18:00 (UTC 10:00) — 晚间更新
+    - cron: '0 10 * * *'
   workflow_dispatch:
 
 permissions:
@@ -33,6 +35,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Daily AI news update $(date -u +%Y-%m-%d)"
+            git commit -m "AI news update $(date -u +%Y-%m-%d_%H:%M) UTC"
             git push
           fi
