@@ -127,6 +127,24 @@
 
     <div class="gloss-item" data-gloss-item data-hay="autoregressive 自回归 预测下一个"><span class="gt">Autoregressive 自回归</span><span class="gd">逐 token 生成：<b>每次只预测「下一个 Token」</b>，再把结果拼回去继续预测，直到结束。所有主流 LLM 都是自回归生成，这也是「幻觉」的结构性根源。</span></div>
 
+    <div class="gloss-item" data-gloss-item data-hay="agent skill 智能体技能 skill 技能包 技能"><span class="gt">Agent Skill 智能体技能</span><span class="gd">模块化、可复用的智能体能力单元。将提示词、代码、模板和 API 连接<b>封装成完整的「技能包」</b>，技能自己知道何时用、怎么用。2026 年从 Prompt Engineering 演变为 Skill Engineering。</span></div>
+
+    <div class="gloss-item" data-gloss-item data-hay="skill.md 技能文件 技能描述 yaml 元数据"><span class="gt">SKILL.md</span><span class="gd">Anthropic 技能标准的核心文件。<b>头部是 YAML 元数据</b>（名称+简介，索引阶段唯一可见），正文是操作流程+示例+资源引用。通过渐进式披露机制实现「按需加载」。</span></div>
+
+    <div class="gloss-item" data-gloss-item data-hay="progressive disclosure 渐进式披露 分层加载 元数据"><span class="gt">Progressive Disclosure 渐进式披露</span><span class="gd">技能的分层加载机制：<b>先只读元数据（省 Token），确定需要才加载完整指令和脚本</b>。让一个智能体可挂载数百技能而不撑爆上下文窗口。</span></div>
+
+    <div class="gloss-item" data-gloss-item data-hay="mcp model context protocol 模型上下文协议 usb-c"><span class="gt">MCP 模型上下文协议</span><span class="gd">Anthropic 2024 年 11 月开源的协议，被称为<b>「AI 世界的 USB-C 接口」</b>。标准化 AI 应用与外部工具/数据源的连接方式，解决 NxM 集成问题。2025 年 12 月捐赠 Linux 基金会，月 SDK 下载量超 4 亿次。</span></div>
+
+    <div class="gloss-item" data-gloss-item data-hay="mcp server mcp client mcp host 客户端 服务器 主机"><span class="gt">MCP Server / Client / Host</span><span class="gd">MCP 三层架构：<b>Host</b>（AI 应用，如 Claude Code）管理 Client；<b>Client</b>维护连接；<b>Server</b>提供工具和数据。通信基于 JSON-RPC 2.0，本地 stdio 传输，远程 HTTP/SSE 传输。</span></div>
+
+    <div class="gloss-item" data-gloss-item data-hay="stateless 无状态 有状态 mcp v5 水平扩展"><span class="gt">Stateless 无状态</span><span class="gd">MCP v5（2026-07-28）的核心变化：每个请求完全独立、自包含，<b>不再需要握手和会话 ID</b>。使 MCP 服务器可像普通 HTTP 服务一样水平扩展，支持 Serverless 部署，运维工作量减半。</span></div>
+
+    <div class="gloss-item" data-gloss-item data-hay="semantic kernel 语义内核 planner 插件 微软"><span class="gt">Semantic Kernel 语义内核</span><span class="gd">微软的智能体编排框架：Plugin（语义函数+原生函数）+ Planner（规划器自动生成执行计划）。与 Anthropic 文档驱动不同，<b>更适合企业级异构系统大规模编排</b>。</span></div>
+
+    <div class="gloss-item" data-gloss-item data-hay="confused deputy 糊涂代理人 间接注入 安全"><span class="gt">Confused Deputy 糊涂代理人</span><span class="gd">Agent 安全首要威胁：攻击者通过<b>间接提示注入</b>（如在邮件中隐藏指令）诱骗有权限的智能体执行恶意操作。防御：沙盒隔离、人机回环审批、最小权限原则。</span></div>
+
+    <div class="gloss-item" data-gloss-item data-hay="skill economy 技能经济 技能市场 技能商店"><span class="gt">Skill Economy 技能经济</span><span class="gd">2026 年形成的新经济形态：领域专家将知识固化为 SKILL.md 售卖，<b>定价从按人头转向按结果付费</b>。Salesforce、ServiceNow 已推出技能市场，预计 30% 企业应用厂商将发布官方 MCP Server。</span></div>
+
   </div>
 
   <div class="empty hidden" data-gloss-empty>没有找到匹配的术语，换个关键词试试，或者告诉我你想了解的词，我来补充～</div>
