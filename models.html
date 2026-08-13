@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AI工作台">
+<link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./assets/ai-workbench.ico">
 <link rel="icon" type="image/x-icon" href="./assets/ai-workbench.ico">
 <title>模型总览 · AI 学习工作台</title>
@@ -145,10 +146,55 @@
 .modal-link:hover { opacity: 0.85; }
 .modal-link:active { transform: scale(0.97); }
 
+/* ---- 对比复选框 ---- */
+.mc-compare {
+  display:flex; align-items:center; gap:6px;
+  font-size:12px; color:var(--accent); cursor:pointer;
+  padding:4px 0; user-select:none; -webkit-tap-highlight-color:transparent;
+}
+.mc-compare input { accent-color:var(--accent); width:14px; height:14px; }
+
+/* ---- 对比浮动栏 ---- */
+.compare-bar {
+  position:fixed; bottom:0; left:0; right:0; z-index:160;
+  background:var(--bg2); border-top:2px solid var(--accent);
+  box-shadow:0 -4px 20px rgba(0,0,0,0.12);
+  padding:10px 16px; display:none; align-items:center; gap:10px;
+  flex-wrap:wrap;
+}
+.compare-bar.show { display:flex; }
+.compare-bar .cb-label { font-size:13px; font-weight:700; color:var(--accent); white-space:nowrap; }
+.compare-bar .cb-tags { display:flex; gap:6px; flex-wrap:wrap; flex:1; }
+.compare-bar .cb-tag {
+  font-size:12px; padding:3px 10px; border-radius:999px;
+  background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent);
+  display:flex; align-items:center; gap:4px;
+}
+.compare-bar .cb-tag .cb-rm { cursor:pointer; font-weight:700; }
+.compare-bar .cb-btns { display:flex; gap:8px; }
+.compare-bar .cb-btn {
+  font-size:13px; font-weight:600; padding:6px 14px; border-radius:8px;
+  border:none; cursor:pointer; font-family:var(--font-sans);
+  -webkit-tap-highlight-color:transparent;
+}
+.compare-bar .cb-btn.primary { background:var(--accent); color:#fff; }
+.compare-bar .cb-btn.ghost { background:var(--bg); color:var(--muted); border:1px solid var(--rule); }
+
+/* ---- 对比结果区 ---- */
+.compare-section { scroll-margin-top:80px; }
+.compare-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.compare-table { width:100%; border-collapse:collapse; font-size:13px; min-width:500px; }
+.compare-table th, .compare-table td { padding:10px 14px; text-align:left; border-bottom:1px solid var(--rule); }
+.compare-table th { background:var(--accent-soft); color:var(--accent); font-weight:700; white-space:nowrap; }
+.compare-table td:first-child { font-weight:600; color:var(--faint); white-space:nowrap; }
+.compare-chart-box { width:100%; min-height:380px; margin-top:16px; }
+
 @media (max-width:700px) {
   .rank-grid { grid-template-columns:1fr; }
   .modal-overlay { padding:16px 10px; }
   .modal-box { padding:20px; }
+  .compare-bar { bottom:56px; padding:8px 12px; }
+  .compare-bar .cb-label { font-size:12px; }
 }
 </style>
 </head>
@@ -164,6 +210,8 @@
       <a href="index.html">首页</a>
       <a href="models.html" class="active">模型总览</a>
       <a href="concepts.html">知识百科</a>
+      <a href="skill.html">Skills</a>
+      <a href="mcp.html">MCP</a>
       <a href="news.html">动态区</a>
     </div>
     <div class="nav-actions">
@@ -177,7 +225,7 @@
   <section class="page-head">
     <span class="kicker">Models & Comparison</span>
     <h1>模型总览</h1>
-    <p class="sub">2026 年主流大模型一页看懂：能力排行榜 → 模型卡片（点击展开详情）→ 图表对比 → 规格表格 → 选型指南。四大视角深度融合，从宏观到微观全面覆盖。</p>
+    <p class="sub">2026 年主流大模型一页看懂：能力排行榜 → 模型卡片（点击展开详情、勾选对比）→ 对比结果（表格 + 雷达图）→ 图表对比 → 规格表格 → 选型指南。所有视角同页流动，从宏观到微观全面覆盖。</p>
   </section>
 
   <!-- ============ 排行榜 ============ -->
@@ -208,20 +256,9 @@
     </div>
   </section>
 
-  <!-- ============ 视图切换 ============ -->
-  <div class="view-tabs">
-    <button class="view-tab active" data-view="cards">🎴 模型卡片</button>
-    <button class="view-tab" data-view="charts">📊 图表对比</button>
-    <button class="view-tab" data-view="tables">📋 表格对比</button>
-    <button class="view-tab" data-view="guide">💡 选型指南</button>
-  </div>
-
-  <!-- ============ 视图：模型卡片 ============ -->
-  <div class="view-pane active" id="view-cards">
-
   <!-- ============ 模型卡片 ============ -->
-  <section class="sec">
-    <div class="sec-head"><h2>🎴 全部模型</h2><div class="rule"></div><span class="hint">点击任意卡片展开详情</span></div>
+  <section class="sec" data-cards-section>
+    <div class="sec-head"><h2>🎴 全部模型</h2><div class="rule"></div><span class="hint">点击卡片展开详情 · 勾选「对比」可多选比较</span></div>
     <div class="cat-tabs">
       <button class="cat-tab active" data-cat="all">全部</button>
       <button class="cat-tab" data-cat="overseas">🌍 海外旗舰</button>
@@ -241,11 +278,14 @@
     </div>
   </section>
 
-  </div><!-- /view-cards -->
+  <!-- ============ 对比结果（选中 2+ 模型时显示）============ -->
+  <section class="sec compare-section" id="compare-section" style="display:none">
+    <div class="sec-head"><h2>📊 对比结果</h2><div class="rule"></div><span class="hint" id="compare-hint">勾选 2 个以上模型开始对比</span></div>
+    <div id="compare-content"></div>
+  </section>
 
-  <!-- ============ 视图：图表对比 ============ -->
-  <div class="view-pane" id="view-charts">
-    <section class="sec">
+  <!-- ============ 图表对比 ============ -->
+  <section class="sec">
       <div class="sec-head"><h2>海外三强 · 能力画像</h2><div class="rule"></div><span class="hint">示意评分 · 5 分制</span></div>
       <figure class="chart-figure">
         <figcaption>GPT-5.6 Sol / Claude Fable 5 / Gemini 3.5 Flash 六维能力对比</figcaption>
@@ -267,11 +307,8 @@
       </figure>
       <p style="font-size:13px;color:var(--faint)">注：Claude Fable 5 以 95.0% 领跑；DeepSeek V4-Pro 与 Gemini 3.1 Pro 同为 80.6%；MiniMax M2.7 为 80.2%。SWE-bench Pro 口径：GLM-5.1 以 58.4 分全球第一（开源首次击败所有闭源旗舰）。</p>
     </section>
-  </div><!-- /view-charts -->
-
-  <!-- ============ 视图：表格对比 ============ -->
-  <div class="view-pane" id="view-tables">
-    <section class="sec">
+  <!-- ============ 规格表格 ============ -->
+  <section class="sec">
       <div class="sec-head"><h2>旗舰模型一表看</h2><div class="rule"></div><span class="hint">截至 2026-08-13</span></div>
       <div class="table-wrap">
         <table>
@@ -325,11 +362,8 @@
         </table>
       </div>
     </section>
-  </div><!-- /view-tables -->
-
-  <!-- ============ 视图：选型指南 ============ -->
-  <div class="view-pane" id="view-guide">
-    <section class="sec">
+  <!-- ============ 选型指南 ============ -->
+  <section class="sec">
       <div class="card" style="background:var(--accent-soft);border-color:var(--accent)">
         <h3 style="font-size:18px;margin-bottom:16px">💡 怎么选模型（实用指南）</h3>
         <p style="font-size:15px;margin-bottom:12px"><b>预算敏感 + 推理/数学为主</b>：DeepSeek V4-Flash（国产价格屠夫）或 Gemini 3.5 Flash（速度快）</p>
@@ -348,13 +382,23 @@
         <p style="font-size:14px;margin:0"><b>③ 商业即技术</b>：Sora 关停说明「单位经济模型决定产品存亡」——视频生成算力成本是图像的千倍量级。</p>
       </div>
     </section>
-  </div><!-- /view-guide -->
+  </section>
 
 </div>
 
 <!-- ============ 详情弹窗 ============ -->
 <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal-box" id="modal-content"></div>
+</div>
+
+<!-- ============ 对比浮动栏 ============ -->
+<div class="compare-bar" id="compare-bar">
+  <span class="cb-label">📊 已选 <span id="cb-count">0</span> 个模型</span>
+  <div class="cb-tags" id="cb-tags"></div>
+  <div class="cb-btns">
+    <button class="cb-btn primary" id="cb-compare-btn">查看对比 ↓</button>
+    <button class="cb-btn ghost" id="cb-clear-btn">清除</button>
+  </div>
 </div>
 
 <footer>
@@ -770,13 +814,16 @@ function renderCards(cat) {
       var cls = i === 0 ? 'tag t-accent' : (i === 1 ? 'tag t-teal' : 'tag');
       return '<span class="' + cls + '">' + t + '</span>';
     }).join('');
-    return '<div class="mini-card" data-idx="' + MODELS.indexOf(m) + '">' +
+    var modelIdx = MODELS.indexOf(m);
+    var checked = compareSet.indexOf(modelIdx) !== -1 ? ' checked' : '';
+    return '<div class="mini-card" data-idx="' + modelIdx + '">' +
       '<div class="mc-top">' +
         '<div><div class="mc-name">' + m.name + '</div><div class="mc-vendor">' + m.vendor + ' · ' + m.date + '</div></div>' +
         rankBadge +
       '</div>' +
       '<div class="mc-tags">' + tags + '</div>' +
       '<div class="mc-summary">' + m.summary + '</div>' +
+      '<label class="mc-compare" onclick="event.stopPropagation()"><input type="checkbox" data-compare-idx="' + modelIdx + '"' + checked + '> 加入对比</label>' +
       '<div class="mc-metric"><span>' + m.metric + '</span><span class="arrow">详情 →</span></div>' +
     '</div>';
   }).join('');
@@ -785,6 +832,18 @@ function renderCards(cat) {
   grid.querySelectorAll('.mini-card').forEach(function(card) {
     card.addEventListener('click', function() {
       openModal(parseInt(card.dataset.idx));
+    });
+  });
+  // bind compare checkboxes
+  grid.querySelectorAll('[data-compare-idx]').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      var idx = parseInt(cb.dataset.compareIdx);
+      if (cb.checked) {
+        if (compareSet.indexOf(idx) === -1) compareSet.push(idx);
+      } else {
+        compareSet = compareSet.filter(function(i) { return i !== idx; });
+      }
+      updateCompareBar();
     });
   });
 }
@@ -841,22 +900,174 @@ document.querySelectorAll('.cat-tab').forEach(function(tab) {
 });
 
 // ==================== 初始化 ====================
+var compareSet = []; // 选中的模型索引（提前声明，renderCards 需要引用）
 renderRankings();
 renderCards('all');
 
-// ==================== 视图切换 ====================
-document.querySelectorAll('.view-tab').forEach(function(tab) {
-  tab.addEventListener('click', function() {
-    document.querySelectorAll('.view-tab').forEach(function(t) { t.classList.remove('active'); });
-    document.querySelectorAll('.view-pane').forEach(function(p) { p.classList.remove('active'); });
-    tab.classList.add('active');
-    var pane = document.getElementById('view-' + tab.dataset.view);
-    if (pane) pane.classList.add('active');
-    // 切到图表视图时触发 resize 让 echarts 重绘
-    if (tab.dataset.view === 'charts') {
-      setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 100);
-    }
+// ==================== 模型对比功能 ====================
+var compareChart = null;
+
+// 模型能力评分（用于雷达图）：[编程, 推理, 多模态, 速度, 性价比]
+var MODEL_SCORES = {
+  'GPT-5.6 系列':            [4.5, 4, 3.5, 4, 3],
+  'Claude Fable 5':          [5, 5, 3, 3, 2],
+  'Claude Opus 5':           [4.5, 4.5, 3, 3.5, 3],
+  'Gemini 3.5 / 3.6 Flash':  [3.5, 4, 5, 5, 4],
+  'Gemini 3.1 Pro':          [4, 4.5, 4, 3, 3],
+  'Grok 4.6':                [4, 4, 3, 3.5, 4],
+  'DeepSeek V4':             [5, 5, 2, 4, 5],
+  'Qwen3.8-Max':             [4, 4, 5, 3.5, 5],
+  'Kimi K3':                 [5, 4, 4, 2, 3],
+  '智谱 GLM-5.2':             [4.5, 3.5, 3, 3.5, 4.5],
+  '豆包 2.1 / Seed 系列':     [3.5, 3.5, 5, 4, 4],
+  'MiniMax M2.7':            [4.5, 4, 2, 4.5, 5],
+  '腾讯混元 Hy3':             [3.5, 3.5, 2.5, 4, 5],
+  '百度文心 5.1':             [3.5, 4, 4.5, 3.5, 4],
+  '阶跃星辰 Step 3.7':         [3.5, 3.5, 4, 4.5, 4],
+  'Meta Llama 4':            [3, 3.5, 3.5, 3, 4.5],
+  'Mistral Medium 3.5':      [4, 3.5, 2.5, 3.5, 4],
+  '小模型军团':                [2.5, 3, 3, 4.5, 5],
+  '格局观察':                 [3, 3, 3, 3, 4],
+  'FLUX 2 / 3':              [2, 2, 5, 3.5, 3],
+  'Stable Diffusion 3.5':    [2, 2, 4, 4, 5],
+  'Veo 3.1':                 [2, 2, 5, 2, 2],
+  'Kling 3.0':               [2, 2, 5, 3, 4],
+  'Seedance 2.5':            [2, 2, 5, 3, 3.5],
+  'MiniMax Audio':           [1, 1, 4, 4, 4.5],
+  'ElevenLabs v3':           [1, 1, 4, 4, 3],
+  'Vidu Q2':                 [2, 2, 5, 3, 3.5],
+  'Runway Gen-4.5':          [2, 2, 4, 3, 3]
+};
+
+function updateCompareBar() {
+  var bar = document.getElementById('compare-bar');
+  var countEl = document.getElementById('cb-count');
+  var tagsEl = document.getElementById('cb-tags');
+  countEl.textContent = compareSet.length;
+  tagsEl.innerHTML = compareSet.map(function(idx) {
+    var m = MODELS[idx];
+    return '<span class="cb-tag">' + m.name + ' <span class="cb-rm" data-rm="' + idx + '">✕</span></span>';
+  }).join('');
+  // 绑定移除按钮
+  tagsEl.querySelectorAll('[data-rm]').forEach(function(rm) {
+    rm.addEventListener('click', function() {
+      var idx = parseInt(rm.dataset.rm);
+      compareSet = compareSet.filter(function(i) { return i !== idx; });
+      // 取消勾选
+      document.querySelectorAll('[data-compare-idx="' + idx + '"]').forEach(function(cb) { cb.checked = false; });
+      updateCompareBar();
+    });
   });
+  bar.classList.toggle('show', compareSet.length >= 1);
+  if (compareSet.length >= 2) {
+    renderCompareSection();
+  } else {
+    document.getElementById('compare-section').style.display = 'none';
+  }
+}
+
+function renderCompareSection() {
+  var sec = document.getElementById('compare-section');
+  var content = document.getElementById('compare-content');
+  var hint = document.getElementById('compare-hint');
+  var selected = compareSet.map(function(idx) { return MODELS[idx]; });
+  hint.textContent = '正在对比 ' + selected.length + ' 个模型';
+  sec.style.display = 'block';
+
+  // 构建对比表格
+  var rows = [
+    { label:'厂商', get:function(m){ return m.vendor; } },
+    { label:'发布', get:function(m){ return m.date; } },
+    { label:'核心标签', get:function(m){ return m.tags.join(' / '); } },
+    { label:'一句话', get:function(m){ return m.summary; } },
+    { label:'关键指标', get:function(m){ return m.metric; } },
+    { label:'详细说明', get:function(m){ return m.desc; } },
+    { label:'亮点', get:function(m){ return m.fact; } }
+  ];
+  // 从 kv 中提取更多规格
+  var kvKeys = [];
+  selected.forEach(function(m) {
+    m.kv.forEach(function(item) { if (kvKeys.indexOf(item[0]) === -1) kvKeys.push(item[0]); });
+  });
+  kvKeys.forEach(function(key) {
+    rows.push({ label:key, get:function(m) {
+      var found = m.kv.filter(function(item) { return item[0] === key; });
+      return found.length ? found[0][1] : '—';
+    }});
+  });
+
+  var tableHtml = '<div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>规格</th>';
+  selected.forEach(function(m) { tableHtml += '<th>' + m.name + '</th>'; });
+  tableHtml += '</tr></thead><tbody>';
+  rows.forEach(function(row) {
+    tableHtml += '<tr><td>' + row.label + '</td>';
+    selected.forEach(function(m) { tableHtml += '<td>' + row.get(m) + '</td>'; });
+    tableHtml += '</tr>';
+  });
+  tableHtml += '</tbody></table></div>';
+
+  // 雷达图容器
+  var chartHtml = '<div class="compare-chart-box" id="compare-chart"></div>';
+
+  content.innerHTML = tableHtml + chartHtml;
+  renderCompareChart(selected);
+}
+
+function renderCompareChart(selected) {
+  var chartDom = document.getElementById('compare-chart');
+  if (!chartDom) return;
+  if (compareChart) { compareChart.dispose(); compareChart = null; }
+  compareChart = echarts.init(chartDom);
+  var indicators = [
+    { name:'编程能力', max:5 },
+    { name:'推理能力', max:5 },
+    { name:'多模态', max:5 },
+    { name:'速度效率', max:5 },
+    { name:'性价比', max:5 }
+  ];
+  var series = selected.map(function(m) {
+    var scores = MODEL_SCORES[m.name] || [3,3,3,3,3];
+    return { name:m.name, value:scores, areaStyle:{opacity:0.1} };
+  });
+  var colors = ['#059669','#F59E0B','#3B82F6','#EF4444','#8B5CF6','#EC4899'];
+  compareChart.setOption({
+    tooltip:{ trigger:'item' },
+    legend:{ top:0, textStyle:{ fontSize:12 } },
+    radar:{
+      indicator:indicators,
+      shape:'polygon',
+      radius:'65%',
+      splitNumber:5,
+      axisName:{ color:'#888', fontSize:12 },
+      splitLine:{ lineStyle:{ color:'#ddd' } },
+      splitArea:{ areaStyle:{ color:['#f9f9f9','#fff'] } },
+      axisLine:{ lineStyle:{ color:'#ddd' } }
+    },
+    series:[{
+      type:'radar',
+      data:series,
+      lineStyle:{ width:2 },
+      itemStyle:{ color:function(p){ return colors[p.dataIndex % colors.length]; } }
+    }],
+    color:colors
+  });
+}
+
+// 对比栏按钮
+document.getElementById('cb-compare-btn').addEventListener('click', function() {
+  if (compareSet.length >= 2) {
+    document.getElementById('compare-section').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+});
+document.getElementById('cb-clear-btn').addEventListener('click', function() {
+  compareSet = [];
+  document.querySelectorAll('[data-compare-idx]').forEach(function(cb) { cb.checked = false; });
+  updateCompareBar();
+});
+
+// 窗口 resize 时重绘对比图
+window.addEventListener('resize', function() {
+  if (compareChart) compareChart.resize();
 });
 </script>
 </body>
