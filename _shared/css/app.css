@@ -87,6 +87,11 @@ body {
   background: var(--page-bg), var(--bg);
   background-attachment: fixed;
 }
+
+/* 移动端：移除 background-attachment: fixed（安卓长页面渲染 bug 根源） */
+@media (max-width: 640px) {
+  body { background-attachment: scroll; }
+}
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 h1, h2, h3, h4 { line-height: 1.35; margin: 0 0 0.6em; font-weight: 700; }
@@ -551,9 +556,9 @@ footer .sources .src-url { display: block; color: var(--accent); font-size: 12px
 /* ---- 底部导航栏（仅移动端）---- */
 .bottom-nav {
   display: none;
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  z-index: 9999;
+  position: fixed !important;
+  bottom: 0 !important; left: 0 !important; right: 0 !important;
+  z-index: 99999 !important;
   background: var(--bg2);
   border-top: 1px solid var(--rule);
   padding-bottom: env(safe-area-inset-bottom, 0);
