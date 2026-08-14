@@ -67,6 +67,17 @@ INDUSTRY_KW = ["funding", "融资", "收购", "acquisition", "ipo", "上市",
                "valuation", "launch", "推出", "shut down", "关停",
                "rebrand", "改名", "价格", "涨价", "降价", "api", "开源"]
 
+# ── 国内企业/产品关键词（用于区分国内外）─────────────────────────
+DOMESTIC_KW = [
+    "deepseek", "qwen", "通义千问", "阿里", "alibaba", "智谱", "glm", "z.ai",
+    "字节", "bytedance", "豆包", "doubao", "腾讯", "tencent", "混元", "hunyuan",
+    "华为", "huawei", "昇腾", "ascend", "商汤", "sensetime", "sensenova",
+    "百度", "baidu", "文心", "ernie", "kimi", "月之暗面", "moonshot",
+    "minimax", "美团", "meituan", "京东", "jd.com",
+    "字节跳动", "veGiantModel", "seedrealtime", "welM", "华为昇腾",
+    "杭州", "浙江", "深圳", "北京", "上海", "国产", "国内",
+]
+
 
 def contains_chinese(text: str) -> bool:
     """检查文本是否包含中文字符。"""
@@ -86,6 +97,21 @@ def classify(title: str) -> str:
         if kw in t:
             return "行业"
     return "热点"
+
+
+# 分类标签 → CSS 类名映射
+CAT_CSS = {
+    "模型": "c-model",
+    "热点": "c-news",
+    "行业": "c-event",
+    "论文": "c-paper",
+}
+
+
+def is_domestic(title: str, summary: str = "") -> bool:
+    """判断新闻是否为国内新闻（中国企业和产品相关）。"""
+    text = (title + " " + summary).lower()
+    return any(kw in text for kw in DOMESTIC_KW)
 
 
 def is_ai_related(title: str, summary: str = "") -> bool:
@@ -118,8 +144,8 @@ def clean_title(title: str) -> str:
 TRANSLATIONS = {
     # 动作类
     "introduces": "推出", "launches": "发布", "unveils": "发布", "announces": "宣布",
-    "releases": "发布", "debuts": "首发", "rolls out": "推出",
-    "updates": "更新", "upgrades": "升级",
+    "releases": "发布", "debuts": "首发", "rolls out": "推出", "rolls out":
+    "推出", "debuts": "首发", "updates": "更新", "upgrades": "升级",
     "open sources": "开源", "open-source": "开源", "open source": "开源",
     "raises": "融资", "funding": "融资", "acquires": "收购",
     "partners with": "合作", "teams up with": "合作",
@@ -164,6 +190,7 @@ def translate_to_chinese(title: str, summary: str = "") -> tuple[str, str]:
         zh_title = re.sub(re.escape(en), zh, zh_title, flags=re.IGNORECASE)
         zh_summary = re.sub(re.escape(en), zh, zh_summary, flags=re.IGNORECASE)
 
+    # 首字母大写处理后的残留英文词保留（模型名、公司名等）
     # 检查翻译后是否包含足够的中文
     if not contains_chinese(zh_title):
         # 完全无法翻译，返回空表示跳过
@@ -228,28 +255,39 @@ def fetch_news():
                     "published": published,
                     "category": classify(title),
                     "is_chinese": contains_chinese(title),
+                    "is_domestic": is_domestic(title, summary),
                 })
         except Exception as e:
             print(f"  [错误] {feed_info['name']}: {e}")
 
     items.sort(key=lambda x: x["published"], reverse=True)
 
-    # 中文优先选择：先从中文条目中按类别挑选，不足再用翻译后的英文补充
+    # 中文优先 + 国内优先选择
     chinese_items = [i for i in items if i["is_chinese"]]
     translated_items = [i for i in items if not i["is_chinese"]]
 
+    # 国内中文新闻（最高优先级）→ 国外中文 → 翻译英文
+    domestic_chinese = [i for i in chinese_items if i.get("is_domestic")]
+    foreign_chinese = [i for i in chinese_items if not i.get("is_domestic")]
+
     selected = []
-    # 第一轮：中文条目，每类最多 2 条
+    # 第一轮：国内中文条目，每类最多 2 条
     for cat in ("模型", "热点", "行业", "论文"):
-        cat_items = [i for i in chinese_items if i["category"] == cat and i not in selected]
+        cat_items = [i for i in domestic_chinese if i["category"] == cat and i not in selected]
         selected.extend(cat_items[:2])
-    # 第二轮：中文条目填充剩余名额
-    for item in chinese_items:
+    # 第二轮：国内中文条目填充剩余名额
+    for item in domestic_chinese:
         if len(selected) >= 8:
             break
         if item not in selected:
             selected.append(item)
-    # 第三轮：仍不足时用翻译后的英文条目补充
+    # 第三轮：国外中文条目补充
+    for item in foreign_chinese:
+        if len(selected) >= 8:
+            break
+        if item not in selected:
+            selected.append(item)
+    # 第四轮：仍不足时用翻译后的英文条目补充
     for item in translated_items:
         if len(selected) >= 8:
             break
@@ -260,29 +298,70 @@ def fetch_news():
 
 
 def generate_block(items, date_str):
-    """生成新闻 HTML 区块。"""
-    badge_colors = {
-        "模型": "#7C3AED",
-        "热点": "#F59E0B",
-        "行业": "#22A5F7",
-        "论文": "#10B981",
-    }
+    """
+    生成新闻 HTML 区块。
+    
+    格式规定：
+    1. 日期标题使用 dhead/ddate/dbadge 结构
+    2. 新闻分为"🇨🇳 国内"和"🌍 国外"两个区域，国内在前
+    3. 每条新闻使用 cat/body/h4/p/src 结构
+    4. 标题必须可点击（<a> 标签）
+    5. 来源必须可点击
+    """
+    # 按国内外分组
+    domestic = [i for i in items if i.get("is_domestic")]
+    foreign = [i for i in items if not i.get("is_domestic")]
+
+    # 判断时段标签
+    period = "早间" if "早间" in date_str else ("晚间" if "晚间" in date_str else "更新")
+
     lines = [
         '    <div class="news-day">',
-        f'      <h3 class="news-date">{date_str}</h3>',
+        '      <div class="dhead">',
+        f'        <span class="ddate">{date_str}</span>',
+        f'        <span class="dbadge">{period}</span>',
+        '      </div>',
     ]
-    for item in items:
-        color = badge_colors.get(item["category"], "#7C3AED")
-        lines.extend([
+
+    def render_item(item):
+        cat_css = CAT_CSS.get(item["category"], "c-model")
+        title = html.escape(item["title"])
+        summary = html.escape(item["summary"])
+        link = item["link"]
+        source = item["source"]
+        return [
             '      <div class="news-item">',
-            f'        <span class="news-badge" style="background:{color}">{item["category"]}</span>',
-            '        <div class="news-body">',
-            f'          <a class="news-title" href="{item["link"]}" target="_blank" rel="noopener">{html.escape(item["title"])}</a>',
-            f'          <p class="news-summary">{html.escape(item["summary"])}</p>',
-            f'          <span class="news-source">{item["source"]}</span>',
+            f'        <span class="cat {cat_css}">{item["category"]}</span>',
+            '        <div class="body">',
+            f'          <h4><a href="{link}" target="_blank" rel="noopener">{title}</a></h4>',
+            f'          <p>{summary}</p>',
+            f'          <span class="src">来源：<a href="{link}" target="_blank" rel="noopener">{source}</a></span>',
             '        </div>',
             '      </div>',
+        ]
+
+    # 国内新闻（在前）
+    if domestic:
+        lines.extend([
+            '',
+            '      <div class="news-region">',
+            '        <span class="region-tag region-cn">🇨🇳 国内</span>',
+            '      </div>',
         ])
+        for item in domestic:
+            lines.extend(render_item(item))
+
+    # 国外新闻（在后）
+    if foreign:
+        lines.extend([
+            '',
+            '      <div class="news-region">',
+            '        <span class="region-tag region-global">🌍 国外</span>',
+            '      </div>',
+        ])
+        for item in foreign:
+            lines.extend(render_item(item))
+
     lines.append("    </div>")
     return "\n".join(lines)
 
@@ -334,7 +413,9 @@ def main():
         return
 
     chinese_count = sum(1 for i in items if i.get("is_chinese"))
-    print(f"找到 {len(items)} 条相关新闻（其中 {chinese_count} 条原生中文，{len(items) - chinese_count} 条翻译自英文）")
+    domestic_count = sum(1 for i in items if i.get("is_domestic"))
+    foreign_count = len(items) - domestic_count
+    print(f"找到 {len(items)} 条相关新闻（中文 {chinese_count} 条，国内 {domestic_count} 条，国外 {foreign_count} 条）")
     block = generate_block(items, date_label)
     if update_news_html(block):
         print(f"✓ news.html 已更新：{date_label}")
