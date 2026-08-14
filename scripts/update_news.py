@@ -15,6 +15,73 @@ AI 新闻自动更新脚本 —— 抓取 RSS 源并插入 news.html。
 4. 中文 RSS 源优先抓取，英文源仅作补充
 5. 若英文新闻无法翻译，则跳过该条新闻
 ══════════════════════════════════════════════════════════════
+
+══════════════════════════════════════════════════════════════
+每日新闻展示格式规范（严格遵循，不可违反）
+══════════════════════════════════════════════════════════════
+
+一、HTML 结构层级（每个日报区块）
+─────────────────────────────────
+<div class="news-day">
+  <div class="dhead">
+    <span class="ddate">YYYY-MM-DD 时段更新</span>
+    <span class="dbadge">早间|晚间</span>
+  </div>
+
+  <!-- 国内区域（必须在国外之前） -->
+  <div class="news-region">
+    <span class="region-tag region-cn">🇨🇳 国内</span>
+  </div>
+  <div class="news-item"> ... </div>
+  ...
+
+  <!-- 国外区域（在国内之后） -->
+  <div class="news-region">
+    <span class="region-tag region-global">🌍 国外</span>
+  </div>
+  <div class="news-item"> ... </div>
+  ...
+</div>
+
+二、单条新闻结构
+─────────────────────────────────
+<div class="news-item">
+  <span class="cat {分类CSS}">{分类名}</span>
+  <div class="body">
+    <h4><a href="{链接}" target="_blank" rel="noopener">{标题}</a></h4>
+    <p>{摘要}</p>
+    <span class="src">来源：<a href="{链接}" target="_blank" rel="noopener">{来源名}</a></span>
+  </div>
+</div>
+
+三、格式强制要求
+─────────────────────────────────
+1. 【国内外分区】每个日报区块必须分为"🇨🇳 国内"和"🌍 国外"两个区域
+2. 【国内优先】国内新闻必须放在国外新闻之前，不可颠倒
+3. 【国内为主】国内新闻数量应不少于国外新闻，国内 ≥ 国外
+4. 【标题可点击】所有新闻标题必须使用 <a> 标签包裹，链接到原文
+5. 【来源可点击】所有来源必须使用 <a> 标签包裹，链接到原文
+6. 【链接安全】所有 <a> 标签必须包含 target="_blank" rel="noopener"
+7. 【分类标签】每条新闻必须有分类标签（模型/热点/行业/论文）
+8. 【中文标题】标题和摘要必须为中文（英文专有名词除外）
+9. 【时段标签】dbadge 使用"早间"或"晚间"
+10.【区域标签】region-cn 为绿色，region-global 为蓝色
+
+四、分类标签 → CSS 映射
+─────────────────────────────────
+模型 → c-model
+热点 → c-news
+行业 → c-event
+论文 → c-paper
+
+五、国内外判定规则
+─────────────────────────────────
+国内（is_domestic=True）：标题或摘要包含以下关键词
+  DeepSeek, Qwen, 通义千问, 阿里, 智谱, GLM, 字节, 豆包,
+  腾讯, 混元, 华为, 昇腾, 商汤, 百度, 文心, Kimi, 月之暗面,
+  MiniMax, 美团, 京东, 杭州, 浙江, 深圳, 北京, 上海, 国产
+国外（is_domestic=False）：不包含上述关键词的新闻
+══════════════════════════════════════════════════════════════
 """
 
 import feedparser
@@ -281,18 +348,29 @@ def fetch_news():
             break
         if item not in selected:
             selected.append(item)
-    # 第三轮：国外中文条目补充
+    # 第三轮：国外中文条目补充（但国内数量必须 ≥ 国外数量）
+    domestic_count = len(selected)
+    max_foreign = domestic_count  # 国外条目数不得超过国内条目数
     for item in foreign_chinese:
         if len(selected) >= 8:
             break
-        if item not in selected:
-            selected.append(item)
-    # 第四轮：仍不足时用翻译后的英文条目补充
-    for item in translated_items:
-        if len(selected) >= 8:
+        foreign_in_selected = len(selected) - domestic_count
+        if foreign_in_selected >= max_foreign:
             break
         if item not in selected:
             selected.append(item)
+    # 第四轮：仍不足时用翻译后的英文条目补充（同样受国内 ≥ 国外约束）
+    domestic_count = sum(1 for i in selected if i.get("is_domestic"))
+    foreign_count = len(selected) - domestic_count
+    for item in translated_items:
+        if len(selected) >= 8:
+            break
+        if not item.get("is_domestic") and foreign_count >= domestic_count:
+            continue  # 国外已达到国内数量上限，跳过
+        if item not in selected:
+            selected.append(item)
+            if not item.get("is_domestic"):
+                foreign_count += 1
 
     return selected[:8]
 
