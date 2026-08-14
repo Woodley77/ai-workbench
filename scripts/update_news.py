@@ -1,5 +1,21 @@
 #!/usr/bin/env python3
-"""Daily AI news updater - fetches RSS feeds and inserts into news.html."""
+"""
+AI 新闻自动更新脚本 —— 抓取 RSS 源并插入 news.html。
+
+══════════════════════════════════════════════════════════════
+中文优先规则（必须遵守）
+══════════════════════════════════════════════════════════════
+1. 所有新闻标题和摘要必须为中文
+2. 仅以下内容允许保留英文：
+   - 模型名称（如 GPT-5.6、Claude Opus 5、DeepSeek V4）
+   - 公司名（如 OpenAI、Anthropic、NVIDIA）
+   - 技术术语（如 MoE、RAG、tokens/s、API）
+   - 基准测试名（如 SWE-bench、HLE、MMLU）
+3. 英文新闻必须翻译标题和摘要为中文后才能发布
+4. 中文 RSS 源优先抓取，英文源仅作补充
+5. 若英文新闻无法翻译，则跳过该条新闻
+══════════════════════════════════════════════════════════════
+"""
 
 import feedparser
 import html
@@ -7,17 +23,22 @@ import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-# ── RSS sources ──────────────────────────────────────────────
+# ── RSS 源（中文优先，英文仅补充）──────────────────────────────
 FEEDS = [
-    {"url": "https://news.ycombinator.com/rss",            "name": "Hacker News"},
-    {"url": "http://export.arxiv.org/rss/cs.AI",           "name": "arXiv cs.AI"},
-    {"url": "http://export.arxiv.org/rss/cs.CL",           "name": "arXiv cs.CL"},
-    {"url": "https://techcrunch.com/feed/",                 "name": "TechCrunch"},
-    {"url": "https://www.jiqizhixin.com/rss",              "name": "机器之心"},
-    {"url": "https://36kr.com/feed",                        "name": "36Kr"},
+    # 中文源（优先抓取，国际可访问）
+    {"url": "https://news.google.com/rss/search?q=AI+大模型+OR+人工智能+OR+大语言模型&hl=zh-CN&gl=CN&ceid=CN:zh-Hans",
+     "name": "Google 新闻·AI", "lang": "zh"},
+    {"url": "https://news.google.com/rss/search?q=DeepSeek+OR+通义千问+OR+智谱+OR+字节+AI&hl=zh-CN&gl=CN&ceid=CN:zh-Hans",
+     "name": "Google 新闻·国产模型", "lang": "zh"},
+    {"url": "https://news.google.com/rss/search?q=OpenAI+OR+Anthropic+OR+Gemini+OR+Claude&hl=zh-CN&gl=CN&ceid=CN:zh-Hans",
+     "name": "Google 新闻·海外模型", "lang": "zh"},
+    {"url": "https://tech.ifeng.com/c/ai/rss", "name": "凤凰科技·AI", "lang": "zh"},
+    # 英文源（仅补充，需翻译）
+    {"url": "https://news.ycombinator.com/rss", "name": "Hacker News", "lang": "en"},
+    {"url": "https://techcrunch.com/feed/", "name": "TechCrunch", "lang": "en"},
 ]
 
-# ── AI relevance keywords ────────────────────────────────────
+# ── AI 相关关键词 ────────────────────────────────────────────
 AI_KEYWORDS = [
     "ai", "a.i.", "artificial intelligence", "machine learning", "ml",
     "llm", "large language model", "gpt", "chatgpt", "claude", "gemini",
@@ -26,26 +47,34 @@ AI_KEYWORDS = [
     "agent", "multimodal", "embedding", "fine-tun", "prompt",
     "人工智能", "大模型", "大语言模型", "机器学习", "深度学习",
     "智能体", "多模态", "生成式", "开源模型", "算力", "推理",
+    "芯片", "训练", "微调", "向量", "检索增强",
 ]
 
-# ── Classification keywords ──────────────────────────────────
+# ── 分类关键词 ───────────────────────────────────────────────
 MODEL_KW = ["gpt", "chatgpt", "claude", "gemini", "llama", "mistral",
             "deepseek", "qwen", "kimi", "glm", "文心", "豆包", "minimax",
             "混元", "step-", "flux", "stable diffusion", "veo", "kling",
             "seedance", "vidu", "midjourney", "sora", "model", "模型",
             "开源", "open-source", "open source", "release", "发布",
-            "benchmark", "评测", "swebench", "mmlu", "elo"]
+            "benchmark", "评测", "swebench", "mmlu", "elo", "权重",
+            "参数", "moE", "moe", "推理", "tokens/s", "ultrafast"]
 
 PAPER_KW = ["paper", "arxiv", "research", "study", "论文", "研究",
-            "analysis", "survey", "experiment"]
+            "analysis", "survey", "experiment", "基准", "benchmark"]
 
 INDUSTRY_KW = ["funding", "融资", "收购", "acquisition", "ipo", "上市",
                "partnership", "合作", "投资", "investment", "估值",
                "valuation", "launch", "推出", "shut down", "关停",
-               "rebrand", "改名"]
+               "rebrand", "改名", "价格", "涨价", "降价", "api", "开源"]
+
+
+def contains_chinese(text: str) -> bool:
+    """检查文本是否包含中文字符。"""
+    return bool(re.search(r'[\u4e00-\u9fff]', text))
 
 
 def classify(title: str) -> str:
+    """根据标题关键词分类新闻。"""
     t = title.lower()
     for kw in MODEL_KW:
         if kw in t:
@@ -60,29 +89,100 @@ def classify(title: str) -> str:
 
 
 def is_ai_related(title: str, summary: str = "") -> bool:
+    """判断新闻是否与 AI 相关。"""
     text = (title + " " + summary).lower()
     return any(kw in text for kw in AI_KEYWORDS)
 
 
 def clean_summary(text: str, limit: int = 180) -> str:
+    """清理 HTML 标签并截断摘要。"""
     text = re.sub(r"<[^>]+>", "", text)
     text = html.unescape(text).strip()
+    # 移除 Google News 前缀
+    text = re.sub(r'^[^-]+-\s*', '', text)
     if len(text) > limit:
         text = text[:limit].rsplit(" ", 1)[0] + "…"
     return text
 
 
+def clean_title(title: str) -> str:
+    """清理标题，移除 Google News 等来源前缀。"""
+    # 移除 " - 来源名" 后缀
+    title = re.sub(r'\s*-\s*[^-]+$', '', title)
+    # 移除开头的来源标记
+    title = re.sub(r'^\[.*?\]\s*', '', title)
+    return title.strip()
+
+
+# ── 英文→中文翻译映射表（关键词级）──────────────────────────────
+TRANSLATIONS = {
+    # 动作类
+    "introduces": "推出", "launches": "发布", "unveils": "发布", "announces": "宣布",
+    "releases": "发布", "debuts": "首发", "rolls out": "推出",
+    "updates": "更新", "upgrades": "升级",
+    "open sources": "开源", "open-source": "开源", "open source": "开源",
+    "raises": "融资", "funding": "融资", "acquires": "收购",
+    "partners with": "合作", "teams up with": "合作",
+    "shuts down": "关停", "discontinues": "停用",
+    "says": "表示", "reports": "报告", "claims": "声称",
+    "beats": "超越", "surpasses": "超越", "outperforms": "性能超越",
+    # 产品类
+    "new ai model": "新 AI 模型", "ai model": "AI 模型",
+    "language model": "语言模型", "large language model": "大语言模型",
+    "ai agent": "AI 智能体", "agent": "智能体",
+    "chatbot": "聊天机器人", "assistant": "助手",
+    # 技术类
+    "artificial intelligence": "人工智能", "machine learning": "机器学习",
+    "deep learning": "深度学习", "neural network": "神经网络",
+    "generative ai": "生成式 AI", "multimodal": "多模态",
+    "inference": "推理", "training": "训练", "fine-tuning": "微调",
+    "open source": "开源", "benchmark": "基准测试",
+    "context window": "上下文窗口", "token": "token",
+    "parameters": "参数", "weights": "权重",
+    # 行业类
+    "startup": "初创公司", "valuation": "估值", "ipo": "上市",
+    "enterprise": "企业", "developer": "开发者",
+}
+
+
+def translate_to_chinese(title: str, summary: str = "") -> tuple[str, str]:
+    """
+    将英文标题和摘要翻译为中文。
+    采用关键词替换策略：保留模型名/公司名等专有名词，翻译常见动词和术语。
+    若标题不含任何中文且无法有效翻译，返回空字符串表示跳过。
+    """
+    if contains_chinese(title):
+        # Google News 中文源可能已包含中文标题
+        return clean_title(title), clean_summary(summary)
+
+    # 英文标题翻译
+    zh_title = title
+    zh_summary = summary
+
+    # 按词组长度降序替换（避免短词覆盖长词）
+    for en, zh in sorted(TRANSLATIONS.items(), key=lambda x: -len(x[0])):
+        zh_title = re.sub(re.escape(en), zh, zh_title, flags=re.IGNORECASE)
+        zh_summary = re.sub(re.escape(en), zh, zh_summary, flags=re.IGNORECASE)
+
+    # 检查翻译后是否包含足够的中文
+    if not contains_chinese(zh_title):
+        # 完全无法翻译，返回空表示跳过
+        return "", ""
+
+    return clean_title(zh_title), clean_summary(zh_summary)
+
+
 def fetch_news():
-    """Fetch and filter news from all RSS feeds."""
+    """抓取并筛选所有 RSS 源的新闻，中文优先。"""
     items = []
     now = datetime.now(timezone.utc)
-    cutoff = now - timedelta(hours=36)
+    cutoff = now - timedelta(hours=24)
 
     for feed_info in FEEDS:
         try:
             feed = feedparser.parse(feed_info["url"])
             if feed.bozo and not feed.entries:
-                print(f"  [warn] feed error: {feed_info['name']}")
+                print(f"  [警告] RSS 源异常: {feed_info['name']}")
                 continue
             for entry in feed.entries:
                 published = None
@@ -95,7 +195,7 @@ def fetch_news():
                             pass
                         break
                 if published is None:
-                    published = now  # fallback if no date
+                    published = now
 
                 if published < cutoff:
                     continue
@@ -108,34 +208,59 @@ def fetch_news():
                 if not is_ai_related(title, summary):
                     continue
 
+                # 英文新闻翻译处理
+                if feed_info["lang"] == "en" or not contains_chinese(title):
+                    zh_title, zh_summary = translate_to_chinese(title, summary)
+                    if not zh_title:
+                        # 无法翻译，跳过该条
+                        continue
+                    title = zh_title
+                    summary = zh_summary
+                else:
+                    title = clean_title(title)
+                    summary = clean_summary(summary)
+
                 items.append({
                     "title": title,
                     "link": link,
-                    "summary": clean_summary(summary),
+                    "summary": summary,
                     "source": feed_info["name"],
                     "published": published,
                     "category": classify(title),
+                    "is_chinese": contains_chinese(title),
                 })
         except Exception as e:
-            print(f"  [error] {feed_info['name']}: {e}")
+            print(f"  [错误] {feed_info['name']}: {e}")
 
     items.sort(key=lambda x: x["published"], reverse=True)
 
-    # Diversify: pick up to 2 per category, then fill
+    # 中文优先选择：先从中文条目中按类别挑选，不足再用翻译后的英文补充
+    chinese_items = [i for i in items if i["is_chinese"]]
+    translated_items = [i for i in items if not i["is_chinese"]]
+
     selected = []
+    # 第一轮：中文条目，每类最多 2 条
     for cat in ("模型", "热点", "行业", "论文"):
-        cat_items = [i for i in items if i["category"] == cat and i not in selected]
+        cat_items = [i for i in chinese_items if i["category"] == cat and i not in selected]
         selected.extend(cat_items[:2])
-    for item in items:
+    # 第二轮：中文条目填充剩余名额
+    for item in chinese_items:
         if len(selected) >= 8:
             break
         if item not in selected:
             selected.append(item)
+    # 第三轮：仍不足时用翻译后的英文条目补充
+    for item in translated_items:
+        if len(selected) >= 8:
+            break
+        if item not in selected:
+            selected.append(item)
+
     return selected[:8]
 
 
 def generate_block(items, date_str):
-    """Generate an HTML news-day block."""
+    """生成新闻 HTML 区块。"""
     badge_colors = {
         "模型": "#7C3AED",
         "热点": "#F59E0B",
@@ -163,12 +288,12 @@ def generate_block(items, date_str):
 
 
 def update_news_html(block):
-    """Insert block after __DAILY_INSERT__ marker."""
+    """在 __DAILY_INSERT__ 标记后插入新闻区块。"""
     path = Path("news.html")
     content = path.read_text(encoding="utf-8")
     marker = "<!-- __DAILY_INSERT__"
     if marker not in content:
-        print("ERROR: marker not found")
+        print("错误：未找到插入标记")
         return False
 
     lines = content.split("\n")
@@ -191,29 +316,30 @@ def main():
     now_bj = datetime.now(beijing_tz)
     date_str = now_bj.strftime("%Y-%m-%d")
 
-    # Determine period: morning (before 14:00) or evening (after 14:00)
+    # 判断时段：14:00 前为早间，之后为晚间
     period = "早间" if now_bj.hour < 14 else "晚间"
     date_label = f"{date_str} {period}更新"
 
-    # Skip if this period's entry already exists
+    # 跳过已存在的时段
     news_path = Path("news.html")
     content = news_path.read_text(encoding="utf-8")
     if date_label in content:
-        print(f"News for {date_label} already exists, skipping.")
+        print(f"{date_label} 的新闻已存在，跳过。")
         return
 
-    print(f"Fetching AI news for {date_label}...")
+    print(f"正在抓取 {date_label} 的 AI 新闻（中文优先）...")
     items = fetch_news()
     if not items:
-        print("No AI news found, skipping.")
+        print("未找到 AI 相关新闻，跳过。")
         return
 
-    print(f"Found {len(items)} relevant items")
+    chinese_count = sum(1 for i in items if i.get("is_chinese"))
+    print(f"找到 {len(items)} 条相关新闻（其中 {chinese_count} 条原生中文，{len(items) - chinese_count} 条翻译自英文）")
     block = generate_block(items, date_label)
     if update_news_html(block):
-        print(f"✓ news.html updated for {date_label}")
+        print(f"✓ news.html 已更新：{date_label}")
     else:
-        print("✗ Failed to update news.html")
+        print("✗ news.html 更新失败")
 
 
 if __name__ == "__main__":
