@@ -468,6 +468,53 @@ def update_news_html(block):
     return True
 
 
+def update_homepage(items, date_label):
+    """
+    联动更新首页 index.html 的「今日 AI 动态」卡片。
+
+    格式规定：
+    1. 卡片内容位于 __TODAY_CARD__ / __END_TODAY_CARD__ 标记之间
+    2. 取前 4 条新闻（fetch_news 已保证国内在前）
+    3. 每条格式：<li><b>分类</b> · 🇨🇳/🌍：<a>标题</a></li>，标题截断 60 字
+    4. 徽标更新为「更新于 {date_label}」
+    """
+    path = Path("index.html")
+    if not path.exists():
+        print("警告：index.html 不存在，跳过首页更新")
+        return False
+    content = path.read_text(encoding="utf-8")
+
+    start_marker = "<!-- __TODAY_CARD__ -->"
+    end_marker = "<!-- __END_TODAY_CARD__ -->"
+    if start_marker not in content or end_marker not in content:
+        print("警告：首页未找到 __TODAY_CARD__ 标记，跳过首页更新")
+        return False
+
+    lis = []
+    for item in items[:4]:
+        region = "🇨🇳" if item.get("is_domestic") else "🌍"
+        title = html.escape(item["title"][:60])
+        lis.append(
+            f'        <li><b>{item["category"]}</b> · {region}：'
+            f'<a href="{item["link"]}" target="_blank" rel="noopener">{title}</a></li>'
+        )
+    card = "      <ul>\n" + "\n".join(lis) + "\n      </ul>"
+
+    start = content.index(start_marker) + len(start_marker)
+    end = content.index(end_marker)
+    content = content[:start] + "\n" + card + "\n      " + content[end:]
+
+    # 更新徽标时间
+    content = re.sub(
+        r'(<span[^>]*data-news-badge[^>]*>)[^<]*(</span>)',
+        rf'\g<1>更新于 {date_label}\g<2>',
+        content,
+    )
+
+    path.write_text(content, encoding="utf-8")
+    return True
+
+
 def main():
     beijing_tz = timezone(timedelta(hours=8))
     now_bj = datetime.now(beijing_tz)
@@ -497,6 +544,10 @@ def main():
     block = generate_block(items, date_label)
     if update_news_html(block):
         print(f"✓ news.html 已更新：{date_label}")
+        if update_homepage(items, date_label):
+            print(f"✓ index.html 首页「今日 AI 动态」已联动更新")
+        else:
+            print("✗ index.html 首页联动更新失败")
     else:
         print("✗ news.html 更新失败")
 
