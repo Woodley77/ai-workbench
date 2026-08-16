@@ -1,11 +1,12 @@
-name: AI News Update (Twice Daily)
+name: AI 新闻更新（每日两次）
 
 on:
   schedule:
-    # Beijing 08:00 (UTC 00:00) — 早间更新
-    - cron: '0 0 * * *'
-    # Beijing 18:00 (UTC 10:00) — 晚间更新
-    - cron: '0 10 * * *'
+    # 北京时间 08:23（UTC 00:23）— 早间更新
+    # 注意：必须避开整点（尤其 00:00 UTC），GitHub Actions 整点高峰期会延迟甚至跳过运行
+    - cron: '23 0 * * *'
+    # 北京时间 18:23（UTC 10:23）— 晚间更新
+    - cron: '23 10 * * *'
   workflow_dispatch:
 
 permissions:
@@ -21,20 +22,20 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install dependencies
+      - name: 安装依赖
         run: pip install feedparser
 
-      - name: Fetch and update AI news
+      - name: 抓取并更新 AI 新闻
         run: python scripts/update_news.py
 
-      - name: Commit and push
+      - name: 提交并推送
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add news.html
+          git add news.html index.html
           if git diff --staged --quiet; then
-            echo "No changes to commit"
+            echo "无变更，跳过提交"
           else
-            git commit -m "AI news update $(date -u +%Y-%m-%d_%H:%M) UTC"
+            git commit -m "AI 新闻自动更新（含首页联动）$(date -u +%Y-%m-%d_%H:%M) UTC"
             git push
           fi
