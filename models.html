@@ -324,9 +324,9 @@
       </figure>
     </section>
     <section class="sec">
-      <div class="sec-head"><h2>国产双雄 + 通义 · 能力画像</h2><div class="rule"></div><span class="hint">示意评分 · 5 分制</span></div>
+      <div class="sec-head"><h2>国产四强 + 通义 · 能力画像</h2><div class="rule"></div><span class="hint">示意评分 · 5 分制</span></div>
       <figure class="chart-figure">
-        <figcaption>DeepSeek V4-Pro / Kimi K3 / Qwen3.8-Max 六维能力对比</figcaption>
+        <figcaption>DeepSeek V4-Pro / Kimi K3 / Qwen3.8-Max / GLM-5.3 六维能力对比</figcaption>
         <div id="chart-domestic" style="width:100%;min-height:420px"></div>
       </figure>
     </section>
@@ -340,7 +340,7 @@
     </section>
   <!-- ============ 规格表格 ============ -->
   <section class="sec">
-      <div class="sec-head"><h2>旗舰模型一表看</h2><div class="rule"></div><span class="hint">截至 2026-08-13</span></div>
+      <div class="sec-head"><h2>旗舰模型一表看</h2><div class="rule"></div><span class="hint">截至 2026-08-18</span></div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>模型</th><th>厂商</th><th>发布</th><th>上下文</th><th>模态</th><th>核心强项</th><th>相对短板</th></tr></thead>
@@ -348,10 +348,11 @@
             <tr><td class="row-t">GPT-5.6 Sol</td><td>OpenAI</td><td>2026-07</td><td>未披露</td><td>文本/图像/语音</td><td>编程 Agent、知识交付</td><td>纯推理略逊 Fable 5</td></tr>
             <tr><td class="row-t">Claude Fable 5</td><td>Anthropic</td><td>2026-06</td><td>1M</td><td>文本/图像</td><td>长程端到端、SWE-bench 第一</td><td>贵、出口管制</td></tr>
             <tr><td class="row-t">Gemini 3.5 Flash</td><td>Google</td><td>2026-05</td><td>1M</td><td>原生四模态</td><td>速度、多模态、高吞吐</td><td>最难任务弱于旗舰</td></tr>
-            <tr><td class="row-t">DeepSeek V4-Pro</td><td>深度求索</td><td>2026-08-13</td><td>1M</td><td>文本为主</td><td>推理性价比之王、Agent 暴涨</td><td>无原生视觉</td></tr>
+            <tr><td class="row-t">DeepSeek V4-Pro</td><td>深度求索</td><td>2026-08-13</td><td>1M</td><td>文本为主</td><td>推理性价比之王、Agent 暴涨</td><td>8/17 涨价后性价比下降</td></tr>
             <tr><td class="row-t">Qwen3.8-Max</td><td>阿里</td><td>2026-08</td><td>1M</td><td>原生全模态</td><td>开源生态第一、中文</td><td>刚发布待评测</td></tr>
-            <tr><td class="row-t">Kimi K3</td><td>月之暗面</td><td>2026-07</td><td>1M</td><td>原生视觉</td><td>前端代码第一、长程 Agent</td><td>推理慢</td></tr>
-            <tr><td class="row-t">GLM-5.2</td><td>智谱</td><td>2026-06</td><td>1M</td><td>文本+VLM</td><td>工程 Agent、MIT 开源</td><td>部分维度低于旗舰</td></tr>
+            <tr><td class="row-t">Kimi K3</td><td>月之暗面</td><td>2026-07</td><td>1M</td><td>原生视觉</td><td>前端代码第一、长程 Agent</td><td>贵（¥20/¥100）</td></tr>
+            <tr><td class="row-t">GLM-5.3</td><td>智谱</td><td>2026-08-14</td><td>1M</td><td>文本为主</td><td>开源阵营编码第一、后训练 Scaling</td><td>API 定价未公布</td></tr>
+            <tr><td class="row-t">小米 MiMo-V2.5</td><td>小米</td><td>2026-05</td><td>1M</td><td>文本+全模态</td><td>极致低价、MIT 开源</td><td>前沿能力弱于旗舰</td></tr>
             <tr><td class="row-t">豆包 2.1 Pro</td><td>字节</td><td>2026-06</td><td>未披露</td><td>全模态矩阵</td><td>多模态全家桶、MaaS</td><td>开源力度弱</td></tr>
             <tr><td class="row-t">混元 Hy3</td><td>腾讯</td><td>2026-07</td><td>256K</td><td>文本为主</td><td>智能密度、中文落地</td><td>参数规模较小</td></tr>
             <tr><td class="row-t">文心 5.1</td><td>百度</td><td>2026-05</td><td>未披露</td><td>原生全模态</td><td>搜索整合、训练成本低</td><td>闭源、跑分不可核验</td></tr>
@@ -369,12 +370,18 @@
             <tr><td class="row-t">Claude Opus 5</td><td>1M</td><td>$5</td><td>$25</td><td>否</td><td>逼近 Fable 5、价格减半</td></tr>
             <tr><td class="row-t">GPT-5.6 Luna</td><td>未披露</td><td>$1</td><td>$6</td><td>否</td><td>降价 80% 主打性价比</td></tr>
             <tr><td class="row-t">Gemini 3.6 Flash</td><td>1M</td><td>$1.5</td><td>$7.5</td><td>否</td><td>输出价再降 17%</td></tr>
-            <tr><td class="row-t">DeepSeek V4-Flash</td><td>1M</td><td>¥0.02（缓存命中）</td><td>¥2</td><td>✅ MIT</td><td>国产性价比之王 · 8/17 起峰谷调价</td></tr>
-            <tr><td class="row-t">Kimi K3</td><td>1M</td><td>¥20</td><td>¥100</td><td>✅ 全链路</td><td>全球最大开源（2.8T）</td></tr>
-            <tr><td class="row-t">Qwen3.8-Max</td><td>1M</td><td>约 GPT-5.2 的 1/15</td><td>—</td><td>✅ 即将开源</td><td>千问首个开源 Max 级</td></tr>
-            <tr><td class="row-t">GLM-5.2</td><td>1M</td><td>—</td><td>—</td><td>✅ MIT</td><td>1M 无损上下文</td></tr>
+            <tr><td class="row-t">DeepSeek V4-Flash</td><td>1M</td><td>¥1（缓存 ¥0.02）</td><td>¥2</td><td>✅ MIT</td><td>国产性价比之王 · 8/17 起峰谷调价（高峰 ¥3/¥9）</td></tr>
+            <tr><td class="row-t">DeepSeek V4-Pro</td><td>1M</td><td>¥9（高峰）/ ¥4.5（空闲）</td><td>¥27 / ¥13.5</td><td>✅ MIT</td><td>⚠️ 8/17 涨价：输出最高 +350%</td></tr>
+            <tr><td class="row-t">Kimi K3</td><td>1M</td><td>¥20</td><td>¥100</td><td>✅ 全链路</td><td>全球最大开源（2.8T）· 定价最高</td></tr>
+            <tr><td class="row-t">Qwen3.8-Max</td><td>1M</td><td>约 ¥14</td><td>约 ¥43</td><td>✅ 即将开源</td><td>千问首个开源 Max 级</td></tr>
+            <tr><td class="row-t">GLM-5.3</td><td>1M</td><td>未公布</td><td>未公布</td><td>✅ MIT（8/28 开源）</td><td>订阅 ¥49-469/月；对标替代 DeepSeek</td></tr>
+            <tr><td class="row-t">小米 MiMo-V2.5</td><td>1M</td><td>¥1（缓存 ¥0.02）</td><td>¥2</td><td>✅ MIT</td><td>💡 低价首选：与 V4-Flash 同价但有 1M 上下文</td></tr>
             <tr><td class="row-t">混元 Hy3</td><td>256K</td><td>¥1</td><td>¥4</td><td>✅ 已开源</td><td>价格极低</td></tr>
+            <tr><td class="row-t">文心 5.1</td><td>未披露</td><td>¥4</td><td>¥18</td><td>否</td><td>搜索整合</td></tr>
             <tr><td class="row-t">MiniMax M2.7</td><td>200K</td><td>主流 1/10-1/20</td><td>—</td><td>否（M2.5 开源）</td><td>「每小时 1 美元」经济模型</td></tr>
+            <tr><td class="row-t">商汤 SenseNova 6.5</td><td>未披露</td><td>约 ¥4.5</td><td>约 ¥9</td><td>否</td><td>视觉多模态国产领先</td></tr>
+            <tr><td class="row-t">讯飞 Spark X2</td><td>未披露</td><td>约 ¥2</td><td>约 ¥2</td><td>否</td><td>教育/办公场景深耕</td></tr>
+            <tr><td class="row-t">百川 M3-Plus</td><td>未披露</td><td>约 ¥5</td><td>约 ¥9</td><td>否</td><td>医疗/金融垂直</td></tr>
           </tbody>
         </table>
       </div>
@@ -486,14 +493,22 @@
     </section>
   <!-- ============ 选型指南 ============ -->
   <section class="sec">
+      <div class="card" style="background:var(--accent2-soft);border-color:var(--accent2);margin-bottom:16px">
+        <h3 style="font-size:18px;margin-bottom:12px">⚠️ DeepSeek 涨价后怎么选（2026-08-17 起执行）</h3>
+        <p style="font-size:14.5px;margin-bottom:10px"><b>原 DeepSeek V4-Pro 用户（轻量/非高峰）</b>：V4-Pro 高峰输出 ¥27（原 ¥6，+350%）。若可接受降档，<b>V4-Flash 空闲时段（¥1.5/¥4.5）</b> 成本可控；追求更强能力可切 <b>Qwen3.7-Max（¥6/¥18）</b> 或 <b>GLM-5.3（订阅制 ¥149/月封顶）</b>。</p>
+        <p style="font-size:14.5px;margin-bottom:10px"><b>重推理/数学 + 预算敏感</b>：<b>小米 MiMo-V2.5（¥1/¥2，缓存 ¥0.02）</b> 是当前国产价格屠夫，1M 上下文 + MIT 开源，与 V4-Flash 同价但上下文更长；<b>混元 Hy3（¥1/¥4）</b> 同样极低。</p>
+        <p style="font-size:14.5px;margin-bottom:10px"><b>编程/Agent 场景</b>：预算充足用 <b>Claude Fable 5 / Opus 5</b>；国产替代优先 <b>GLM-5.3</b>（8/28 开源权重后免费，Terminal-Bench 开源第一）或 <b>Kimi K3</b>（前端代码最强，但 ¥20/¥100 偏贵）。</p>
+        <p style="font-size:14.5px;margin-bottom:10px"><b>长文档/RAG</b>：<b>小米 MiMo-V2.5（1M 上下文 ¥1/¥2）</b> 无敌；其次 <b>Qwen 系（1M）</b> 或 <b>混元（256K）</b>。</p>
+        <p style="font-size:14.5px;margin:0"><b>一句话结论</b>：DeepSeek 涨价后，「低价高性能」首选 <b>小米 MiMo-V2.5 / 混元 Hy3</b>（同价位替代），编程首选 <b>GLM-5.3</b>（等 8/28 开源），旗舰推理仍可错峰用 <b>V4-Pro 空闲档</b>。</p>
+      </div>
       <div class="card" style="background:var(--accent-soft);border-color:var(--accent)">
-        <h3 style="font-size:18px;margin-bottom:16px">💡 怎么选模型（实用指南）</h3>
-        <p style="font-size:15px;margin-bottom:12px"><b>预算敏感 + 推理/数学为主</b>：DeepSeek V4-Flash（国产价格屠夫）或 Gemini 3.5 Flash（速度快）</p>
-        <p style="font-size:15px;margin-bottom:12px"><b>编程/Agent 重活</b>：Claude Fable 5 / Opus 5（SWE-bench 领先），前端开发看 Kimi K3</p>
+        <h3 style="font-size:18px;margin-bottom:16px">💡 怎么选模型（通用指南）</h3>
+        <p style="font-size:15px;margin-bottom:12px"><b>预算敏感 + 推理/数学为主</b>：小米 MiMo-V2.5（¥1/¥2）或 DeepSeek V4-Flash（空闲档）、混元 Hy3</p>
+        <p style="font-size:15px;margin-bottom:12px"><b>编程/Agent 重活</b>：Claude Fable 5 / Opus 5（SWE-bench 领先），国产看 GLM-5.3（开源第一）、Kimi K3（前端）</p>
         <p style="font-size:15px;margin-bottom:12px"><b>知识型文档/设计交付</b>：GPT-5.6 系列（演示文稿、文档、表格审美强）</p>
-        <p style="font-size:15px;margin-bottom:12px"><b>多模态/视频理解</b>：Gemini 3.5（原生四模态）</p>
-        <p style="font-size:15px;margin-bottom:12px"><b>本地部署</b>：Qwen 开源系（中文好、Apache 2.0）或 DeepSeek V4（MIT 许可）</p>
-        <p style="font-size:15px;margin:0"><b>Agent 长程任务</b>：DeepSeek V4 Pro 正式版（DeepSWE 62.7，4.9 倍提升）或 Claude Fable 5（端到端最强）</p>
+        <p style="font-size:15px;margin-bottom:12px"><b>多模态/视频理解</b>：Gemini 3.5（原生四模态）或商汤 SenseNova（国产视觉强）</p>
+        <p style="font-size:15px;margin-bottom:12px"><b>本地部署</b>：Qwen 开源系（中文好、Apache 2.0）、GLM-5.3（8/28 开源 MIT）、小米 MiMo-V2.5（MIT）</p>
+        <p style="font-size:15px;margin:0"><b>Agent 长程任务</b>：Claude Fable 5（端到端最强）或 DeepSeek V4 Pro（错峰、空闲档）</p>
       </div>
     </section>
     <section class="sec">
@@ -525,18 +540,20 @@
 
 <footer>
   <div class="sources">
-    <div>模型知识库 · 数据截至 2026-08-13，来源包括官方公告（OpenAI / Anthropic / DeepMind / 各厂商官网）与权威媒体报道（36氪、量子位、IT之家、新浪财经等）。主要信息来源：</div>
+    <div>模型知识库 · 数据截至 2026-08-18，来源包括官方公告（OpenAI / Anthropic / DeepMind / 各厂商官网）与权威媒体报道（36氪、量子位、IT之家、新浪财经等）。主要信息来源：</div>
     <ol>
       <li><span class="src-title">OpenAI, GPT-5.6 官方发布页</span><a class="src-url" href="https://openai.com/zh-Hans-CN/index/gpt-5-6/" target="_blank" rel="noopener">https://openai.com/zh-Hans-CN/index/gpt-5-6/</a></li>
       <li><span class="src-title">Anthropic, Claude Fable 5 and Claude Mythos 5</span><a class="src-url" href="https://www.anthropic.com/news/claude-fable-5-mythos-5" target="_blank" rel="noopener">https://www.anthropic.com/news/claude-fable-5-mythos-5</a></li>
       <li><span class="src-title">Google DeepMind, Gemini 3.5</span><a class="src-url" href="https://deepmind.google/blog/gemini-3-5-frontier-intelligence-with-action/" target="_blank" rel="noopener">https://deepmind.google/blog/gemini-3-5-frontier-intelligence-with-action/</a></li>
       <li><span class="src-title">36氪/量子位, DeepSeek V4 发布</span><a class="src-url" href="https://m.36kr.com/p/3780290045121801" target="_blank" rel="noopener">https://m.36kr.com/p/3780290045121801</a></li>
       <li><span class="src-title">Qwen Cloud 官方变更日志</span><a class="src-url" href="https://docs.qwencloud.com/changelog/models" target="_blank" rel="noopener">https://docs.qwencloud.com/changelog/models</a></li>
-      <li><span class="src-title">智谱开放平台, GLM-5.2 官方公告</span><a class="src-url" href="https://docs.bigmodel.cn/cn/update/new-releases" target="_blank" rel="noopener">https://docs.bigmodel.cn/cn/update/new-releases</a></li>
+      <li><span class="src-title">智谱开放平台, GLM-5.3 官方公告</span><a class="src-url" href="https://docs.bigmodel.cn/cn/update/new-releases" target="_blank" rel="noopener">https://docs.bigmodel.cn/cn/update/new-releases</a></li>
       <li><span class="src-title">豆包官方研究站, Seed 系列</span><a class="src-url" href="https://research.doubao.com/zh/" target="_blank" rel="noopener">https://research.doubao.com/zh/</a></li>
       <li><span class="src-title">Black Forest Labs, FLUX 3 Release Notes</span><a class="src-url" href="https://docs.bfl.ml/release-notes" target="_blank" rel="noopener">https://docs.bfl.ml/release-notes</a></li>
       <li><span class="src-title">MiniMax 开放平台</span><a class="src-url" href="https://platform.minimaxi.com/docs/api-reference/api-overview" target="_blank" rel="noopener">https://platform.minimaxi.com/docs/api-reference/api-overview</a></li>
       <li><span class="src-title">DeepSeek API 官方定价页（峰谷定价）</span><a class="src-url" href="https://api-docs.deepseek.com/zh-cn/quick_start/pricing/" target="_blank" rel="noopener">https://api-docs.deepseek.com/zh-cn/quick_start/pricing/</a></li>
+      <li><span class="src-title">小米 MiMo 官方定价</span><a class="src-url" href="https://www.xiaomimimo.com/" target="_blank" rel="noopener">https://www.xiaomimimo.com/</a></li>
+      <li><span class="src-title">LMArena 排行榜（2026-08 第 33 周）</span><a class="src-url" href="https://lmarena.ai/leaderboard" target="_blank" rel="noopener">https://lmarena.ai/leaderboard</a></li>
     </ol>
   </div>
 </footer>
@@ -612,12 +629,12 @@ const MODELS = [
   {
     cat:'domestic', name:'DeepSeek V4', vendor:'深度求索', date:'2026-08-13 正式版',
     tags:['开源推理之王','1M 上下文','Agent 暴涨'],
-    summary:'V4-Pro 正式版（0813）Agent 能力暴涨 4.9 倍，开源首次硬刚闭源旗舰',
+    summary:'V4-Pro 正式版（0813）Agent 能力暴涨 4.9 倍，8/17 起峰谷调价',
     metric:'DeepSWE 62.7 · SWE-bench 80.6%',
-    rank:{ coding:4, reasoning:3, value:1 },
+    rank:{ coding:4, reasoning:3, value:2 },
     kv:[['版本','V4-Pro-0813 正式版（1.6T / 激活 49B）/ V4-Flash（284B / 激活 13B），全系 MIT 开源'],['上下文','1M token · 最大输出 384K'],['正式版升级','DeepSWE 12.8→62.7（4.9 倍）；Terminal Bench 87.9；Cybergym 83.3；NL2Repo 61.5'],['双协议兼容','同时支持 OpenAI 和 Anthropic API 格式，可直接接入 Claude Code'],['思考模式','thinking / non-thinking 双模式，默认开启思考'],['定价','8/17 起峰谷定价 — V4-Pro: 高峰 ¥9/¥27、空闲 ¥4.5/¥13.5；V4-Flash: 高峰 ¥3/¥9、空闲 ¥1.5/¥4.5（缓存未命中输入/输出，每百万token）。高峰时段 9:00-12:00、14:00-18:00'],['国产算力','已适配华为昇腾 A2/A3/950，20ms 低时延，Decode 吞吐 4700 TPS'],['核心能力','SWE-bench 80.6% 开源最高；HumanEval 89.2% 超越 GPT-5.5；Codeforces 3206；Agentic Coding 内部默认模型']],
-    desc:'2026-08-13 凌晨无预告转正，从预览版到正式版相隔 108 天。9 项 Agent/代码基准全线大涨，前端审美发生质变（36 氪实测"告别 AI 一眼假"），长周期工程任务可连续三轮自修 bug。开源模型首次正面硬刚闭源旗舰，性能逼近 Claude Fable 5。弱项：鹈鹕/月亮等简单图形偶有低级失误；无原生视觉。',
-    fact:'DeepSWE 从 12.8 提升到 62.7（4.9 倍）是本次最大亮点——测的不是"会不会写代码"，而是"能不能像工程师一样持续干活"。与 Grok 4.6 同日发布，开源 vs 闭源正面对决。'
+    desc:'2026-08-13 凌晨无预告转正，从预览版到正式版相隔 108 天。9 项 Agent/代码基准全线大涨，前端审美发生质变（36 氪实测"告别 AI 一眼假"），长周期工程任务可连续三轮自修 bug。⚠️ 8/17 起峰谷调价后白天高峰成本大幅上升（输出最高 +350%），性价比优势减弱，建议错峰使用或换小米 MiMo / 混元 Hy3。',
+    fact:'DeepSWE 从 12.8 提升到 62.7（4.9 倍）是本次最大亮点——测的不是"会不会写代码"，而是"能不能像工程师一样持续干活"。涨价后错峰使用仍具竞争力。'
   },
   {
     cat:'domestic', name:'Qwen3.8-Max', vendor:'阿里巴巴', date:'2026-08-03',
@@ -640,14 +657,14 @@ const MODELS = [
     fact:'2026-07-29 完成 35 亿美元 F 轮融资，估值 350 亿美元；7-27 全链路开源（权重+技术报告+三大 Infra）。'
   },
   {
-    cat:'domestic', name:'智谱 GLM-5.2', vendor:'智谱 AI', date:'2026-06-15',
-    tags:['MIT 开源','工程 Agent'],
-    summary:'745B 参数 MIT 协议最宽松，单任务独立工作 8 小时',
-    metric:'SWE-bench Pro 58.4 #1',
-    rank:{ coding:6 },
-    kv:[['参数量','约 745B / 激活 40B / 1M 无损上下文'],['核心能力','GLM-5.1 曾以 SWE-Bench Pro 58.4 全球第一击败所有闭源旗舰；单次任务独立工作 8 小时'],['模态','文本为主；配套 GLM-5V-Turbo、GLM-OCR、GLM-Image']],
-    desc:'清华系「工程 Agent」代表，MIT 协议最宽松、交付稳定。2026-01 完成香港 IPO，募资约 43.5 亿港元。',
-    fact:'GLM-5 全程在 10 万颗华为昇腾 910B 上训练，实现从美国制程硬件的完全独立。'
+    cat:'domestic', name:'智谱 GLM-5.3', vendor:'智谱 AI', date:'2026-08-14',
+    tags:['开源最强编程','后训练 Scaling'],
+    summary:'同基座纯后训练拉满编码能力：编程提升 50%，开源阵营多项第一',
+    metric:'Terminal-Bench 28.3 开源 #1',
+    rank:{ coding:5, overall:6 },
+    kv:[['基座','与 GLM-5.2 相同（约 745B / 激活 40B / 1M 上下文），全部提升来自后训练 Scaling'],['编码能力','Z.ai Code Bench 较 5.2 提升 50%；Terminal-Bench 3.0 从 4.6→28.3 开源第一；DeepSWE v1.1 46.2→66.9'],['安全能力','CyberGym 84.5% 逼近 Mythos 5；实战 269 项目挖出 2436 漏洞（中高危 1097 个）'],['token 效率','高难度档用约 5 万 tokens 达 31.4%，超过 Claude Opus 4.8（12 万 tokens、29.5%）'],['开源计划','8/28 开放权重（MIT 继承），先于 API 上线；当前走 GLM Coding Plan 订阅（Lite ¥49/Pro ¥149/Max ¥469 每月）'],['定位','纯文本模型；面向编程/Agent/网络安全，对标 DeepSeek 涨价后的替代选择']],
+    desc:'2026-08-14 发布，逆势亮出「便宜 + 更强」的牌：编程能力开源第一梯队，网络安全漏洞挖掘对标一线闭源模型。API 定价未公布，但明确打出替代 DeepSeek 的旗号。',
+    fact:'与 DeepSeek 8/17 涨价同场竞争：智谱发新模型时机精准，两周后开源权重将成为免费替代方案。'
   },
   {
     cat:'domestic', name:'豆包 2.1 / Seed 系列', vendor:'字节跳动', date:'2026-06-24',
@@ -697,6 +714,43 @@ const MODELS = [
     kv:[['最新','Step 3.7 Flash（196B / 激活 11B + 1.8B ViT，Apache 2.0 开源）'],['模态','文本+图像原生；视频 Step-Video-T2V（300 亿参数）、Step-Audio 全家桶'],['速度','最高 400 tokens/s，定位「Agent 加速器」']],
     desc:'国产多模态开源力度第一梯队。2026-07 发布 AI 终端品牌 STEPX 手机与智能体原生系统 Step AOS，从模型公司走向终端。',
     fact:'Step-2（2024-07）是国内创业公司首个万亿 MoE；正在推进港股 IPO。'
+  },
+  {
+    cat:'domestic', name:'小米 MiMo-V2.5', vendor:'小米', date:'2026-05-27',
+    tags:['极致低价','1M 长上下文','MIT 开源'],
+    summary:'价格战卷王：输入低至 ¥1/百万 token，1M 上下文，降价 99% 永久生效',
+    metric:'¥1/¥2 · 1M 上下文',
+    rank:{ value:2 },
+    kv:[['定价','V2.5-Pro：缓存 ¥0.025 / 输入 ¥3 / 输出 ¥6；V2.5 标准：缓存 ¥0.02 / 输入 ¥1 / 输出 ¥2（每百万 token，1M 上下文）'],['开源','双模型 MIT 协议全量开源（V2.5-Pro 推理旗舰 + V2.5 原生全模态）'],['生态','MiMo Orbit 计划：100 万亿免费 Token 已全部发完；Token Plan 加量 5-8 倍'],['长文档','1M 上下文一次处理 75 万字，长文档 RAG 场景性价比无敌']],
+    desc:'DeepSeek 涨价后的最强平替之一：与 V4-Flash 定价几乎相同（同是 ¥1/¥2），但拥有 1M 超长上下文和 MIT 全开源。最高降幅 99% 永久生效，主打「让开发者用得起」。',
+    fact:'5/27 宣布永久降价后与 DeepSeek 正面竞争，一度把价格战打到「厘级」。V2.5-Pro 定价与 V4-Pro 原价完全一致（¥3/¥6）。'
+  },
+  {
+    cat:'domestic', name:'商汤 SenseNova 6.5', vendor:'商汤科技', date:'2026 公测',
+    tags:['国产多模态','视觉强'],
+    summary:'多模态视觉能力国产第一梯队，API 约 ¥4.5/¥9 公测中',
+    metric:'视觉多模态领先',
+    kv:[['定位','多模态视觉理解国产第一梯队；文本生成约 ¥4.5/¥9 每百万 token（公测中）'],['优势','图像/视频理解强，智慧城市、医疗影像等垂直场景落地深'],['进展','2026 年持续迭代，SenseNova 系列保持国内视觉多模态领先']],
+    desc:'以视觉多模态见长的国产厂商，文本模型处于追赶位置。适合图像理解、视频分析等场景的国产替代。',
+    fact:'商汤在 CV 领域积累深厚，多模态评测中视觉理解能力长期位居国产前列。'
+  },
+  {
+    cat:'domestic', name:'科大讯飞 Spark X2', vendor:'科大讯飞', date:'2026',
+    tags:['国产实用','多语种'],
+    summary:'星火 X2 Flash 约 ¥2/¥2 低价实用，教育/办公场景深耕',
+    metric:'约 ¥2/¥2',
+    kv:[['定价','Spark X2 Flash 约 ¥2/¥2（输入/输出，每百万 token），x1 推理版 ¥12/¥12'],['优势','教育、办公、语音融合场景落地深；中文理解扎实'],['弱势','前沿能力与头部旗舰存在差距']],
+    desc:'讯飞星火走「实用主义」路线，教育硬件、办公场景绑定深，API 定价实惠。',
+    fact:'讯飞在语音合成/识别领域积累深厚，多语种支持完善。'
+  },
+  {
+    cat:'domestic', name:'百川智能 Baichuan M3', vendor:'百川智能', date:'2026',
+    tags:['医疗/金融','垂直深耕'],
+    summary:'M3-Plus 约 ¥5/¥9，医疗金融垂直领域布局深',
+    metric:'约 ¥5/¥9',
+    kv:[['定价','M3-Plus 约 ¥5/¥9（输入/输出，每百万 token）'],['优势','医疗、金融垂直场景数据积累深'],['弱势','通用能力与头部旗舰有差距']],
+    desc:'百川智能聚焦医疗、金融等垂直领域，通用模型处于追赶位置。',
+    fact:'百川是「清华系」创业公司，医疗大模型商业化走在前列。'
   },
   // ---- 开源生态 ----
   {
@@ -823,26 +877,26 @@ const MODELS = [
 const RANKINGS = {
   overall: {
     overseas: [
-      { name:'Claude Fable 5', score:'最强', pct:100 },
-      { name:'GPT-5.6 Sol', score:'第 2', pct:92 },
-      { name:'Grok 4.6', score:'61 分', pct:85 }
+      { name:'Claude Fable 5', score:'Elo 1506', pct:100 },
+      { name:'GPT-5.6 Sol', score:'OpenLM 1509', pct:92 },
+      { name:'Claude Opus 5', score:'OpenLM 1511', pct:90 }
     ],
     domestic: [
-      { name:'Kimi K3', score:'开源最强', pct:88 },
-      { name:'DeepSeek V4', score:'推理王', pct:85 },
-      { name:'Qwen3.8-Max', score:'全模态', pct:80 }
+      { name:'Qwen3.8-Max', score:'LMArena 1491 #8', pct:88 },
+      { name:'Kimi K3', score:'LMArena 1489', pct:86 },
+      { name:'GLM-5.3', score:'OpenLM 1503', pct:84 }
     ]
   },
   coding: {
     overseas: [
-      { name:'Claude Fable 5', score:'95.0%', pct:95 },
-      { name:'Claude Opus 4.8', score:'88.6%', pct:89 },
-      { name:'Gemini 3.1 Pro', score:'80.6%', pct:81 }
+      { name:'Claude Fable 5', score:'SWE 95.0%', pct:95 },
+      { name:'Claude Opus 4.7', score:'SWE ~92%', pct:89 },
+      { name:'GPT-5.6 Sol', score:'Agent 80', pct:85 }
     ],
     domestic: [
-      { name:'DeepSeek V4-Pro', score:'80.6%', pct:81 },
-      { name:'MiniMax M2.7', score:'80.2%', pct:80 },
-      { name:'Kimi K3', score:'Arena 1679', pct:83 }
+      { name:'Kimi K3', score:'Arena 1679', pct:88 },
+      { name:'GLM-5.3', score:'Terminal-Bench 28.3', pct:86 },
+      { name:'DeepSeek V4-Pro', score:'SWE 80.6%', pct:81 }
     ]
   },
   reasoning: {
@@ -864,9 +918,9 @@ const RANKINGS = {
       { name:'Claude Opus 5', score:'$5/$25', pct:60 }
     ],
     domestic: [
-      { name:'DeepSeek V4-Flash', score:'¥0.2 缓存', pct:100 },
-      { name:'混元 Hy3', score:'¥1/¥4', pct:90 },
-      { name:'MiniMax M2.7', score:'1/10 价格', pct:85 }
+      { name:'小米 MiMo-V2.5', score:'¥1/¥2 缓存¥0.02', pct:100 },
+      { name:'DeepSeek V4-Flash', score:'空闲 ¥1.5/¥4.5', pct:92 },
+      { name:'混元 Hy3', score:'¥1/¥4', pct:90 }
     ]
   }
 };
@@ -887,6 +941,10 @@ var VENDOR_URLS = {
   '腾讯':'https://hunyuan.tencent.com',
   '百度':'https://yiyan.baidu.com',
   '阶跃星辰':'https://www.stepfun.com',
+  '小米':'https://www.xiaomimimo.com',
+  '商汤科技':'https://www.sensetime.com',
+  '科大讯飞':'https://www.iflytek.com',
+  '百川智能':'https://www.baichuan-ai.com',
   'Meta':'https://ai.meta.com',
   'Mistral AI（法国）':'https://mistral.ai',
   'Gemma · Phi · 推理谱系':'https://ai.google.dev/gemma',
