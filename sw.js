@@ -1,9 +1,10 @@
 /* ============================================================
-   AI 学习工作台 · Service Worker v2
-   策略：所有资源 Network First（保证最新），离线回退 Cache
+   AI 学习工作台 · Service Worker v3
+   策略：所有资源 Network First，离线回退 Cache；
+        导航(HTML)请求强制 no-cache，避免 GitHub Pages 缓存造成新闻延迟更新
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v2';
+var CACHE_VERSION = 'ai-wb-v3';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
@@ -69,8 +70,11 @@ self.addEventListener('fetch', function (event) {
   if (url.origin !== self.location.origin) return;
 
   // 所有请求：Network First，离线回退缓存
+  // 导航(HTML)请求强制绕过浏览器 HTTP 缓存，避免 GitHub Pages 的
+  // max-age=600 导致更新后最多 10 分钟仍看到旧版（新闻延迟更新的根因）
+  var fetchOpts = (req.mode === 'navigate') ? { cache: 'no-cache' } : undefined;
   event.respondWith(
-    fetch(req).then(function (res) {
+    fetch(req, fetchOpts).then(function (res) {
       var clone = res.clone();
       caches.open(STATIC_CACHE).then(function (cache) {
         cache.put(req, clone);
