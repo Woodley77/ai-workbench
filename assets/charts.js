@@ -65,14 +65,15 @@
     })]
   }));
 
-  /* 图 2 · 国产三强 */
+  /* 图 2 · 国产四强 */
   mk('chart-domestic', Object.assign({}, radarCommon, {
-    color: [accent, accent2, '#F59E0B'],
+    color: [accent, accent2, '#F59E0B', '#6366F1'],
     series: [Object.assign({}, radarCommon.series[0], {
       data: [
         { name: 'DeepSeek V4-Pro', value: [4.6, 5.0, 3.0, 5.0, 5.0, 4.6] },
         { name: 'Kimi K3', value: [4.8, 4.4, 4.2, 5.0, 4.2, 5.0] },
-        { name: 'Qwen3.8-Max', value: [4.5, 4.3, 5.0, 5.0, 4.8, 4.6] }
+        { name: 'Qwen3.8-Max', value: [4.5, 4.3, 5.0, 5.0, 4.8, 4.6] },
+        { name: 'GLM-5.3', value: [4.6, 4.6, 3.6, 5.0, 4.4, 4.4] }
       ]
     })]
   }));
@@ -83,7 +84,7 @@
     { name: 'Claude Opus 4.8', value: 88.6 },
     { name: 'Gemini 3.1 Pro', value: 80.6 },
     { name: 'DeepSeek V4-Pro', value: 80.6 },
-    { name: 'MiniMax M2.5', value: 80.2 },
+    { name: 'MiniMax M2.7', value: 80.2 },
     { name: 'Claude Sonnet 4.6', value: 79.6 }
   ];
 
