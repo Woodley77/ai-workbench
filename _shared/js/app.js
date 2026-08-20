@@ -70,24 +70,41 @@
     });
   }
 
-  /* ---------- PWA Service Worker 注册 ---------- */
+  /* ---------- PWA Service Worker 注册 + 自动更新 ---------- */
   function initServiceWorker() {
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function () {
-        navigator.serviceWorker.register('./sw.js').then(function (reg) {
-          reg.addEventListener('updatefound', function () {
-            var newWorker = reg.installing;
-            newWorker.addEventListener('statechange', function () {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('[PWA] 新版本已就绪，刷新页面更新');
-              }
-            });
+    if (!('serviceWorker' in navigator)) return;
+
+    // 关键修复：新 SW 接管控制后，自动刷新一次页面，
+    // 否则页面会一直停留在旧 SW 服务的缓存内容（新闻不更新的根因）。
+    var reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (reloading) return;
+      reloading = true;
+      window.location.reload();
+    });
+
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js').then(function (reg) {
+        // 若已有“等待中”的新 SW 且当前被旧 SW 控制，立刻催促其接管
+        if (reg.waiting && navigator.serviceWorker.controller) {
+          reg.waiting.postMessage('skipWaiting');
+        }
+        reg.addEventListener('updatefound', function () {
+          var newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', function () {
+            // 新 SW 安装完成、且当前有旧控制器 → 催促其立即接管；
+            // 接管成功后 controllerchange 触发上面的自动刷新
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              newWorker.postMessage('skipWaiting');
+              console.log('[PWA] 检测到新版本，即将自动刷新');
+            }
           });
-        }).catch(function (err) {
-          console.warn('[PWA] Service Worker 注册失败:', err);
         });
+      }).catch(function (err) {
+        console.warn('[PWA] Service Worker 注册失败:', err);
       });
-    }
+    });
   }
 
   /* ---------- 底部导航（移动端）· 立即创建 + 滚动兜底 ---------- */
