@@ -181,9 +181,7 @@
     var pages = [
       { href: 'index.html',      icon: '🏠', label: '首页' },
       { href: 'models.html',     icon: '🤖', label: '模型' },
-      { href: 'concepts.html',   icon: '📖', label: '百科' },
-      { href: 'skill.html',      icon: '⚡', label: 'Skill' },
-      { href: 'mcp.html',        icon: '🔌', label: 'MCP' }
+      { href: 'concepts.html',   icon: '📖', label: '百科' }
     ];
     var current = location.pathname.split('/').pop() || 'index.html';
     var html = '<div class="bottom-nav-inner">';
