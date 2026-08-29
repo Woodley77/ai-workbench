@@ -5,7 +5,7 @@
         版本升级到 v4 会强制清除旧版(v1/v2/v3)残留缓存，根治“一直看旧内容”。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v4';
+var CACHE_VERSION = 'ai-wb-v5';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
@@ -18,6 +18,9 @@ var PRECACHE_URLS = [
   './skill.html',
   './mcp.html',
   './news.html',
+  './wiki-basics.html',
+  './wiki-skills.html',
+  './wiki-mcp.html',
   './comparison.html',
   './glossary.html',
   './manifest.json',
