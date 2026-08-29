@@ -416,17 +416,17 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
 
     <!-- ---- 热力图 ---- -->
     <section class="sec">
-      <div class="sec-head"><h2>🗺️ 能力热力图 · 18 个国产模型一眼横评</h2><div class="rule"></div><span class="hint">点任意格子 → 看该模型解读</span></div>
-      <p class="sec-note">纵轴按综合评分从高到低排列，颜色越深该项越强。想找「某方面最强」的模型，直接扫对应那一列。</p>
+      <div class="sec-head"><h2>🗺️ 能力热力图 · 10 个国产主力模型</h2><div class="rule"></div><span class="hint">点任意格子 → 看该模型解读</span></div>
+      <p class="sec-note">纵轴按综合评分从高到低排列，颜色越深该项越强。想找「某方面最强」的模型，直接扫对应那一列。只收录<b>国产主力通用大模型</b>：多模态生成模型（可灵/即梦等）评的不是同一套能力，小众垂类模型也没进图 —— 它们都在下方「全部模型」表里。</p>
       <figure class="chart-figure">
-        <div id="chart-heatmap" style="width:100%;min-height:480px"></div>
+        <div id="chart-heatmap" style="width:100%;min-height:330px"></div>
       </figure>
     </section>
 
     <!-- ---- 定位散点图 ---- -->
     <section class="sec">
       <div class="sec-head"><h2>🎯 能力 vs 价格 · 定位图</h2><div class="rule"></div><span class="hint">点圆点 → 看该模型解读</span></div>
-      <p class="sec-note">横轴越往右性价比越高，纵轴越往上能力越强。<b>右上角</b>是「又强又便宜」的甜点区，<b>左上角</b>是「贵但强」的旗舰区。气泡大小代表上下文长度。</p>
+      <p class="sec-note">横轴越往右性价比越高，纵轴越往上能力越强。<b>右上角</b>是「又强又便宜」的甜点区，<b>左上角</b>是「贵但强」的旗舰区。分数相同的模型会重叠，标签会自动上下错开；悬停可看具体分数，点圆点看完整解读。</p>
       <figure class="chart-figure">
         <div id="chart-scatter" style="width:100%;min-height:470px"></div>
       </figure>
@@ -443,7 +443,7 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
 
     <!-- ---- 全部模型表 ---- -->
     <section class="sec">
-      <div class="sec-head"><h2>📋 全部模型</h2><div class="rule"></div><span class="hint">点行看完整解读 · 勾选后可在下方逐项对比</span></div>
+      <div class="sec-head"><h2>📋 全部模型</h2><div class="rule"></div><span class="hint">国产在前 · 海外在后｜点行看完整解读 · 勾选后可逐项对比</span></div>
       <div class="filter-bar">
         <input type="search" id="model-search" class="filter-input" placeholder="搜索模型名 / 厂商…" aria-label="搜索模型">
         <div class="filter-chips" id="model-filters">
@@ -1085,6 +1085,19 @@ var FOREIGN_MODELS = [
 // 「格局观察」讲的是 DeepSeek × Qwen 国产双雄，归国产，故不在此列。
 function isDomestic(m) { return FOREIGN_MODELS.indexOf(m.name) === -1; }
 
+// ---- 进图表的名单（热力图 / 定位散点图）----
+// 国外模型之外，还有三类国产条目**不进图表**（它们仍完整保留在「全部模型」表里）：
+//   ① 多模态生成模型（可灵 / 即梦 / MiniMax Audio / Vidu）——评的是生成能力，
+//      跟通用大模型挤在一张「编程/推理」热力图里没有可比性，只会拉低观感
+//   ② 「格局观察」——行业观察条目，不是模型
+//   ③ 小众 / 垂类且综合分靠后的（商汤 SenseNova 6.5、讯飞 Spark X2、百川 M3）
+// ⚠️ 新增国产主力模型时，记得把它的 name 加进这里，否则图表里不会出现。
+var CHART_MODELS = [
+  'DeepSeek V4', 'Qwen3.8-Max', 'Kimi K3', '智谱 GLM-5.3', '豆包 2.1 / Seed 系列',
+  'MiniMax M2.7', '腾讯混元 Hy3', '百度文心 5.1', '阶跃星辰 Step 3.7', '小米 MiMo-V2.5'
+];
+function inCharts(m) { return isDomestic(m) && CHART_MODELS.indexOf(m.name) !== -1; }
+
 // ==================== 图表数据（供 assets/charts.js 使用） ====================
 var CAT_LABEL = { overseas:'海外旗舰', domestic:'国产力量', opensource:'开源生态', multimodal:'多模态生成' };
 var CAT_COLOR = { overseas:'#3B82F6', domestic:'#059669', opensource:'#8B5CF6', multimodal:'#F59E0B' };
@@ -1106,13 +1119,14 @@ window.WB_GROUPS = [
   { key:'multimodal', label:'🎨 多模态生成', color: CAT_COLOR.multimodal }
 ];
 
-// 国产模型 × 5 能力矩阵，按综合分从高到低排序（热力图 / 定位散点图共用）
-// 只收国产：国外模型不参与图表展示与比较，只在「全部模型」表里列出。
+// 国产主力模型 × 5 能力矩阵，按综合分从高到低排序（热力图 / 定位散点图共用）
+// 只收 inCharts() 通过的：国外模型 + 多模态生成类 + 小众垂类都不进图表，
+// 它们只在「全部模型」表里列出。
 // 注意 idx 必须是 MODELS 的原始下标（图表点击下钻靠它），不能是过滤后的序号。
 function buildMatrix() {
   var rows = [];
   MODELS.forEach(function (m, i) {
-    if (!isDomestic(m)) return;
+    if (!inCharts(m)) return;
     var s = MODEL_SCORES[m.name] || [3, 3, 3, 3, 3];
     rows.push({
       idx: i, name: m.name, vendor: m.vendor, cat: m.cat, scores: s,
@@ -1147,6 +1161,11 @@ function renderModelTable() {
       if (hay.indexOf(q) === -1) return;
     }
     list.push({ m: m, i: i });
+  });
+
+  // 国产排前面、海外排后面（组内保持 MODELS 原顺序：Array.sort 在现代浏览器是稳定排序）
+  list.sort(function (a, b) {
+    return (isDomestic(a.m) ? 0 : 1) - (isDomestic(b.m) ? 0 : 1);
   });
 
   if (!list.length) {
