@@ -202,16 +202,51 @@
   def('chart-scatter', function (v) {
     var m = window.WB_MATRIX || { rows: [] };
     var groups = window.WB_GROUPS || [];
+
+    // 能力 = 前四维均值；性价比 = 第五维
+    function ability(r) {
+      return +((r.scores[0] + r.scores[1] + r.scores[2] + r.scores[3]) / 4).toFixed(2);
+    }
+    /* 坐标轴按实际数据动态收窄 —— 这是散点图不再挤成一团的关键。
+     * 评分都是 1-5 分制，但实际只落在 3.4~5 这个窄区间；若轴仍按 1.5~5.6 铺满，
+     * 所有点会压成中间一条横带，看上去就是"全都重叠在一起"。 */
+    function range(vals, pad, step) {
+      if (!vals.length) return { min: 0, max: 5 };
+      var lo = Math.min.apply(null, vals) - pad;
+      var hi = Math.max.apply(null, vals) + pad;
+      return { min: Math.floor(lo / step) * step, max: Math.ceil(hi / step) * step };
+    }
+    var rx = range(m.rows.map(function (r) { return r.scores[4]; }), 0.4, 0.5);
+    var ry = range(m.rows.map(ability), 0.25, 0.25);
+
+    /* 坐标完全相同的点沿 Y 轴做极小错位，让每个圆点都能露出来。
+     * 例如文心 5.1 与阶跃 Step 3.7 的（性价比 4, 能力 3.875）一模一样，
+     * 不处理的话后画的点会把前一个整个盖住，看上去只有一个点。
+     * 偏移量只取 Y 轴跨度的 2.5%（约 0.04 分），肉眼几乎不可辨，
+     * 且只作用于图形位置 —— tooltip 里显示的仍是原始分数。 */
+    var jitter = (ry.max - ry.min) * 0.025;
+    var buckets = {};
+    m.rows.forEach(function (r) {
+      var k = r.scores[4] + '|' + ability(r);
+      (buckets[k] = buckets[k] || []).push(r.idx);
+    });
+    var offset = {};
+    Object.keys(buckets).forEach(function (k) {
+      var g = buckets[k];
+      if (g.length < 2) return;
+      g.forEach(function (idx, i) { offset[idx] = (i - (g.length - 1) / 2) * jitter; });
+    });
+
     var series = groups.map(function (g) {
       var pts = m.rows.filter(function (r) { return r.cat === g.key; });
       if (!pts.length) return null;   // 该分组没有点时整组跳过，避免图例出现空项
       return {
         name: g.label,
         type: 'scatter',
-        symbolSize: 17,
+        symbolSize: 13,
         data: pts.map(function (r) {
-          var ability = (r.scores[0] + r.scores[1] + r.scores[2] + r.scores[3]) / 4;
-          return { value: [r.scores[4], +ability.toFixed(2)], name: r.name, idx: r.idx };
+          var y = +(ability(r) + (offset[r.idx] || 0)).toFixed(3);
+          return { value: [r.scores[4], y], name: r.name, idx: r.idx };
         }),
         itemStyle: {
           color: g.color,
@@ -225,9 +260,10 @@
           formatter: '{b}',
           fontSize: 10.5,
           color: v.muted,
-          distance: 6
+          distance: 5
         },
-        labelLayout: { hideOverlap: true },
+        // moveOverlap 先把撞在一起的标签上下错开，实在放不下的才由 hideOverlap 隐藏
+        labelLayout: { moveOverlap: 'shiftY', hideOverlap: true },
         emphasis: { itemStyle: { opacity: 1, borderColor: v.accent, borderWidth: 2 }, scale: 1.35 }
       };
     }).filter(Boolean);
@@ -240,8 +276,9 @@
           var r = null;
           for (var i = 0; i < m.rows.length; i++) if (m.rows[i].idx === p.data.idx) { r = m.rows[i]; break; }
           if (!r) return p.name;
+          // 注意用 ability(r) / r.scores[4] 取原始分，不用 p.value —— 后者可能带过重合错位量
           return '<b>' + r.name + '</b>（' + r.vendor + '）<br/>' +
-            '能力 ' + p.value[1] + ' / 5　性价比 ' + p.value[0] + ' / 5<br/>' +
+            '能力 ' + ability(r) + ' / 5　性价比 ' + r.scores[4] + ' / 5<br/>' +
             '<span style="opacity:.7">点击查看完整解读</span>';
         }
       },
@@ -251,15 +288,15 @@
         itemWidth: 12,
         itemHeight: 12
       },
-      grid: { left: 52, right: 34, top: 26, bottom: 52 },
+      grid: { left: 52, right: 76, top: 26, bottom: 52 },
       xAxis: {
         name: '性价比 →（越右越便宜）',
         nameLocation: 'middle',
         nameGap: 28,
         nameTextStyle: { color: v.muted, fontSize: 11.5 },
         type: 'value',
-        min: 1.5,
-        max: 5.6,
+        min: rx.min,
+        max: rx.max,
         interval: 0.5,
         axisLabel: { color: v.muted, fontSize: 11 },
         splitLine: { lineStyle: { color: v.rule, type: 'dashed' } },
@@ -269,10 +306,10 @@
         name: '能力 →（越上越强）',
         nameTextStyle: { color: v.muted, fontSize: 11.5 },
         type: 'value',
-        min: 1.5,
-        max: 5.4,
-        interval: 0.5,
-        axisLabel: { color: v.muted, fontSize: 11 },
+        min: ry.min,
+        max: ry.max,
+        interval: 0.25,
+        axisLabel: { color: v.muted, fontSize: 11, formatter: function (n) { return n.toFixed(2); } },
         splitLine: { lineStyle: { color: v.rule, type: 'dashed' } },
         axisLine: { show: false }
       },
