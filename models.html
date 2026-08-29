@@ -228,6 +228,109 @@
 }
 .pane-lead b { color:var(--accent); }
 
+/* ---- 小节说明文字 ---- */
+.sec-note { font-size:13px; color:var(--faint); line-height:1.7; margin:0 0 14px; }
+.sec-note b { color:var(--muted); }
+.sub-h { font-size:15px; margin:26px 0 12px; color:var(--ink); }
+.sub-h:first-of-type { margin-top:18px; }
+
+/* ---- 筛选条：搜索 + chips ---- */
+.filter-bar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:14px; }
+.filter-input {
+  flex:0 1 240px; min-width:180px;
+  padding:8px 14px; font-size:13.5px; font-family:var(--font-sans);
+  border:1px solid var(--rule); border-radius:999px;
+  background:var(--bg2); color:var(--ink); outline:none;
+  transition:border-color .15s, box-shadow .15s;
+}
+.filter-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+.filter-input::-webkit-search-cancel-button { cursor:pointer; }
+.filter-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.fchip {
+  font-size:12.5px; padding:6px 13px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--rule); background:var(--bg2); color:var(--muted);
+  font-family:var(--font-sans); white-space:nowrap;
+  transition:all .15s; -webkit-tap-highlight-color:transparent;
+}
+.fchip:hover { color:var(--ink); border-color:var(--accent); }
+.fchip.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+
+/* ---- 模型表 ---- */
+.model-table { width:100%; border-collapse:collapse; font-size:13.5px; min-width:760px; }
+.model-table th {
+  text-align:left; padding:10px 12px; font-size:12px; font-weight:700;
+  color:var(--accent); background:var(--accent-soft); white-space:nowrap;
+  border-bottom:1px solid var(--rule);
+}
+.model-table td { padding:11px 12px; border-bottom:1px solid var(--rule); vertical-align:middle; }
+.model-table tbody tr { cursor:pointer; transition:background .13s; }
+.model-table tbody tr:hover { background:var(--accent-soft); }
+.model-table .col-act { white-space:nowrap; text-align:right; }
+.mt-name { font-size:14px; font-weight:700; color:var(--ink); }
+.mt-sub { font-size:11.5px; color:var(--faint); margin-top:2px; }
+.mt-rank {
+  font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:999px;
+  background:var(--accent); color:#fff; margin-left:4px; vertical-align:1px;
+}
+.mt-vendor { color:var(--muted); white-space:nowrap; }
+.mt-sum { color:var(--muted); line-height:1.55; min-width:220px; }
+.mt-metric { font-family:var(--font-mono); font-size:12px; color:var(--accent); white-space:nowrap; }
+.empty-row { text-align:center; color:var(--faint); padding:28px 12px; }
+.cat-pill {
+  font-size:11.5px; font-weight:600; padding:3px 10px; border-radius:999px;
+  white-space:nowrap; border:1px solid;
+}
+.cat-pill.c-overseas   { color:#2563EB; border-color:#93C5FD; background:rgba(59,130,246,.10); }
+.cat-pill.c-domestic   { color:#059669; border-color:#6EE7B7; background:rgba(5,150,105,.10); }
+.cat-pill.c-opensource { color:#7C3AED; border-color:#C4B5FD; background:rgba(139,92,246,.10); }
+.cat-pill.c-multimodal { color:#D97706; border-color:#FCD34D; background:rgba(245,158,11,.10); }
+.mt-btn {
+  font-size:12px; font-weight:600; padding:5px 13px; border-radius:8px;
+  border:1px solid var(--accent); background:var(--accent); color:#fff;
+  cursor:pointer; font-family:var(--font-sans); transition:opacity .15s;
+}
+.mt-btn:hover { opacity:.85; }
+.mt-cmp {
+  display:inline-flex; align-items:center; gap:4px; margin-left:8px;
+  font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap;
+}
+.mt-cmp input { accent-color:var(--accent); width:14px; height:14px; }
+
+/* ---- 雷达图下钻 chips ---- */
+.drill-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:14px; }
+.drill-label { font-size:12px; color:var(--faint); }
+.drill-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.drill-chip {
+  font-size:12px; padding:5px 12px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--rule); background:var(--bg2); color:var(--accent);
+  font-family:var(--font-sans); transition:all .15s; -webkit-tap-highlight-color:transparent;
+}
+.drill-chip:hover { border-color:var(--accent); background:var(--accent-soft); }
+
+/* ---- 价格表：色标 / 开源列 / 排序 ---- */
+.price-table { width:100%; border-collapse:collapse; font-size:13px; min-width:720px; }
+.price-table th {
+  text-align:left; padding:10px 12px; font-size:12px; font-weight:700;
+  color:var(--accent); background:var(--accent-soft); white-space:nowrap;
+  border-bottom:1px solid var(--rule);
+}
+.price-table td { padding:10px 12px; border-bottom:1px solid var(--rule); }
+.price-table tbody tr { transition:background .13s; }
+.price-table tbody tr:hover { background:var(--accent-soft); }
+th.sortable { cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
+th.sortable:hover { background:var(--accent); color:#fff; }
+th.sortable .sort-ico { opacity:.5; font-size:11px; }
+th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:700; }
+.p-tag { font-family:var(--font-mono); font-weight:700; white-space:nowrap; }
+.p-tag small { display:block; font-size:10.5px; font-weight:500; color:var(--faint); font-family:var(--font-sans); }
+.p-green  { color:#059669; }
+.p-orange { color:#D97706; }
+.p-red    { color:#DC2626; }
+.p-gray   { color:var(--faint); font-weight:500; }
+.os-yes { color:#059669; font-weight:600; }
+.os-no  { color:var(--faint); }
+.os-yes small, .os-no small { display:block; font-size:10.5px; font-weight:500; }
+
 /* ---- 块内小节跳转 ---- */
 .sub-nav { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 22px; }
 .sub-chip {
@@ -298,189 +401,154 @@
   <section class="page-head">
     <span class="kicker">Models &amp; Comparison</span>
     <h1>模型总览</h1>
-    <p class="sub">2026 年主流大模型一页看懂。整页按「能力 → 模型 → 图表 → 价格 → 选型」五个知识块组织：先用榜单建立坐标，再进模型库挑模型、勾选对比，然后看能力图表与规格价格表，最后按场景落到选型结论。</p>
+    <p class="sub">用三张图先看懂全局，再往下钻到具体模型：<b>热力图</b>横看每个模型强在哪、<b>定位图</b>看谁又强又便宜、<b>雷达图</b>看旗舰之间的取舍。图上任意一点都能点开，里面有该模型的完整解读。价格与规格单独收在第二个页签。</p>
     <div class="stat-bar" id="stat-bar"></div>
   </section>
 
   <div class="tabs mtabs" role="tablist">
-    <button class="tab-btn active" data-mtab="rank" role="tab">🏆 能力榜单</button>
-    <button class="tab-btn" data-mtab="library" role="tab">🎴 模型库</button>
-    <button class="tab-btn" data-mtab="charts" role="tab">📈 能力图表</button>
-    <button class="tab-btn" data-mtab="spec" role="tab">💰 规格与价格</button>
-    <button class="tab-btn" data-mtab="guide" role="tab">🧭 选型指南</button>
+    <button class="tab-btn active" data-mtab="library" role="tab">🗺️ 模型全景</button>
+    <button class="tab-btn" data-mtab="price" role="tab">💰 规格与价格</button>
   </div>
 
-  <!-- ==================== ① 能力榜单 ==================== -->
-  <div class="tab-pane active" data-mpane="rank">
-    <p class="pane-lead">四个维度分别看：综合智能看谁最强、编程看 SWE-bench 实测、推理看难题表现、性价比看单位能力的价格。每个维度按海外 / 国内两条线分别排列，条长是该维度内的归一化相对值，用于快速定位坐标，不是绝对权威排名。</p>
+  <!-- ==================== ① 模型全景 ==================== -->
+  <div class="tab-pane active" data-mpane="library">
+    <p class="pane-lead">先看图，再下钻。每张图上的模型都可以<b>直接点开</b>，弹窗里是这个模型的完整解读：规格参数、能力定位、亮点与冷知识、官网入口。评分均为 5 分制示意评分，用于横向比较强弱分布，不代表绝对基准分。</p>
 
+    <!-- ---- 热力图 ---- -->
     <section class="sec">
-      <div class="sec-head"><h2>📊 能力排行榜</h2><div class="rule"></div><span class="hint">点击卡片查看完整信息</span></div>
-      <div class="rank-grid">
-
-        <div class="rank-box">
-          <h3>🏆 综合智能</h3>
-          <div class="rank-list" id="rank-overall"></div>
-        </div>
-
-        <div class="rank-box">
-          <h3>💻 编程能力 · SWE-bench</h3>
-          <div class="rank-list" id="rank-coding"></div>
-        </div>
-
-        <div class="rank-box">
-          <h3>🧠 推理能力</h3>
-          <div class="rank-list" id="rank-reasoning"></div>
-        </div>
-
-        <div class="rank-box">
-          <h3>💰 性价比</h3>
-          <div class="rank-list" id="rank-value"></div>
-        </div>
-
-      </div>
+      <div class="sec-head"><h2>🗺️ 能力热力图 · 32 个模型一眼横评</h2><div class="rule"></div><span class="hint">点任意格子 → 看该模型解读</span></div>
+      <p class="sec-note">纵轴按综合评分从高到低排列，颜色越深该项越强。想找「某方面最强」的模型，直接扫对应那一列。</p>
+      <figure class="chart-figure">
+        <div id="chart-heatmap" style="width:100%;min-height:780px"></div>
+      </figure>
     </section>
 
+    <!-- ---- 定位散点图 ---- -->
     <section class="sec">
-      <div class="card" style="background:var(--accent2-soft);border-color:var(--accent2)">
-        <h3 style="font-size:16px">📐 读懂这份榜单的三条底层逻辑</h3>
-        <p style="font-size:14px;margin-bottom:8px"><b>① 架构趋同</b>：MoE + 稀疏注意力 + 1M 上下文成为 2026 年主流标配，「总参数大、激活参数小」是降低成本的关键。</p>
-        <p style="font-size:14px;margin-bottom:8px"><b>② 能力分层</b>：最难的任务看 Claude / GPT / Gemini 三巨头；性价比与开源看 DeepSeek / Qwen；多模态与视频看字节 / Google / 快手。</p>
-        <p style="font-size:14px;margin:0"><b>③ 商业即技术</b>：Sora 于 2026-03 关停、DeepSeek 自 8/17 起改峰谷定价，都说明「单位经济模型决定产品存亡」——视频生成的算力成本是图像的千倍量级，而推理成本可以靠错峰计价转嫁。能力决定上限，成本结构决定能不能持续。</p>
-      </div>
-    </section>
-  </div>
-
-  <!-- ==================== ② 模型库 ==================== -->
-  <div class="tab-pane" data-mpane="library">
-    <p class="pane-lead">收录 <b id="lead-count">32</b> 个主流模型，按海外旗舰 / 国产力量 / 开源生态 / 多模态生成分组。<b>点卡片</b>看完整规格与亮点，<b>勾选「加入对比」</b>可把 2 个以上模型拉到下方做逐项对比（表格 + 雷达图）。</p>
-
-    <section class="sec" data-cards-section>
-      <div class="sec-head"><h2>🎴 全部模型</h2><div class="rule"></div><span class="hint">点击卡片展开详情 · 勾选「对比」可多选比较</span></div>
-      <div class="cat-tabs">
-        <button class="cat-tab active" data-cat="all">全部</button>
-        <button class="cat-tab" data-cat="overseas">🌍 海外旗舰</button>
-        <button class="cat-tab" data-cat="domestic">🇨🇳 国产力量</button>
-        <button class="cat-tab" data-cat="opensource">🔓 开源生态</button>
-        <button class="cat-tab" data-cat="multimodal">🎨 多模态生成</button>
-      </div>
-      <div class="grid grid-3" id="card-grid"></div>
+      <div class="sec-head"><h2>🎯 能力 vs 价格 · 定位图</h2><div class="rule"></div><span class="hint">点圆点 → 看该模型解读</span></div>
+      <p class="sec-note">横轴越往右性价比越高，纵轴越往上能力越强。<b>右上角</b>是「又强又便宜」的甜点区，<b>左上角</b>是「贵但强」的旗舰区。气泡大小代表上下文长度。</p>
+      <figure class="chart-figure">
+        <div id="chart-scatter" style="width:100%;min-height:470px"></div>
+      </figure>
     </section>
 
+    <!-- ---- 雷达图 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>📐 旗舰能力画像</h2><div class="rule"></div><span class="hint">六维示意评分 · 5 分制</span></div>
+      <div class="cat-tabs" id="radar-tabs">
+        <button class="cat-tab active" data-radar="overseas">🌍 海外三强</button>
+        <button class="cat-tab" data-radar="domestic">🇨🇳 国产四强</button>
+      </div>
+      <figure class="chart-figure">
+        <div id="chart-radar" style="width:100%;min-height:450px"></div>
+      </figure>
+      <div class="drill-row"><span class="drill-label">快速查看</span><span class="drill-chips" id="radar-drill"></span></div>
+    </section>
+
+    <!-- ---- SWE-bench 实测 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>🧪 软件工程 · SWE-bench Verified 实测</h2><div class="rule"></div><span class="hint">真实基准分，非示意评分</span></div>
+      <figure class="chart-figure">
+        <div id="chart-swebench" style="width:100%;min-height:330px"></div>
+      </figure>
+      <p class="sec-note">注：Claude Fable 5 以 95.0% 领跑；DeepSeek V4-Pro 与 Gemini 3.1 Pro 同为 80.6%；MiniMax M2.7 为 80.2%。SWE-bench Pro 口径：GLM-5.1 以 58.4 分全球第一（开源首次击败所有闭源旗舰）。</p>
+    </section>
+
+    <!-- ---- 全部模型表 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>📋 全部模型</h2><div class="rule"></div><span class="hint">点行看完整解读 · 勾选后可在下方逐项对比</span></div>
+      <div class="filter-bar">
+        <input type="search" id="model-search" class="filter-input" placeholder="搜索模型名 / 厂商…" aria-label="搜索模型">
+        <div class="filter-chips" id="model-filters">
+          <button class="fchip active" data-cat="all">全部</button>
+          <button class="fchip" data-cat="overseas">🌍 海外旗舰</button>
+          <button class="fchip" data-cat="domestic">🇨🇳 国产力量</button>
+          <button class="fchip" data-cat="opensource">🔓 开源生态</button>
+          <button class="fchip" data-cat="multimodal">🎨 多模态生成</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="model-table">
+          <thead>
+            <tr><th>模型</th><th>厂商</th><th>阵营</th><th>一句话</th><th>关键指标</th><th class="col-act">操作</th></tr>
+          </thead>
+          <tbody id="model-tbody"></tbody>
+        </table>
+      </div>
+      <p class="sec-note" id="model-count"></p>
+    </section>
+
+    <!-- ---- 对比结果 ---- -->
     <section class="sec compare-section" id="compare-section" style="display:none">
       <div class="sec-head"><h2>📊 对比结果</h2><div class="rule"></div><span class="hint" id="compare-hint">勾选 2 个以上模型开始对比</span></div>
       <div id="compare-content"></div>
     </section>
   </div>
 
-  <!-- ==================== ③ 能力图表 ==================== -->
-  <div class="tab-pane" data-mpane="charts">
-    <p class="pane-lead">三张图回答三个问题：海外三强各自偏什么？国产四强差在哪？真实软件工程任务上谁更能打？前两张为六维示意评分（5 分制），第三张为 SWE-bench Verified 实测分数。</p>
-
-    <section class="sec">
-      <div class="sec-head"><h2>海外三强 · 能力画像</h2><div class="rule"></div><span class="hint">示意评分 · 5 分制</span></div>
-      <figure class="chart-figure">
-        <figcaption>GPT-5.6 Sol / Claude Fable 5 / Gemini 3.5 Flash 六维能力对比</figcaption>
-        <div id="chart-overseas" style="width:100%;min-height:420px"></div>
-      </figure>
-    </section>
-
-    <section class="sec">
-      <div class="sec-head"><h2>国产四强 + 通义 · 能力画像</h2><div class="rule"></div><span class="hint">示意评分 · 5 分制</span></div>
-      <figure class="chart-figure">
-        <figcaption>DeepSeek V4-Pro / Kimi K3 / Qwen3.8-Max / GLM-5.3 六维能力对比</figcaption>
-        <div id="chart-domestic" style="width:100%;min-height:420px"></div>
-      </figure>
-    </section>
-
-    <section class="sec">
-      <div class="sec-head"><h2>软件工程 · SWE-bench Verified 实测</h2><div class="rule"></div><span class="hint">越高越强</span></div>
-      <figure class="chart-figure">
-        <figcaption>主流模型 SWE-bench Verified 对比</figcaption>
-        <div id="chart-swebench" style="width:100%;min-height:400px"></div>
-      </figure>
-      <p style="font-size:13px;color:var(--faint)">注：Claude Fable 5 以 95.0% 领跑；DeepSeek V4-Pro 与 Gemini 3.1 Pro 同为 80.6%；MiniMax M2.7 为 80.2%。SWE-bench Pro 口径：GLM-5.1 以 58.4 分全球第一（开源首次击败所有闭源旗舰）。</p>
-    </section>
-  </div>
-
-  <!-- ==================== ④ 规格与价格 ==================== -->
-  <div class="tab-pane" data-mpane="spec">
-    <p class="pane-lead">「花多少钱、买到什么规格」全部集中在这里：旗舰参数速查 → 上下文与 token 单价 → 多模态生成赛道 → DeepSeek 峰谷定价专题 → 订阅制套餐。点下面的小标题可直接跳到对应小节。</p>
+  <!-- ==================== ② 规格与价格 ==================== -->
+  <div class="tab-pane" data-mpane="price">
+    <p class="pane-lead">这一块只回答「花多少钱、买到什么」。分四节：<b>按量单价</b>（API 按 token 计费，可排序筛选）→ <b>DeepSeek 峰谷定价</b>专题 → <b>订阅制包月</b>（海外/国内分开）→ <b>规格速查</b>（旗舰参数与多模态赛道）。</p>
 
     <div class="sub-nav">
-      <a class="sub-chip" href="#spec-flagship">旗舰一表看</a>
-      <a class="sub-chip" href="#spec-price">上下文 · 价格 · 开源</a>
-      <a class="sub-chip" href="#spec-multimodal">多模态赛道</a>
-      <a class="sub-chip" href="#spec-ds">DeepSeek 峰谷定价</a>
-      <a class="sub-chip" href="#spec-plans">订阅制套餐</a>
+      <a class="sub-chip" href="#spec-price">按量单价</a>
+      <a class="sub-chip" href="#spec-ds">DeepSeek 峰谷</a>
+      <a class="sub-chip" href="#spec-plans">订阅制包月</a>
+      <a class="sub-chip" href="#spec-flagship">规格速查</a>
     </div>
 
-    <section class="sec anchor-sec" id="spec-flagship">
-      <div class="sec-head"><h2>旗舰模型一表看</h2><div class="rule"></div><span class="hint">截至 2026-08-18</span></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>模型</th><th>厂商</th><th>发布</th><th>上下文</th><th>模态</th><th>核心强项</th><th>相对短板</th></tr></thead>
-          <tbody>
-            <tr><td class="row-t">GPT-5.6 Sol</td><td>OpenAI</td><td>2026-07</td><td>未披露</td><td>文本/图像/语音</td><td>编程 Agent、知识交付</td><td>纯推理略逊 Fable 5</td></tr>
-            <tr><td class="row-t">Claude Fable 5</td><td>Anthropic</td><td>2026-06</td><td>1M</td><td>文本/图像</td><td>长程端到端、SWE-bench 第一</td><td>贵、出口管制</td></tr>
-            <tr><td class="row-t">Gemini 3.5 Flash</td><td>Google</td><td>2026-05</td><td>1M</td><td>原生四模态</td><td>速度、多模态、高吞吐</td><td>最难任务弱于旗舰</td></tr>
-            <tr><td class="row-t">DeepSeek V4-Pro</td><td>深度求索</td><td>2026-08-13</td><td>1M</td><td>文本为主</td><td>推理性价比之王、Agent 暴涨</td><td>8/17 涨价后性价比下降</td></tr>
-            <tr><td class="row-t">Qwen3.8-Max</td><td>阿里</td><td>2026-08</td><td>1M</td><td>原生全模态</td><td>开源生态第一、中文</td><td>刚发布待评测</td></tr>
-            <tr><td class="row-t">Kimi K3</td><td>月之暗面</td><td>2026-07</td><td>1M</td><td>原生视觉</td><td>前端代码第一、长程 Agent</td><td>贵（¥20/¥100）</td></tr>
-            <tr><td class="row-t">GLM-5.3</td><td>智谱</td><td>2026-08-14</td><td>1M</td><td>文本为主</td><td>开源阵营编码第一、后训练 Scaling</td><td>API 定价未公布</td></tr>
-            <tr><td class="row-t">小米 MiMo-V2.5</td><td>小米</td><td>2026-05</td><td>1M</td><td>文本+全模态</td><td>极致低价、MIT 开源</td><td>前沿能力弱于旗舰</td></tr>
-            <tr><td class="row-t">豆包 2.1 Pro</td><td>字节</td><td>2026-06</td><td>未披露</td><td>全模态矩阵</td><td>多模态全家桶、MaaS</td><td>开源力度弱</td></tr>
-            <tr><td class="row-t">混元 Hy3</td><td>腾讯</td><td>2026-07</td><td>256K</td><td>文本为主</td><td>智能密度、中文落地</td><td>参数规模较小</td></tr>
-            <tr><td class="row-t">文心 5.1</td><td>百度</td><td>2026-05</td><td>未披露</td><td>原生全模态</td><td>搜索整合、训练成本低</td><td>闭源、跑分不可核验</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
+    <!-- ---- A 按量单价 ---- -->
     <section class="sec anchor-sec" id="spec-price">
-      <div class="sec-head"><h2>上下文 · 价格 · 开源情况</h2><div class="rule"></div><span class="hint">每百万 token</span></div>
+      <div class="sec-head"><h2>💰 API 按量计费 · 单价速查</h2><div class="rule"></div><span class="hint">每百万 token</span></div>
+      <p class="sec-note">点表头 <b>上下文 / 输入价 / 输出价</b> 可排序；美元按约 1:7.2 折算成人民币参与排序，表中仍显示原币种原价。「开源」列打勾表示权重可下载自建。</p>
+      <div class="filter-bar">
+        <input type="search" id="price-search" class="filter-input" placeholder="搜索模型…" aria-label="搜索模型价格">
+        <div class="filter-chips" id="price-filters">
+          <button class="fchip active" data-pf="all">全部</button>
+          <button class="fchip" data-pf="domestic">🇨🇳 国产</button>
+          <button class="fchip" data-pf="overseas">🌍 海外</button>
+          <button class="fchip" data-pf="open">🔓 仅开源</button>
+          <button class="fchip" data-pf="cheap">💚 输出价 ≤ ¥10</button>
+          <button class="fchip" data-pf="longctx">📜 上下文 ≥ 1M</button>
+        </div>
+      </div>
       <div class="table-wrap">
-        <table>
-          <thead><tr><th>模型</th><th>上下文</th><th>输入价</th><th>输出价</th><th>开源</th><th>备注</th></tr></thead>
-          <tbody>
-            <tr><td class="row-t">Claude Fable 5</td><td>1M</td><td>$10</td><td>$50</td><td>否</td><td>能力最强、定价最高</td></tr>
-            <tr><td class="row-t">Claude Opus 5</td><td>1M</td><td>$5</td><td>$25</td><td>否</td><td>逼近 Fable 5、价格减半</td></tr>
-            <tr><td class="row-t">GPT-5.6 Luna</td><td>未披露</td><td>$1</td><td>$6</td><td>否</td><td>降价 80% 主打性价比</td></tr>
-            <tr><td class="row-t">Gemini 3.6 Flash</td><td>1M</td><td>$1.5</td><td>$7.5</td><td>否</td><td>输出价再降 17%</td></tr>
-            <tr><td class="row-t">DeepSeek V4-Flash</td><td>1M</td><td>¥1（缓存 ¥0.02）</td><td>¥2</td><td>✅ MIT</td><td>国产性价比之王 · 8/17 起峰谷调价（高峰 ¥3/¥9）</td></tr>
-            <tr><td class="row-t">DeepSeek V4-Pro</td><td>1M</td><td>¥9（高峰）/ ¥4.5（空闲）</td><td>¥27 / ¥13.5</td><td>✅ MIT</td><td>⚠️ 8/17 涨价：输出最高 +350%</td></tr>
-            <tr><td class="row-t">Kimi K3</td><td>1M</td><td>¥20</td><td>¥100</td><td>✅ 全链路</td><td>全球最大开源（2.8T）· 定价最高</td></tr>
-            <tr><td class="row-t">Qwen3.8-Max</td><td>1M</td><td>约 ¥14</td><td>约 ¥43</td><td>✅ 即将开源</td><td>千问首个开源 Max 级</td></tr>
-            <tr><td class="row-t">GLM-5.3</td><td>1M</td><td>未公布</td><td>未公布</td><td>✅ MIT（8/28 开源）</td><td>订阅 ¥118-1078/月（7/31 回归）；对标替代 DeepSeek</td></tr>
-            <tr><td class="row-t">小米 MiMo-V2.5</td><td>1M</td><td>¥1（缓存 ¥0.02）</td><td>¥2</td><td>✅ MIT</td><td>💡 低价首选：与 V4-Flash 同价但有 1M 上下文</td></tr>
-            <tr><td class="row-t">混元 Hy3</td><td>256K</td><td>¥1</td><td>¥4</td><td>✅ 已开源</td><td>价格极低</td></tr>
-            <tr><td class="row-t">文心 5.1</td><td>未披露</td><td>¥4</td><td>¥18</td><td>否</td><td>搜索整合</td></tr>
-            <tr><td class="row-t">MiniMax M2.7</td><td>200K</td><td>主流 1/10-1/20</td><td>—</td><td>否（M2.5 开源）</td><td>「每小时 1 美元」经济模型</td></tr>
-            <tr><td class="row-t">商汤 SenseNova 6.5</td><td>未披露</td><td>约 ¥4.5</td><td>约 ¥9</td><td>否</td><td>视觉多模态国产领先</td></tr>
-            <tr><td class="row-t">讯飞 Spark X2</td><td>未披露</td><td>约 ¥2</td><td>约 ¥2</td><td>否</td><td>教育/办公场景深耕</td></tr>
-            <tr><td class="row-t">百川 M3-Plus</td><td>未披露</td><td>约 ¥5</td><td>约 ¥9</td><td>否</td><td>医疗/金融垂直</td></tr>
+        <table class="price-table" id="price-table">
+          <thead>
+            <tr>
+              <th>模型</th>
+              <th class="sortable" data-sort="ctx">上下文 <span class="sort-ico">↕</span></th>
+              <th class="sortable" data-sort="in">输入价 <span class="sort-ico">↕</span></th>
+              <th class="sortable" data-sort="out">输出价 <span class="sort-ico">↕</span></th>
+              <th>开源</th>
+              <th>备注</th>
+            </tr>
+          </thead>
+          <tbody id="price-tbody">
+            <tr data-cat="overseas" data-open="0" data-ctx="1024" data-in="72" data-out="360"><td class="row-t">Claude Fable 5</td><td>1M</td><td class="p-tag p-red">$10</td><td class="p-tag p-red">$50</td><td class="os-no">否</td><td>能力最强、定价最高</td></tr>
+            <tr data-cat="overseas" data-open="0" data-ctx="1024" data-in="36" data-out="180"><td class="row-t">Claude Opus 5</td><td>1M</td><td class="p-tag p-orange">$5</td><td class="p-tag p-red">$25</td><td class="os-no">否</td><td>逼近 Fable 5、价格减半</td></tr>
+            <tr data-cat="overseas" data-open="0" data-ctx="" data-in="7.2" data-out="43.2"><td class="row-t">GPT-5.6 Luna</td><td>未披露</td><td class="p-tag p-green">$1</td><td class="p-tag p-orange">$6</td><td class="os-no">否</td><td>降价 80% 主打性价比</td></tr>
+            <tr data-cat="overseas" data-open="0" data-ctx="1024" data-in="10.8" data-out="54"><td class="row-t">Gemini 3.6 Flash</td><td>1M</td><td class="p-tag p-green">$1.5</td><td class="p-tag p-orange">$7.5</td><td class="os-no">否</td><td>输出价再降 17%</td></tr>
+            <tr data-cat="domestic" data-open="1" data-ctx="1024" data-in="1" data-out="2"><td class="row-t">DeepSeek V4-Flash</td><td>1M</td><td class="p-tag p-green">¥1<small>缓存 ¥0.02</small></td><td class="p-tag p-green">¥2</td><td class="os-yes">✅ MIT</td><td>国产性价比之王 · 8/17 起峰谷调价（高峰 ¥3/¥9）</td></tr>
+            <tr data-cat="domestic" data-open="1" data-ctx="1024" data-in="4.5" data-out="13.5"><td class="row-t">DeepSeek V4-Pro</td><td>1M</td><td class="p-tag p-orange">¥9 / ¥4.5<small>高峰 / 空闲</small></td><td class="p-tag p-red">¥27 / ¥13.5</td><td class="os-yes">✅ MIT</td><td>⚠️ 8/17 涨价：输出最高 +350%</td></tr>
+            <tr data-cat="domestic" data-open="1" data-ctx="1024" data-in="20" data-out="100"><td class="row-t">Kimi K3</td><td>1M</td><td class="p-tag p-red">¥20</td><td class="p-tag p-red">¥100</td><td class="os-yes">✅ 全链路</td><td>全球最大开源（2.8T）· 定价最高</td></tr>
+            <tr data-cat="domestic" data-open="1" data-ctx="1024" data-in="14" data-out="43"><td class="row-t">Qwen3.8-Max</td><td>1M</td><td class="p-tag p-orange">约 ¥14</td><td class="p-tag p-orange">约 ¥43</td><td class="os-yes">✅ 即将开源</td><td>千问首个开源 Max 级</td></tr>
+            <tr data-cat="domestic" data-open="1" data-ctx="1024" data-in="" data-out=""><td class="row-t">GLM-5.3</td><td>1M</td><td class="p-tag p-gray">未公布</td><td class="p-tag p-gray">未公布</td><td class="os-yes">✅ MIT<small>8/28 开源</small></td><td>订阅 ¥118-1078/月（7/31 回归）；对标替代 DeepSeek</td></tr>
+            <tr data-cat="domestic" data-open="1" data-ctx="1024" data-in="1" data-out="2"><td class="row-t">小米 MiMo-V2.5</td><td>1M</td><td class="p-tag p-green">¥1<small>缓存 ¥0.02</small></td><td class="p-tag p-green">¥2</td><td class="os-yes">✅ MIT</td><td>💡 低价首选：与 V4-Flash 同价但有 1M 上下文</td></tr>
+            <tr data-cat="domestic" data-open="1" data-ctx="256" data-in="1" data-out="4"><td class="row-t">混元 Hy3</td><td>256K</td><td class="p-tag p-green">¥1</td><td class="p-tag p-green">¥4</td><td class="os-yes">✅ 已开源</td><td>价格极低</td></tr>
+            <tr data-cat="domestic" data-open="0" data-ctx="" data-in="4" data-out="18"><td class="row-t">文心 5.1</td><td>未披露</td><td class="p-tag p-orange">¥4</td><td class="p-tag p-orange">¥18</td><td class="os-no">否</td><td>搜索整合</td></tr>
+            <tr data-cat="domestic" data-open="0" data-ctx="200" data-in="" data-out=""><td class="row-t">MiniMax M2.7</td><td>200K</td><td class="p-tag p-gray">主流 1/10-1/20</td><td class="p-tag p-gray">—</td><td class="os-no">否<small>M2.5 开源</small></td><td>「每小时 1 美元」经济模型</td></tr>
+            <tr data-cat="domestic" data-open="0" data-ctx="" data-in="4.5" data-out="9"><td class="row-t">商汤 SenseNova 6.5</td><td>未披露</td><td class="p-tag p-orange">约 ¥4.5</td><td class="p-tag p-green">约 ¥9</td><td class="os-no">否</td><td>视觉多模态国产领先</td></tr>
+            <tr data-cat="domestic" data-open="0" data-ctx="" data-in="2" data-out="2"><td class="row-t">讯飞 Spark X2</td><td>未披露</td><td class="p-tag p-green">约 ¥2</td><td class="p-tag p-green">约 ¥2</td><td class="os-no">否</td><td>教育/办公场景深耕</td></tr>
+            <tr data-cat="domestic" data-open="0" data-ctx="" data-in="5" data-out="9"><td class="row-t">百川 M3-Plus</td><td>未披露</td><td class="p-tag p-orange">约 ¥5</td><td class="p-tag p-green">约 ¥9</td><td class="os-no">否</td><td>医疗/金融垂直</td></tr>
           </tbody>
         </table>
       </div>
+      <p class="sec-note" id="price-count"></p>
     </section>
 
-    <section class="sec anchor-sec" id="spec-multimodal">
-      <div class="sec-head"><h2>多模态生成 · 一张表</h2><div class="rule"></div><span class="hint">图 / 视频 / 音频</span></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>赛道</th><th>第一梯队</th><th>核心优势</th><th>价格参考</th><th>代表性事件</th></tr></thead>
-          <tbody>
-            <tr><td class="row-t">文生图</td><td>FLUX 2 / Midjourney V7 / GPT Image 2</td><td>FLUX 写实第一；MJ 风格化最强</td><td>—</td><td>DALL-E 品牌退役</td></tr>
-            <tr><td class="row-t">文生视频</td><td>Veo 3.1 / Kling 3.0 / Seedance 2.5</td><td>Veo 质量顶；Kling 性价比高；Seedance 好莱坞走红</td><td>Veo 约 $3.75/5 秒</td><td>Sora 2026-03 关停成分水岭</td></tr>
-            <tr><td class="row-t">TTS 语音</td><td>MiniMax Audio / ElevenLabs</td><td>MiniMax 盲测第一；ElevenLabs 生态全</td><td>MiniMax 免费额度大</td><td>国产 TTS 首次双榜登顶</td></tr>
-            <tr><td class="row-t">音乐</td><td>Stable Audio 3.0 / Suno</td><td>全授权数据训练、最长 6 分钟</td><td>—</td><td>版权合规成核心议题</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="sec anchor-sec" id="ds-pricing-section">
-      <div class="sec-head"><h2>💰 DeepSeek V4 峰谷定价对比</h2><div class="rule"></div><span class="hint">2026-08-17 起生效 · 每百万 token</span></div>
+    <!-- ---- B DeepSeek 峰谷定价 ---- -->
+    <section class="sec anchor-sec" id="spec-ds">
+      <div class="sec-head"><h2>⚡ DeepSeek V4 峰谷定价专题</h2><div class="rule"></div><span class="hint">2026-08-17 起生效 · 每百万 token</span></div>
 
       <div class="pricing-alert">
         <h3>⚠️ 重要：API 定价大幅调整</h3>
@@ -555,7 +623,7 @@
         </table>
       </div>
 
-      <p style="font-size:13px;color:var(--faint);margin-top:12px">高峰时段：北京时间 9:00-12:00、14:00-18:00 ｜ 空闲时段：其余时间 ｜ 空闲时段价格为高峰时段的 50%</p>
+      <p class="sec-note">高峰时段：北京时间 9:00-12:00、14:00-18:00 ｜ 空闲时段：其余时间 ｜ 空闲时段价格为高峰时段的 50%</p>
 
       <figure class="chart-figure" style="margin-top:20px">
         <figcaption>DeepSeek V4 峰谷定价对比（每百万 token · 元 · 对数轴）</figcaption>
@@ -570,9 +638,12 @@
       </div>
     </section>
 
+    <!-- ---- C 订阅制套餐 ---- -->
     <section class="sec anchor-sec" id="spec-plans">
-      <div class="sec-head"><h2>💳 订阅制套餐对比</h2><div class="rule"></div><span class="hint">月付 · 2026-08 更新</span></div>
-      <p style="font-size:13px;color:var(--faint);margin-bottom:12px">按「订阅制」收费（月费/年费，非按 token 计费）的主流 AI 服务。编程类 Coding Plan 适合开发者高频调用；对话类会员适合日常使用。</p>
+      <div class="sec-head"><h2>💳 订阅制包月 · 套餐对比</h2><div class="rule"></div><span class="hint">月付 · 2026-08 更新</span></div>
+      <p class="sec-note">按「订阅制」收费（月费/年费，非按 token 计费）的主流 AI 服务。下面的价格是<b>官方标价</b>，实际促销与地区定价会有差异，以官网实时为准。</p>
+
+      <h3 class="sub-h">🌍 海外服务</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>服务</th><th>厂商</th><th>套餐</th><th>月费</th><th>年付折算</th><th>特点</th><th>官网</th></tr></thead>
@@ -585,6 +656,15 @@
             <tr><td>Max 20x</td><td>$200</td><td>—</td><td>Pro 的 20 倍额度、优先算力</td></tr>
             <tr><td class="row-t" rowspan="2">Gemini</td><td rowspan="2">Google</td><td>AI Pro</td><td>约 $20</td><td>—</td><td>Gemini 3.1 Pro、Deep Research</td><td rowspan="2"><a href="https://one.google.com/about/google-ai-plans/" target="_blank" rel="noopener">one.google.com ↗</a></td></tr>
             <tr><td>AI Ultra</td><td>$100 / $200</td><td>—</td><td>5x / 20x 额度（原 $250 已降价）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-h">🇨🇳 国内服务</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>服务</th><th>厂商</th><th>套餐</th><th>月费</th><th>年付折算</th><th>特点</th><th>官网</th></tr></thead>
+          <tbody>
             <tr><td class="row-t" rowspan="3">智谱 GLM Coding Plan</td><td rowspan="3">智谱 AI</td><td>Lite</td><td>¥118</td><td>约 ¥94</td><td>编程订阅、透明积分制（7/31 回归）</td><td rowspan="3"><a href="https://www.z.ai/codingplan" target="_blank" rel="noopener">z.ai/codingplan ↗</a></td></tr>
             <tr><td>Pro</td><td>¥538</td><td>约 ¥430</td><td>3 倍 Claude Pro 额度</td></tr>
             <tr><td>Max</td><td>¥1,078</td><td>约 ¥755</td><td>14 倍 Lite 用量</td></tr>
@@ -604,31 +684,42 @@
           </tbody>
         </table>
       </div>
-      <p style="font-size:13px;color:var(--faint);margin-top:12px">注：智谱 GLM Coding Plan 于 2026-07-31 回归并改为透明积分制，价格已从旧版（¥49/¥149/¥469）上调；Kimi 官网帮助中心为最新价格。国外服务价格以官网实时为准。</p>
+      <p class="sec-note">注：智谱 GLM Coding Plan 于 2026-07-31 回归并改为透明积分制，价格已从旧版（¥49/¥149/¥469）上调；Kimi 官网帮助中心为最新价格。</p>
     </section>
-  </div>
 
-  <!-- ==================== ⑤ 选型指南 ==================== -->
-  <div class="tab-pane" data-mpane="guide">
-    <p class="pane-lead">前面四块是「是什么、多少钱」，这一块直接给结论：按场景该选谁。先看 2026-08-17 DeepSeek 涨价后的替代方案，再看通用场景速查。</p>
-
-    <section class="sec">
-      <div class="card" style="background:var(--accent2-soft);border-color:var(--accent2);margin-bottom:16px">
-        <h3 style="font-size:18px;margin-bottom:12px">⚠️ DeepSeek 涨价后怎么选（2026-08-17 起执行）</h3>
-        <p style="font-size:14.5px;margin-bottom:10px"><b>原 DeepSeek V4-Pro 用户（轻量/非高峰）</b>：V4-Pro 高峰输出 ¥27（原 ¥6，+350%）。若可接受降档，<b>V4-Flash 空闲时段（¥1.5/¥4.5）</b> 成本可控；追求更强能力可切 <b>Qwen3.7-Max（¥6/¥18）</b> 或 <b>GLM-5.3（订阅制 ¥149/月封顶）</b>。</p>
-        <p style="font-size:14.5px;margin-bottom:10px"><b>重推理/数学 + 预算敏感</b>：<b>小米 MiMo-V2.5（¥1/¥2，缓存 ¥0.02）</b> 是当前国产价格屠夫，1M 上下文 + MIT 开源，与 V4-Flash 同价但上下文更长；<b>混元 Hy3（¥1/¥4）</b> 同样极低。</p>
-        <p style="font-size:14.5px;margin-bottom:10px"><b>编程/Agent 场景</b>：预算充足用 <b>Claude Fable 5 / Opus 5</b>；国产替代优先 <b>GLM-5.3</b>（8/28 开源权重后免费，Terminal-Bench 开源第一）或 <b>Kimi K3</b>（前端代码最强，但 ¥20/¥100 偏贵）。</p>
-        <p style="font-size:14.5px;margin-bottom:10px"><b>长文档/RAG</b>：<b>小米 MiMo-V2.5（1M 上下文 ¥1/¥2）</b> 无敌；其次 <b>Qwen 系（1M）</b> 或 <b>混元（256K）</b>。</p>
-        <p style="font-size:14.5px;margin:0"><b>一句话结论</b>：DeepSeek 涨价后，「低价高性能」首选 <b>小米 MiMo-V2.5 / 混元 Hy3</b>（同价位替代），编程首选 <b>GLM-5.3</b>（等 8/28 开源），旗舰推理仍可错峰用 <b>V4-Pro 空闲档</b>。</p>
+    <!-- ---- D 规格速查 ---- -->
+    <section class="sec anchor-sec" id="spec-flagship">
+      <div class="sec-head"><h2>📋 旗舰规格速查</h2><div class="rule"></div><span class="hint">截至 2026-08-18</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>模型</th><th>厂商</th><th>发布</th><th>上下文</th><th>模态</th><th>核心强项</th><th>相对短板</th></tr></thead>
+          <tbody>
+            <tr><td class="row-t">GPT-5.6 Sol</td><td>OpenAI</td><td>2026-07</td><td>未披露</td><td>文本/图像/语音</td><td>编程 Agent、知识交付</td><td>纯推理略逊 Fable 5</td></tr>
+            <tr><td class="row-t">Claude Fable 5</td><td>Anthropic</td><td>2026-06</td><td>1M</td><td>文本/图像</td><td>长程端到端、SWE-bench 第一</td><td>贵、出口管制</td></tr>
+            <tr><td class="row-t">Gemini 3.5 Flash</td><td>Google</td><td>2026-05</td><td>1M</td><td>原生四模态</td><td>速度、多模态、高吞吐</td><td>最难任务弱于旗舰</td></tr>
+            <tr><td class="row-t">DeepSeek V4-Pro</td><td>深度求索</td><td>2026-08-13</td><td>1M</td><td>文本为主</td><td>推理性价比之王、Agent 暴涨</td><td>8/17 涨价后性价比下降</td></tr>
+            <tr><td class="row-t">Qwen3.8-Max</td><td>阿里</td><td>2026-08</td><td>1M</td><td>原生全模态</td><td>开源生态第一、中文</td><td>刚发布待评测</td></tr>
+            <tr><td class="row-t">Kimi K3</td><td>月之暗面</td><td>2026-07</td><td>1M</td><td>原生视觉</td><td>前端代码第一、长程 Agent</td><td>贵（¥20/¥100）</td></tr>
+            <tr><td class="row-t">GLM-5.3</td><td>智谱</td><td>2026-08-14</td><td>1M</td><td>文本为主</td><td>开源阵营编码第一、后训练 Scaling</td><td>API 定价未公布</td></tr>
+            <tr><td class="row-t">小米 MiMo-V2.5</td><td>小米</td><td>2026-05</td><td>1M</td><td>文本+全模态</td><td>极致低价、MIT 开源</td><td>前沿能力弱于旗舰</td></tr>
+            <tr><td class="row-t">豆包 2.1 Pro</td><td>字节</td><td>2026-06</td><td>未披露</td><td>全模态矩阵</td><td>多模态全家桶、MaaS</td><td>开源力度弱</td></tr>
+            <tr><td class="row-t">混元 Hy3</td><td>腾讯</td><td>2026-07</td><td>256K</td><td>文本为主</td><td>智能密度、中文落地</td><td>参数规模较小</td></tr>
+            <tr><td class="row-t">文心 5.1</td><td>百度</td><td>2026-05</td><td>未披露</td><td>原生全模态</td><td>搜索整合、训练成本低</td><td>闭源、跑分不可核验</td></tr>
+          </tbody>
+        </table>
       </div>
-      <div class="card" style="background:var(--accent-soft);border-color:var(--accent)">
-        <h3 style="font-size:18px;margin-bottom:16px">💡 怎么选模型（通用指南）</h3>
-        <p style="font-size:15px;margin-bottom:12px"><b>预算敏感 + 推理/数学为主</b>：小米 MiMo-V2.5（¥1/¥2）或 DeepSeek V4-Flash（空闲档）、混元 Hy3</p>
-        <p style="font-size:15px;margin-bottom:12px"><b>编程/Agent 重活</b>：Claude Fable 5 / Opus 5（SWE-bench 领先），国产看 GLM-5.3（开源第一）、Kimi K3（前端）</p>
-        <p style="font-size:15px;margin-bottom:12px"><b>知识型文档/设计交付</b>：GPT-5.6 系列（演示文稿、文档、表格审美强）</p>
-        <p style="font-size:15px;margin-bottom:12px"><b>多模态/视频理解</b>：Gemini 3.5（原生四模态）或商汤 SenseNova（国产视觉强）</p>
-        <p style="font-size:15px;margin-bottom:12px"><b>本地部署</b>：Qwen 开源系（中文好、Apache 2.0）、GLM-5.3（8/28 开源 MIT）、小米 MiMo-V2.5（MIT）</p>
-        <p style="font-size:15px;margin:0"><b>Agent 长程任务</b>：Claude Fable 5（端到端最强）或 DeepSeek V4 Pro（错峰、空闲档）</p>
+
+      <h3 class="sub-h">🎨 多模态生成赛道</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>赛道</th><th>第一梯队</th><th>核心优势</th><th>价格参考</th><th>代表性事件</th></tr></thead>
+          <tbody>
+            <tr><td class="row-t">文生图</td><td>FLUX 2 / Midjourney V7 / GPT Image 2</td><td>FLUX 写实第一；MJ 风格化最强</td><td>—</td><td>DALL-E 品牌退役</td></tr>
+            <tr><td class="row-t">文生视频</td><td>Veo 3.1 / Kling 3.0 / Seedance 2.5</td><td>Veo 质量顶；Kling 性价比高；Seedance 好莱坞走红</td><td>Veo 约 $3.75/5 秒</td><td>Sora 2026-03 关停成分水岭</td></tr>
+            <tr><td class="row-t">TTS 语音</td><td>MiniMax Audio / ElevenLabs</td><td>MiniMax 盲测第一；ElevenLabs 生态全</td><td>MiniMax 免费额度大</td><td>国产 TTS 首次双榜登顶</td></tr>
+            <tr><td class="row-t">音乐</td><td>Stable Audio 3.0 / Suno</td><td>全授权数据训练、最长 6 分钟</td><td>—</td><td>版权合规成核心议题</td></tr>
+          </tbody>
+        </table>
       </div>
     </section>
   </div>
@@ -1068,77 +1159,116 @@ var VENDOR_URLS = {
   'Runway':'https://runwayml.com'
 };
 
-// ==================== 渲染排行榜 ====================
-function renderRankRow(r, i) {
-  return '<div class="rank-row">' +
-    '<span class="rank-num">' + (i+1) + '</span>' +
-    '<span class="rank-name">' + r.name + '</span>' +
-    '<span class="rank-bar-bg"><span class="rank-bar-fill" style="width:' + r.pct + '%"></span></span>' +
-    '<span class="rank-score">' + r.score + '</span>' +
-  '</div>';
-}
-function renderRankings() {
-  var labels = { overall:'rank-overall', coding:'rank-coding', reasoning:'rank-reasoning', value:'rank-value' };
-  Object.keys(RANKINGS).forEach(function(key) {
-    var el = document.getElementById(labels[key]);
-    if (!el) return;
-    var d = RANKINGS[key];
-    el.innerHTML =
-      '<div class="rank-sub"><span class="rank-sub-label">🌍 海外</span>' +
-        d.overseas.map(function(r,i){ return renderRankRow(r,i); }).join('') +
-      '</div>' +
-      '<div class="rank-sub"><span class="rank-sub-label">🇨🇳 国内</span>' +
-        d.domestic.map(function(r,i){ return renderRankRow(r,i); }).join('') +
-      '</div>';
-  });
+// ==================== 图表数据（供 assets/charts.js 使用） ====================
+var CAT_LABEL = { overseas:'海外旗舰', domestic:'国产力量', opensource:'开源生态', multimodal:'多模态生成' };
+var CAT_COLOR = { overseas:'#3B82F6', domestic:'#059669', opensource:'#8B5CF6', multimodal:'#F59E0B' };
+
+// 模型名 → MODELS 下标，供图表点击下钻
+var WB_IDX = {};
+MODELS.forEach(function (m, i) { WB_IDX[m.name] = i; });
+window.WB_IDX = WB_IDX;
+
+// 图表点击后的统一入口：打开该模型的详情弹窗
+window.WB_DRILL = function (idx) {
+  if (idx != null && MODELS[idx]) openModal(idx);
+};
+
+window.WB_GROUPS = [
+  { key:'overseas',   label:'🌍 海外旗舰',   color: CAT_COLOR.overseas },
+  { key:'domestic',   label:'🇨🇳 国产力量',   color: CAT_COLOR.domestic },
+  { key:'opensource', label:'🔓 开源生态',   color: CAT_COLOR.opensource },
+  { key:'multimodal', label:'🎨 多模态生成', color: CAT_COLOR.multimodal }
+];
+
+// 32 × 5 能力矩阵，按综合分从高到低排序（热力图 / 定位散点图共用）
+function buildMatrix() {
+  var rows = MODELS.map(function (m, i) {
+    var s = MODEL_SCORES[m.name] || [3, 3, 3, 3, 3];
+    return {
+      idx: i, name: m.name, vendor: m.vendor, cat: m.cat, scores: s,
+      sum: s[0] + s[1] + s[2] + s[3] + s[4]
+    };
+  }).sort(function (a, b) { return b.sum - a.sum; });
+  return { dims: ['编程', '推理', '多模态', '速度', '性价比'], rows: rows };
 }
 
-// ==================== 渲染卡片 ====================
-function renderCards(cat) {
-  var grid = document.getElementById('card-grid');
-  var list = cat === 'all' ? MODELS : MODELS.filter(function(m) { return m.cat === cat; });
-  grid.innerHTML = list.map(function(m, idx) {
-    var rankBadge = '';
-    if (m.rank) {
-      var bestRank = Math.min.apply(null, Object.values(m.rank));
-      if (bestRank <= 3) rankBadge = '<span class="mc-badge">#' + bestRank + '</span>';
+// ==================== 全部模型表（搜索 + 阵营筛选 + 点击下钻） ====================
+var modelCat = 'all';
+var modelQuery = '';
+var compareSet = [];   // 已勾选对比的模型下标（MODELS 数组下标）
+
+function bestRankOf(m) {
+  if (!m.rank) return null;
+  var vals = [];
+  Object.keys(m.rank).forEach(function (k) { vals.push(m.rank[k]); });
+  return vals.length ? Math.min.apply(null, vals) : null;
+}
+
+function renderModelTable() {
+  var tbody = document.getElementById('model-tbody');
+  if (!tbody) return;
+  var q = modelQuery;
+  var list = [];
+  MODELS.forEach(function (m, i) {
+    if (modelCat !== 'all' && m.cat !== modelCat) return;
+    if (q) {
+      var hay = (m.name + ' ' + m.vendor + ' ' + m.tags.join(' ') + ' ' + m.summary).toLowerCase();
+      if (hay.indexOf(q) === -1) return;
     }
-    var tags = m.tags.map(function(t, i) {
-      var cls = i === 0 ? 'tag t-accent' : (i === 1 ? 'tag t-teal' : 'tag');
-      return '<span class="' + cls + '">' + t + '</span>';
-    }).join('');
-    var modelIdx = MODELS.indexOf(m);
-    var checked = compareSet.indexOf(modelIdx) !== -1 ? ' checked' : '';
-    return '<div class="mini-card" data-idx="' + modelIdx + '">' +
-      '<div class="mc-top">' +
-        '<div><div class="mc-name">' + m.name + '</div><div class="mc-vendor">' + m.vendor + ' · ' + m.date + '</div></div>' +
-        rankBadge +
-      '</div>' +
-      '<div class="mc-tags">' + tags + '</div>' +
-      '<div class="mc-summary">' + m.summary + '</div>' +
-      '<label class="mc-compare" onclick="event.stopPropagation()"><input type="checkbox" data-compare-idx="' + modelIdx + '"' + checked + '> 加入对比</label>' +
-      '<div class="mc-metric"><span>' + m.metric + '</span><span class="arrow">详情 →</span></div>' +
-    '</div>';
-  }).join('');
+    list.push({ m: m, i: i });
+  });
 
-  // bind click
-  grid.querySelectorAll('.mini-card').forEach(function(card) {
-    card.addEventListener('click', function() {
-      openModal(parseInt(card.dataset.idx));
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-row">没有匹配的模型，换个关键词试试</td></tr>';
+  } else {
+    tbody.innerHTML = list.map(function (o) {
+      var m = o.m, i = o.i;
+      var checked = compareSet.indexOf(i) !== -1 ? ' checked' : '';
+      var best = bestRankOf(m);
+      return '<tr class="mt-row" data-idx="' + i + '">' +
+        '<td><div class="mt-name">' + m.name +
+          (best && best <= 3 ? ' <span class="mt-rank">#' + best + '</span>' : '') +
+          '</div><div class="mt-sub">' + m.date + '</div></td>' +
+        '<td class="mt-vendor">' + m.vendor + '</td>' +
+        '<td><span class="cat-pill c-' + m.cat + '">' + CAT_LABEL[m.cat] + '</span></td>' +
+        '<td class="mt-sum">' + m.summary + '</td>' +
+        '<td class="mt-metric">' + m.metric + '</td>' +
+        '<td class="col-act">' +
+          '<button class="mt-btn" data-drill="' + i + '">解读</button>' +
+          '<label class="mt-cmp" onclick="event.stopPropagation()">' +
+            '<input type="checkbox" data-compare-idx="' + i + '"' + checked + '> 对比' +
+          '</label>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  // 整行点击 → 打开详情
+  tbody.querySelectorAll('.mt-row').forEach(function (tr) {
+    tr.addEventListener('click', function () {
+      if (tr.querySelector('.empty-row')) return;
+      openModal(parseInt(tr.dataset.idx, 10));
     });
   });
-  // bind compare checkboxes
-  grid.querySelectorAll('[data-compare-idx]').forEach(function(cb) {
-    cb.addEventListener('change', function() {
-      var idx = parseInt(cb.dataset.compareIdx);
-      if (cb.checked) {
-        if (compareSet.indexOf(idx) === -1) compareSet.push(idx);
-      } else {
-        compareSet = compareSet.filter(function(i) { return i !== idx; });
-      }
+  // 复选框区域不触发行点击
+  tbody.querySelectorAll('.mt-cmp, [data-compare-idx]').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.stopPropagation(); });
+  });
+  tbody.querySelectorAll('[data-compare-idx]').forEach(function (cb) {
+    cb.addEventListener('change', function () {
+      var idx = parseInt(cb.dataset.compareIdx, 10);
+      if (cb.checked) { if (compareSet.indexOf(idx) === -1) compareSet.push(idx); }
+      else { compareSet = compareSet.filter(function (x) { return x !== idx; }); }
       updateCompareBar();
     });
   });
+
+  var cnt = document.getElementById('model-count');
+  if (cnt) {
+    cnt.textContent = (list.length === MODELS.length)
+      ? '共收录 ' + MODELS.length + ' 个模型'
+      : '共 ' + MODELS.length + ' 个模型，当前筛选显示 ' + list.length + ' 个';
+  }
 }
 
 // ==================== 详情弹窗 ====================
@@ -1183,24 +1313,172 @@ function closeModal() {
 }
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
 
-// ==================== 分类切换 ====================
-document.querySelectorAll('.cat-tab').forEach(function(tab) {
-  tab.addEventListener('click', function() {
-    document.querySelectorAll('.cat-tab').forEach(function(t) { t.classList.remove('active'); });
-    tab.classList.add('active');
-    renderCards(tab.dataset.cat);
-  });
-});
+// ==================== 模型表：搜索 + 阵营筛选 ====================
+(function initModelTable() {
+  var search = document.getElementById('model-search');
+  var chips = document.getElementById('model-filters');
+  if (search) {
+    search.addEventListener('input', function () {
+      modelQuery = search.value.trim().toLowerCase();
+      renderModelTable();
+    });
+  }
+  if (chips) {
+    chips.querySelectorAll('[data-cat]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        chips.querySelectorAll('[data-cat]').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        modelCat = btn.getAttribute('data-cat');
+        renderModelTable();
+      });
+    });
+  }
+})();
 
-// ==================== 初始化 ====================
-var compareSet = []; // 选中的模型索引（提前声明，renderCards 需要引用）
-renderRankings();
-renderCards('all');
+// ==================== 能力雷达图：分组切换 + 下钻入口 ====================
+(function initRadarTabs() {
+  var tabs = document.getElementById('radar-tabs');
+  var drill = document.getElementById('radar-drill');
+  if (!tabs) return;
+
+  var NAMES = {
+    overseas: ['GPT-5.6 Sol', 'Claude Fable 5', 'Gemini 3.5 Flash'],
+    domestic: ['DeepSeek V4-Pro', 'Kimi K3', 'Qwen3.8-Max', 'GLM-5.3']
+  };
+  // 雷达图用的是产品名，MODELS 里登记的是系列名，这里做一层映射
+  var ALIAS = {
+    'GPT-5.6 Sol': 'GPT-5.6 系列',
+    'Gemini 3.5 Flash': 'Gemini 3.5 / 3.6 Flash',
+    'DeepSeek V4-Pro': 'DeepSeek V4',
+    'GLM-5.3': '智谱 GLM-5.3'
+  };
+
+  function renderDrill(group) {
+    if (!drill) return;
+    drill.innerHTML = (NAMES[group] || []).map(function (n) {
+      var idx = WB_IDX[ALIAS[n] || n];
+      if (idx == null) return '';
+      return '<button class="drill-chip" data-drill="' + idx + '">' + n + ' →</button>';
+    }).join('');
+    drill.querySelectorAll('[data-drill]').forEach(function (b) {
+      b.addEventListener('click', function () { openModal(parseInt(b.dataset.drill, 10)); });
+    });
+  }
+
+  tabs.querySelectorAll('[data-radar]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      tabs.querySelectorAll('[data-radar]').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      var g = btn.getAttribute('data-radar');
+      if (window.WB_RADAR) window.WB_RADAR.group = g;
+      if (window.WB_CHARTS) window.WB_CHARTS.rebuild('chart-radar');
+      renderDrill(g);
+    });
+  });
+  renderDrill('overseas');
+})();
+
+// ==================== 价格表：排序 + 筛选 + 搜索 ====================
+(function initPriceTable() {
+  var table = document.getElementById('price-table');
+  var tbody = document.getElementById('price-tbody');
+  var search = document.getElementById('price-search');
+  var chips = document.getElementById('price-filters');
+  var countEl = document.getElementById('price-count');
+  if (!table || !tbody) return;
+
+  var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+  var pf = 'all';
+  var pq = '';
+  var sortKey = '';
+  var sortDir = -1;
+
+  function num(tr, key, dft) {
+    var raw = tr.getAttribute('data-' + key);
+    if (raw === '' || raw === null) return dft;
+    var n = parseFloat(raw);
+    return isNaN(n) ? dft : n;
+  }
+
+  function apply() {
+    var list = rows.filter(function (tr) {
+      var name = tr.querySelector('td').textContent.toLowerCase();
+      if (pq && name.indexOf(pq) === -1) return false;
+      var cat = tr.getAttribute('data-cat');
+      var open = tr.getAttribute('data-open') === '1';
+      if (pf === 'domestic' && cat !== 'domestic') return false;
+      if (pf === 'overseas' && cat !== 'overseas') return false;
+      if (pf === 'open' && !open) return false;
+      if (pf === 'cheap' && !(num(tr, 'out', 1e9) <= 10)) return false;
+      if (pf === 'longctx' && !(num(tr, 'ctx', 0) >= 1024)) return false;
+      return true;
+    });
+
+    if (sortKey) {
+      list.sort(function (a, b) {
+        var av = num(a, sortKey, null);
+        var bv = num(b, sortKey, null);
+        // 「未披露」的行永远沉到末尾，不参与升/降序
+        if (av === null && bv === null) return 0;
+        if (av === null) return 1;
+        if (bv === null) return -1;
+        return (av - bv) * sortDir;
+      });
+    }
+
+    tbody.innerHTML = '';
+    list.forEach(function (tr) { tbody.appendChild(tr); });
+
+    if (countEl) {
+      countEl.textContent = (list.length === rows.length)
+        ? '共 ' + rows.length + ' 个模型的按量单价'
+        : '共 ' + rows.length + ' 个模型，当前显示 ' + list.length + ' 个';
+    }
+  }
+
+  table.querySelectorAll('th.sortable').forEach(function (th) {
+    th.addEventListener('click', function () {
+      var key = th.getAttribute('data-sort');
+      if (sortKey === key) sortDir = -sortDir;
+      else { sortKey = key; sortDir = -1; }   // 首次点击默认从高到低
+
+      table.querySelectorAll('th.sortable').forEach(function (o) {
+        o.classList.remove('asc', 'desc');
+        var ico = o.querySelector('.sort-ico');
+        if (ico) ico.textContent = '↕';
+      });
+      th.classList.add(sortDir === -1 ? 'desc' : 'asc');
+      var i2 = th.querySelector('.sort-ico');
+      if (i2) i2.textContent = sortDir === -1 ? '▼' : '▲';
+      apply();
+    });
+  });
+
+  if (search) {
+    search.addEventListener('input', function () {
+      pq = search.value.trim().toLowerCase();
+      apply();
+    });
+  }
+  if (chips) {
+    chips.querySelectorAll('[data-pf]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        chips.querySelectorAll('[data-pf]').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        pf = btn.getAttribute('data-pf');
+        apply();
+      });
+    });
+  }
+  apply();
+})();
 
 // ==================== 模型对比功能 ====================
 var compareChart = null;
 
-// 模型能力评分（用于雷达图）：[编程, 推理, 多模态, 速度, 性价比]
+// 模型能力评分（用于热力图 / 散点图 / 对比雷达图）：[编程, 推理, 多模态, 速度, 性价比]
+// 5 分制示意评分，用于横向比较强弱分布，不代表绝对基准分。
+// 改动这里会同步影响「模型全景」里的热力图、定位散点图和对比雷达图。
 var MODEL_SCORES = {
   'GPT-5.6 系列':            [4.5, 4, 3.5, 4, 3],
   'Claude Fable 5':          [5, 5, 3, 3, 2],
@@ -1211,12 +1489,16 @@ var MODEL_SCORES = {
   'DeepSeek V4':             [5, 5, 2, 4, 5],
   'Qwen3.8-Max':             [4, 4, 5, 3.5, 5],
   'Kimi K3':                 [5, 4, 4, 2, 3],
-  '智谱 GLM-5.2':             [4.5, 3.5, 3, 3.5, 4.5],
+  '智谱 GLM-5.3':             [4.5, 3.5, 3, 3.5, 4.5],
   '豆包 2.1 / Seed 系列':     [3.5, 3.5, 5, 4, 4],
   'MiniMax M2.7':            [4.5, 4, 2, 4.5, 5],
   '腾讯混元 Hy3':             [3.5, 3.5, 2.5, 4, 5],
   '百度文心 5.1':             [3.5, 4, 4.5, 3.5, 4],
   '阶跃星辰 Step 3.7':         [3.5, 3.5, 4, 4.5, 4],
+  '小米 MiMo-V2.5':           [3.5, 3.5, 4, 4.5, 5],
+  '商汤 SenseNova 6.5':       [3, 3.5, 5, 4, 4],
+  '科大讯飞 Spark X2':         [3, 3, 4, 4, 4.5],
+  '百川智能 Baichuan M3':     [3.5, 3.5, 2.5, 4, 4],
   'Meta Llama 4':            [3, 3.5, 3.5, 3, 4.5],
   'Mistral Medium 3.5':      [4, 3.5, 2.5, 3.5, 4],
   '小模型军团':                [2.5, 3, 3, 4.5, 5],
@@ -1456,35 +1738,41 @@ document.querySelectorAll('[data-mtab]').forEach(function (btn) {
 });
 
 // ==================== 页头数据速览 ====================
-(function renderStatBar() {
+function renderStatBar() {
   var bar = document.getElementById('stat-bar');
-  var lead = document.getElementById('lead-count');
-  if (lead) lead.textContent = MODELS.length;
   if (!bar) return;
   var vendors = {};
-  MODELS.forEach(function (m) { vendors[m.vendor] = 1; });
-  var os = MODELS.filter(function (m) {
-    return m.tags.join('').indexOf('开源') !== -1 || m.cat === 'opensource';
-  }).length;
+  var openCnt = 0;
+  var cats = {};
+  MODELS.forEach(function (m) {
+    vendors[m.vendor] = 1;
+    cats[m.cat] = 1;
+    if (m.cat === 'opensource' || m.tags.join('').indexOf('开源') !== -1) openCnt++;
+  });
   var items = [
     { v: MODELS.length, l: '收录模型' },
     { v: Object.keys(vendors).length, l: '覆盖厂商' },
-    { v: '4', l: '榜单维度' },
+    { v: Object.keys(cats).length, l: '阵营分类' },
     { v: '2026-08-18', l: '数据截止' }
   ];
   bar.innerHTML = items.map(function (it) {
     return '<div class="stat-item"><div class="sv">' + it.v + '</div><div class="sl">' + it.l + '</div></div>';
   }).join('');
-})();
+}
 
 // ==================== 首屏初始化 ====================
+// 注意顺序：必须先建好能力矩阵（依赖 MODEL_SCORES），再渲染模型表与页头统计。
+window.WB_MATRIX = buildMatrix();
+renderModelTable();
+renderStatBar();
+
 (function initFirstPane() {
-  // 支持用 #library / #spec 这样的锚点直达某个知识块
+  // 支持用 #library / #price 这样的锚点直达某个知识块
   var hash = (location.hash || '').replace('#', '');
-  var known = ['rank', 'library', 'charts', 'spec', 'guide'];
-  var pane = known.indexOf(hash) !== -1 ? hash : 'rank';
+  var known = ['library', 'price'];
+  var pane = known.indexOf(hash) !== -1 ? hash : 'library';
   switchPane(pane);
-  if (hash && pane === 'rank') {
+  if (hash && known.indexOf(hash) === -1) {
     // 可能是 #spec-flagship 这类小节锚点：切到对应块再滚动
     var target = document.getElementById(hash);
     if (target) {
