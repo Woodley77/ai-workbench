@@ -5,9 +5,12 @@
         版本升级会强制清除旧版残留缓存，根治“一直看旧内容”。
         v6：模型页改为五块知识分块（榜单/模型库/图表/价格/选型），
             charts.js 改为延迟初始化，务必清缓存。
+        v7：模型页重构为两块（模型全景 / 规格与价格），删掉能力榜单、
+            能力图表、选型指南；模型库改为图表驱动并支持点击下钻；
+            价格表支持排序筛选。app.js 主题改为解析时立即应用。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v6';
+var CACHE_VERSION = 'ai-wb-v7';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
