@@ -107,6 +107,75 @@
     });
   }
 
+  /* ---------- 自动更新保险：切回前台 / 定时 检查更新 ---------- */
+  function initAutoUpdate() {
+    if (!('serviceWorker' in navigator)) return;
+
+    var lastCheck = 0;
+    var bannerShown = false;
+
+    function showUpdateBanner() {
+      if (bannerShown) return;
+      bannerShown = true;
+      var bar = document.createElement('div');
+      bar.id = 'update-banner';
+      bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;' +
+        'background:#2563eb;color:#fff;font-size:14px;text-align:center;' +
+        'padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:12px;' +
+        'box-shadow:0 2px 8px rgba(0,0,0,.2)';
+      bar.innerHTML = '<span>📰 有新的每日动态，</span>' +
+        '<button id="update-now" style="background:#fff;color:#2563eb;border:0;border-radius:6px;' +
+        'padding:4px 12px;font-weight:600;cursor:pointer;">立即刷新</button>' +
+        '<button id="update-close" style="background:transparent;color:#fff;border:0;' +
+        'font-size:18px;line-height:1;cursor:pointer;">×</button>';
+      document.body.appendChild(bar);
+      document.getElementById('update-now').addEventListener('click', function () {
+        window.location.reload();
+      });
+      document.getElementById('update-close').addEventListener('click', function () {
+        bar.remove();
+        bannerShown = false;
+      });
+    }
+
+    function checkForUpdates() {
+      var now = Date.now();
+      if (now - lastCheck < 30000) return; // 30s 内不重复检查
+      lastCheck = now;
+
+      // 1) 催促 SW 检查自身新版（waiting -> skipWaiting -> 接管自动刷新）
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.getRegistration().then(function (reg) {
+          if (!reg) return;
+          reg.update();
+          if (reg.waiting) reg.waiting.postMessage('skipWaiting');
+        }).catch(function () {});
+      }
+
+      // 2) 内容新鲜度探针：仅新闻页。拉最新 news.html，对比首条日期
+      var cur = document.querySelector('.ddate');
+      if (!cur) return;
+      fetch('news.html', { cache: 'no-store' }).then(function (res) {
+        return res.text();
+      }).then(function (html) {
+        var m = html.match(/class="ddate">([^<]+)</);
+        if (!m) return;
+        var fresh = m[1].trim();
+        var curTxt = cur.textContent.trim();
+        // 首条日期更新（晚于当前展示）即认为有新版内容
+        if (fresh && curTxt && fresh > curTxt) showUpdateBanner();
+      }).catch(function () {});
+    }
+
+    // 切回前台（含从后台标签页切回）时检查一次
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) checkForUpdates();
+    });
+
+    // 定时兜底：每 15 分钟检查一次（覆盖长时间开着的标签页）
+    setInterval(checkForUpdates, 15 * 60 * 1000);
+  }
+
   /* ---------- 底部导航（移动端）· 立即创建 + 滚动兜底 ---------- */
   var bottomNavHtml = (function () {
     var pages = [
@@ -225,6 +294,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     initTheme();
     initServiceWorker();
+    initAutoUpdate();
     initGlossary();
     initTabs();
     initDates();
