@@ -414,6 +414,13 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
   <div class="tab-pane active" data-mpane="library">
     <p class="pane-lead">先看图，再下钻。每张图上的模型都可以<b>直接点开</b>，弹窗里是这个模型的完整解读：规格参数、能力定位、亮点与冷知识、官网入口。评分均为 5 分制示意评分，用于横向比较强弱分布，不代表绝对基准分。<b>注：本页所有图表与价格只覆盖国产模型</b>；国外模型仅在下方「全部模型」表中列出，不做介绍与比较。</p>
 
+    <!-- ============ 最新动态（每日自动更新） ============ -->
+    <div class="daily-feed">
+      <div class="sec-head"><h2>🆕 最新动态</h2><div class="rule"></div><span class="hint">每日自动更新 · 新模型 / 调价 / 评测</span></div>
+      <p class="sec-note">每天自动检索国产大模型的<b>发布、官方调价、权威评测</b>等实质变化，按日期倒序追加在这里。注意：这里是动态快讯，<b>不代表</b>上方热力图/散点图的评分已同步调整 —— 评分与价格表仍以人工核实为准。</p>
+      <!-- __MODEL_DAILY_INSERT__ -->
+    </div>
+
     <!-- ---- 热力图 ---- -->
     <section class="sec">
       <div class="sec-head"><h2>🗺️ 能力热力图 · 10 个国产主力模型</h2><div class="rule"></div><span class="hint">点任意格子 → 看该模型解读</span></div>
@@ -1683,7 +1690,7 @@ function renderStatBar() {
     { v: MODELS.length, l: '收录模型' },
     { v: Object.keys(vendors).length, l: '覆盖厂商' },
     { v: Object.keys(cats).length, l: '阵营分类' },
-    { v: '2026-08-29', l: '数据截止' }
+    { v: '2026-08-18', l: '数据截止' }
   ];
   bar.innerHTML = items.map(function (it) {
     return '<div class="stat-item"><div class="sv">' + it.v + '</div><div class="sl">' + it.l + '</div></div>';
