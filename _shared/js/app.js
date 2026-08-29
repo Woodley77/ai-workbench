@@ -21,10 +21,20 @@
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
   }
-  function initTheme() {
+  function currentTheme() {
     var saved = null;
     try { saved = localStorage.getItem('wb-theme'); } catch (e) {}
-    var theme = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    return saved ||
+      (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  }
+
+  /* 关键：主题必须在本脚本被解析时就落到 <html data-theme> 上，不能等 DOMContentLoaded。
+   * 否则页面内联脚本先跑（ECharts 按默认配色渲染），主题再被套上就得销毁重建一遍，
+   * 表现为「图表闪一下换色」+ 多一次无谓渲染。 */
+  applyTheme(currentTheme());
+
+  function initTheme() {
+    var theme = currentTheme();
     applyTheme(theme);
     var btn = document.querySelector('[data-theme-btn]');
     if (btn) {
