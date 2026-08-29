@@ -2,10 +2,12 @@
    AI 学习工作台 · Service Worker v4
    策略：所有资源 Network First，离线回退 Cache；
         导航(HTML)请求强制 no-cache，避免 GitHub Pages 缓存造成新闻延迟更新。
-        版本升级到 v4 会强制清除旧版(v1/v2/v3)残留缓存，根治“一直看旧内容”。
+        版本升级会强制清除旧版残留缓存，根治“一直看旧内容”。
+        v6：模型页改为五块知识分块（榜单/模型库/图表/价格/选型），
+            charts.js 改为延迟初始化，务必清缓存。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v5';
+var CACHE_VERSION = 'ai-wb-v6';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
