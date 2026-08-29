@@ -204,6 +204,7 @@
     var groups = window.WB_GROUPS || [];
     var series = groups.map(function (g) {
       var pts = m.rows.filter(function (r) { return r.cat === g.key; });
+      if (!pts.length) return null;   // 该分组没有点时整组跳过，避免图例出现空项
       return {
         name: g.label,
         type: 'scatter',
@@ -229,7 +230,7 @@
         labelLayout: { hideOverlap: true },
         emphasis: { itemStyle: { opacity: 1, borderColor: v.accent, borderWidth: 2 }, scale: 1.35 }
       };
-    });
+    }).filter(Boolean);
 
     return {
       animation: false,
@@ -280,50 +281,32 @@
   });
 
   /* =========================================================
-   * 图 3 · 旗舰能力画像雷达（分组可切换）
+   * 图 3 · 国产旗舰能力画像雷达
+   * 原先是「海外三强 / 国产四强」两个分组可切换；按需求国外模型不参与
+   * 介绍与比较，国外分组已删除，这里固定只画国产四强。
    * ======================================================= */
-  var RADAR_GROUPS = {
-    overseas: {
-      color: [null, null, '#F59E0B'],
-      data: [
-        { name: 'GPT-5.6 Sol',        value: [5.0, 4.5, 4.2, 4.5, 3.8, 5.0] },
-        { name: 'Claude Fable 5',     value: [4.9, 4.8, 4.0, 4.8, 3.2, 4.8] },
-        { name: 'Gemini 3.5 Flash',   value: [4.3, 4.0, 5.0, 5.0, 4.6, 4.5] }
-      ]
-    },
-    domestic: {
-      color: [null, null, '#F59E0B', '#6366F1'],
-      data: [
-        { name: 'DeepSeek V4-Pro',    value: [4.6, 5.0, 3.0, 5.0, 5.0, 4.6] },
-        { name: 'Kimi K3',            value: [4.8, 4.4, 4.2, 5.0, 4.2, 5.0] },
-        { name: 'Qwen3.8-Max',        value: [4.5, 4.3, 5.0, 5.0, 4.8, 4.6] },
-        { name: 'GLM-5.3',            value: [4.6, 4.6, 3.6, 5.0, 4.4, 4.4] }
-      ]
-    }
-  };
+  var RADAR_DATA = [
+    { name: 'DeepSeek V4-Pro',    value: [4.6, 5.0, 3.0, 5.0, 5.0, 4.6] },
+    { name: 'Kimi K3',            value: [4.8, 4.4, 4.2, 5.0, 4.2, 5.0] },
+    { name: 'Qwen3.8-Max',        value: [4.5, 4.3, 5.0, 5.0, 4.8, 4.6] },
+    { name: 'GLM-5.3',            value: [4.6, 4.6, 3.6, 5.0, 4.4, 4.4] }
+  ];
+  var RADAR_COLOR = [null, null, '#F59E0B', '#6366F1'];
 
-  /* 名字 → MODELS 下标的模糊映射（雷达图用的是"产品名"，MODELS 里是"系列名"） */
+  /* 雷达图里用的是"产品名"，MODELS 里登记的是"系列名"，做一层映射 */
   var RADAR_ALIAS = {
-    'GPT-5.6 Sol': 'GPT-5.6 系列',
-    'Claude Fable 5': 'Claude Fable 5',
-    'Gemini 3.5 Flash': 'Gemini 3.5 / 3.6 Flash',
     'DeepSeek V4-Pro': 'DeepSeek V4',
-    'Kimi K3': 'Kimi K3',
-    'Qwen3.8-Max': 'Qwen3.8-Max',
     'GLM-5.3': '智谱 GLM-5.3'
   };
 
-  window.WB_RADAR = { group: 'overseas' };
-
   def('chart-radar', function (v) {
-    var g = RADAR_GROUPS[window.WB_RADAR.group] || RADAR_GROUPS.overseas;
     var idxMap = window.WB_IDX || {};
-    var colors = g.color.map(function (c, i) {
+    var colors = RADAR_COLOR.map(function (c, i) {
       return c || (i === 0 ? v.accent : v.accent2);
     });
     return radarBase(v, {
       color: colors,
-      data: g.data.map(function (d) {
+      data: RADAR_DATA.map(function (d) {
         return {
           name: d.name,
           value: d.value,
@@ -371,77 +354,12 @@
     };
   }
 
-  /* =========================================================
-   * 图 4 · SWE-bench Verified 实测（真实基准分）
-   * ======================================================= */
-  var SWE_ALIAS = {
-    'Claude Fable 5': 'Claude Fable 5',
-    'Claude Opus 4.8': null,
-    'Gemini 3.1 Pro': 'Gemini 3.1 Pro',
-    'DeepSeek V4-Pro': 'DeepSeek V4',
-    'MiniMax M2.7': 'MiniMax M2.7',
-    'Claude Sonnet 4.6': null
-  };
-
-  def('chart-swebench', function (v) {
-    var swe = [
-      { name: 'Claude Fable 5', value: 95.0 },
-      { name: 'Claude Opus 4.8', value: 88.6 },
-      { name: 'Gemini 3.1 Pro', value: 80.6 },
-      { name: 'DeepSeek V4-Pro', value: 80.6 },
-      { name: 'MiniMax M2.7', value: 80.2 },
-      { name: 'Claude Sonnet 4.6', value: 79.6 }
-    ];
-    var idxMap = window.WB_IDX || {};
-    var asc = swe.slice().sort(function (a, b) { return a.value - b.value; });
-    return {
-      animation: false,
-      tooltip: {
-        appendToBody: true,
-        formatter: function (p) {
-          var extra = (p.data && p.data.idx != null)
-            ? '<br/><span style="opacity:.7">点击查看完整解读</span>' : '';
-          return p.name + '：<b>' + p.value + '%</b>' + extra;
-        }
-      },
-      grid: { left: 132, right: 56, top: 14, bottom: 24 },
-      xAxis: {
-        type: 'value',
-        max: 100,
-        axisLabel: { color: v.muted, formatter: '{value}%' },
-        splitLine: { lineStyle: { color: v.rule } }
-      },
-      yAxis: {
-        type: 'category',
-        data: asc.map(function (d) { return d.name; }),
-        axisLabel: { color: v.ink, fontSize: 12 },
-        axisLine: { lineStyle: { color: v.rule } },
-        axisTick: { show: false }
-      },
-      series: [{
-        type: 'bar',
-        data: asc.map(function (d) {
-          var alias = SWE_ALIAS[d.name];
-          return {
-            value: d.value,
-            idx: alias ? idxMap[alias] : null,
-            itemStyle: {
-              borderRadius: [0, 6, 6, 0],
-              color: d.value >= 90 ? v.accent : v.accent2
-            }
-          };
-        }),
-        barWidth: 18,
-        label: {
-          show: true,
-          position: 'right',
-          formatter: function (p) { return p.value + '%'; },
-          color: v.muted,
-          fontSize: 12
-        }
-      }]
-    };
-  });
+  /* ---------------------------------------------------------
+   * 原「图 4 · SWE-bench Verified 实测」已于 2026-08-29 移除：
+   * 该榜前列绝大多数是国外模型，按需求国外模型不参与介绍与比较，
+   * 剔除后只剩 2 根柱子、失去参照意义，因此整节删除（含 models.html 的
+   * section 与这里的定义）。若要恢复，需同时补回两处。
+   * ------------------------------------------------------- */
 
   /* ---------- 窗口尺寸变化 ---------- */
   window.addEventListener('resize', resizeVisible);
