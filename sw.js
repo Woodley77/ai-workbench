@@ -8,9 +8,11 @@
         v7：模型页重构为两块（模型全景 / 规格与价格），删掉能力榜单、
             能力图表、选型指南；模型库改为图表驱动并支持点击下钻；
             价格表支持排序筛选。app.js 主题改为解析时立即应用。
+        v8：模型页只保留国产模型做展示与比较——国外模型全部移出图表、
+            规格与价格，仅保留在「全部模型」表中；SWE-bench 实测节删除。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v7';
+var CACHE_VERSION = 'ai-wb-v8';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
