@@ -10,9 +10,11 @@
             价格表支持排序筛选。app.js 主题改为解析时立即应用。
         v8：模型页只保留国产模型做展示与比较——国外模型全部移出图表、
             规格与价格，仅保留在「全部模型」表中；SWE-bench 实测节删除。
+        v9：全部模型表改为国产在前、海外在后；热力图/定位散点图只留 10 个
+            国产主力大模型；散点图修掉点与标签重叠（轴按数据收窄 + 自动错开）。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v8';
+var CACHE_VERSION = 'ai-wb-v9';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
