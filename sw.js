@@ -12,9 +12,11 @@
             规格与价格，仅保留在「全部模型」表中；SWE-bench 实测节删除。
         v9：全部模型表改为国产在前、海外在后；热力图/定位散点图只留 10 个
             国产主力大模型；散点图修掉点与标签重叠（轴按数据收窄 + 自动错开）。
+        v10：模型页与百科新增「最新动态」区块（models / wiki-skills / wiki-mcp），
+             由 scripts/update_content.py 每日自动追加；三页加了插入标记，务必清缓存。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v9';
+var CACHE_VERSION = 'ai-wb-v11';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
