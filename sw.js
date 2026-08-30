@@ -14,9 +14,13 @@
             国产主力大模型；散点图修掉点与标签重叠（轴按数据收窄 + 自动错开）。
         v10：模型页与百科新增「最新动态」区块（models / wiki-skills / wiki-mcp），
              由 scripts/update_content.py 每日自动追加；三页加了插入标记，务必清缓存。
+        v11：散点图标签改用细引线(callout)指向圆点、拥挤处自动避让且不隐藏；
+             模型页新增三块高价值模块（场景选型卡 / 国产平替映射 / 性价比红黑榜）。
+        v12：模型页移除「最新动态」新闻区（news 内容只留在 news.html 与百科页），
+             模型页不再参与每日新闻更新；务必清缓存。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v11';
+var CACHE_VERSION = 'ai-wb-v12';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
