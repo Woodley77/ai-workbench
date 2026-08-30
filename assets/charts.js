@@ -256,14 +256,26 @@
         },
         label: {
           show: true,
-          position: 'right',
+          // 按归一化高度朝外发散：上半区标签落点下方、下半区落上方，减少同向堆叠
+          position: function (p) {
+            var span = (ry.max - ry.min) || 1;
+            var norm = (p.value[1] - ry.min) / span;
+            return norm > 0.5 ? 'bottom' : 'top';
+          },
           formatter: '{b}',
           fontSize: 10.5,
           color: v.muted,
-          distance: 5
+          backgroundColor: v.bg2,
+          padding: [2, 4],
+          borderRadius: 3,
+          distance: 6
         },
-        // moveOverlap 先把撞在一起的标签上下错开，实在放不下的才由 hideOverlap 隐藏
-        labelLayout: { moveOverlap: 'shiftY', hideOverlap: true },
+        labelLine: {
+          show: true, length: 8, length2: 10,
+          lineStyle: { color: v.muted, width: 1, opacity: 0.5 }
+        },
+        // 全部显示（hideOverlap:false），拥挤处由 moveOverlap 竖向避让；标签带引线指向圆点
+        labelLayout: { hideOverlap: false, moveOverlap: 'shiftY' },
         emphasis: { itemStyle: { opacity: 1, borderColor: v.accent, borderWidth: 2 }, scale: 1.35 }
       };
     }).filter(Boolean);
@@ -288,7 +300,7 @@
         itemWidth: 12,
         itemHeight: 12
       },
-      grid: { left: 52, right: 76, top: 26, bottom: 52 },
+      grid: { left: 52, right: 96, top: 30, bottom: 56 },
       xAxis: {
         name: '性价比 →（越右越便宜）',
         nameLocation: 'middle',
