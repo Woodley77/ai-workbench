@@ -374,6 +374,30 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
   color: #fff; background: #DC2626; font-size: 11px; font-weight: 700;
   padding: 2px 8px; border-radius: 999px; display: inline-block;
 }
+/* ===== 新模块：场景选型卡 / 国产平替 / 性价比红黑榜 ===== */
+.sc-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
+.sc-card { border:1px solid var(--rule); border-radius:12px; padding:14px 16px; background:var(--bg2); }
+.sc-card .sc-top { display:flex; align-items:center; gap:8px; font-weight:700; color:var(--ink); margin-bottom:6px; }
+.sc-card .sc-why { font-size:12.5px; color:var(--faint); line-height:1.6; margin-bottom:10px; }
+.sc-picks { display:flex; flex-wrap:wrap; gap:6px; }
+.pick-pill { cursor:pointer; border:1px solid var(--rule); background:var(--accent-soft); color:var(--accent); font-size:12.5px; padding:3px 10px; border-radius:999px; transition:.15s; }
+.pick-pill:hover { border-color:var(--accent); transform:translateY(-1px); }
+.rep-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; }
+.rep-item { display:flex; flex-wrap:wrap; align-items:center; gap:10px; border:1px solid var(--rule); border-radius:12px; padding:12px 14px; background:var(--bg2); }
+.rep-item .rep-from { flex:1; min-width:120px; }
+.rep-item .rep-from b { color:var(--ink); font-size:13.5px; }
+.rep-item .rep-from span { display:block; font-size:11.5px; color:var(--faint); margin-top:2px; }
+.rep-arrow { color:var(--faint); font-size:18px; }
+.rep-reason { flex-basis:100%; font-size:12px; color:var(--accent); margin-top:2px; }
+.bang-wrap { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.bang-col h3 { font-size:14px; margin:0 0 10px; display:flex; align-items:center; gap:6px; }
+.bang-col.red h3 { color:#DC2626; }
+.bang-col.black h3 { color:#D97706; }
+.bang-item { display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--rule); border-radius:10px; padding:9px 12px; margin-bottom:8px; background:var(--bg2); }
+.bang-item .bi-name { font-weight:600; color:var(--ink); font-size:13px; cursor:pointer; }
+.bang-item .bi-name:hover { color:var(--accent); }
+.bang-item .bi-score { font-size:12px; color:var(--faint); white-space:nowrap; }
+@media (max-width:640px){ .bang-wrap{ grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -419,52 +443,6 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
       <div class="sec-head"><h2>🆕 最新动态</h2><div class="rule"></div><span class="hint">每日自动更新 · 新模型 / 调价 / 评测</span></div>
       <p class="sec-note">每天自动检索国产大模型的<b>发布、官方调价、权威评测</b>等实质变化，按日期倒序追加在这里。注意：这里是动态快讯，<b>不代表</b>上方热力图/散点图的评分已同步调整 —— 评分与价格表仍以人工核实为准。</p>
       <!-- __MODEL_DAILY_INSERT__ -->
-      <div class="news-day">
-        <div class="dhead">
-          <span class="ddate">2026-08-29</span>
-          <span class="dbadge">5 条更新</span>
-        </div>
-        <div class="news-item">
-          <span class="cat c-model">发布</span>
-          <div class="body">
-            <h4><a href="https://news.google.com/rss/articles/CBMiSEFVX3lxTE45UTNLTFBBOUk3T3ExVGhUaDZzdUdhWERldmVzRzVHZjJZZUJoSWZKbkZsZlZ3UG82a0hid1ZSZmFIaXVrN25VeQ?oc=5" target="_blank" rel="noopener">【早报】华为发布V2版“韬定律”论文；豆包、千问：智能体功能将下线 - 财联社</a></h4>
-            <p>【早报】华为发布V2版“韬定律”论文；豆包、千问：智能体功能将下线&amp;nbsp;&amp;nbsp;财联社</p>
-            <span class="src">来源：<a href="https://news.google.com/rss/articles/CBMiSEFVX3lxTE45UTNLTFBBOUk3T3ExVGhUaDZzdUdhWERldmVzRzVHZjJZZUJoSWZKbkZsZlZ3UG82a0hid1ZSZmFIaXVrN25VeQ?oc=5" target="_blank" rel="noopener">财联社</a></span>
-          </div>
-        </div>
-        <div class="news-item">
-          <span class="cat c-model">发布</span>
-          <div class="body">
-            <h4><a href="https://news.google.com/rss/articles/CBMicEFVX3lxTE1wUWs3YVg4T3NwODhWd2o4Tm5qUWUxZVI0QWMxR3oxZzdVS2MzVVZOcDdVZDNhOVVFbnN3Xzd3MXFaT1I3MVoxcU1XdUlpckl0VVNuUFU3bTVhYzA4bURFQ3dGTS1FM0NvU0trcGhoRXk?oc=5" target="_blank" rel="noopener">腾讯混元Hy4 preview发布并开源 - 中国科技网</a></h4>
-            <p>腾讯混元Hy4 preview发布并开源&amp;nbsp;&amp;nbsp;中国科技网</p>
-            <span class="src">来源：<a href="https://news.google.com/rss/articles/CBMicEFVX3lxTE1wUWs3YVg4T3NwODhWd2o4Tm5qUWUxZVI0QWMxR3oxZzdVS2MzVVZOcDdVZDNhOVVFbnN3Xzd3MXFaT1I3MVoxcU1XdUlpckl0VVNuUFU3bTVhYzA4bURFQ3dGTS1FM0NvU0trcGhoRXk?oc=5" target="_blank" rel="noopener">中国科技网</a></span>
-          </div>
-        </div>
-        <div class="news-item">
-          <span class="cat c-model">发布</span>
-          <div class="body">
-            <h4><a href="https://news.google.com/rss/articles/CBMigAFBVV95cUxQR0Rja185TTg1WVZ5dlRNTVA0Nk4zZFlBUkZ5S21manQxWDdPaGlkOTRvdU5vNnRwWFVnUUtLMThjVmxkMjNEZ2JGcjEtbGgtNmJMRDNEdm5wakdfWmFRUHJrRGZxTFhHSTdlRjZHV2x6dUZTMV8yV0luNUpuZlU1SQ?oc=5" target="_blank" rel="noopener">豆包工作正式发布 赋能办公生产力提升 - 经济参考报</a></h4>
-            <p>豆包工作正式发布 赋能办公生产力提升&amp;nbsp;&amp;nbsp;经济参考报</p>
-            <span class="src">来源：<a href="https://news.google.com/rss/articles/CBMigAFBVV95cUxQR0Rja185TTg1WVZ5dlRNTVA0Nk4zZFlBUkZ5S21manQxWDdPaGlkOTRvdU5vNnRwWFVnUUtLMThjVmxkMjNEZ2JGcjEtbGgtNmJMRDNEdm5wakdfWmFRUHJrRGZxTFhHSTdlRjZHV2x6dUZTMV8yV0luNUpuZlU1SQ?oc=5" target="_blank" rel="noopener">经济参考报</a></span>
-          </div>
-        </div>
-        <div class="news-item">
-          <span class="cat c-model">发布</span>
-          <div class="body">
-            <h4><a href="https://news.google.com/rss/articles/CBMipwFBVV95cUxQazM2NGg2RW5MMUJYbkhmLVItSWlzMFU3YVkwdkNNMkJJdTBTOGpMSXlWcnI2NWV4c3N1WWRlRHo5V003UGdJdXZ2aHhaSE5RNFd2VTBseEo3Z25tWWtQYmdQQ0FHb3BDRlJLejQtbkJ0SmVSajhDT1B5YjZBN3VVSnhiUUtGaHluR3FpYldXR0FVR0JEWFpVdlFzbEx6dHdBYUpiTnhaUQ?oc=5" target="_blank" rel="noopener">腾讯猛踩油门，混元追赶的127天|OpenAI|腾讯混元|强化学习|Hy3|智谱_手机新浪网 - 新浪财经</a></h4>
-            <p>腾讯猛踩油门，混元追赶的127天|OpenAI|腾讯混元|强化学习|Hy3|智谱_手机新浪网&amp;nbsp;&amp;nbsp;新浪财经</p>
-            <span class="src">来源：<a href="https://news.google.com/rss/articles/CBMipwFBVV95cUxQazM2NGg2RW5MMUJYbkhmLVItSWlzMFU3YVkwdkNNMkJJdTBTOGpMSXlWcnI2NWV4c3N1WWRlRHo5V003UGdJdXZ2aHhaSE5RNFd2VTBseEo3Z25tWWtQYmdQQ0FHb3BDRlJLejQtbkJ0SmVSajhDT1B5YjZBN3VVSnhiUUtGaHluR3FpYldXR0FVR0JEWFpVdlFzbEx6dHdBYUpiTnhaUQ?oc=5" target="_blank" rel="noopener">新浪财经</a></span>
-          </div>
-        </div>
-        <div class="news-item">
-          <span class="cat c-model">发布</span>
-          <div class="body">
-            <h4><a href="https://news.google.com/rss/articles/CBMid0FVX3lxTE9BQzBkTVJxZWJXbklsZXFxR01UbDNQT0VYd1BJcDRCd21EUTFuMXZTOGtQR3JGRUFyd3NuT1gtN294Y3V6VEp1d1lkWEN2czZXWkZyTklqVkdSbmJ1MDRYWnlWRzRmNXU1ejJucVFrVHdsOE10Q0Vn?oc=5" target="_blank" rel="noopener">腾讯混元 Hy4 preview发布，稳居开源模型第一梯队 - 雷峰网</a></h4>
-            <p>腾讯混元 Hy4 preview发布，稳居开源模型第一梯队&amp;nbsp;&amp;nbsp;雷峰网</p>
-            <span class="src">来源：<a href="https://news.google.com/rss/articles/CBMid0FVX3lxTE9BQzBkTVJxZWJXbklsZXFxR01UbDNQT0VYd1BJcDRCd21EUTFuMXZTOGtQR3JGRUFyd3NuT1gtN294Y3V6VEp1d1lkWEN2czZXWkZyTklqVkdSbmJ1MDRYWnlWRzRmNXU1ejJucVFrVHdsOE10Q0Vn?oc=5" target="_blank" rel="noopener">雷峰网</a></span>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- ---- 热力图 ---- -->
@@ -479,7 +457,7 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
     <!-- ---- 定位散点图 ---- -->
     <section class="sec">
       <div class="sec-head"><h2>🎯 能力 vs 价格 · 定位图</h2><div class="rule"></div><span class="hint">点圆点 → 看该模型解读</span></div>
-      <p class="sec-note">横轴越往右性价比越高，纵轴越往上能力越强。<b>右上角</b>是「又强又便宜」的甜点区，<b>左上角</b>是「贵但强」的旗舰区。分数相同的模型会重叠，标签会自动上下错开；悬停可看具体分数，点圆点看完整解读。</p>
+      <p class="sec-note">横轴越往右性价比越高，纵轴越往上能力越强。<b>右上角</b>是「又强又便宜」的甜点区，<b>左上角</b>是「贵但强」的旗舰区。每个模型名用细引线指向圆点，拥挤处自动避让、<b>全部显示</b>不隐藏；悬停可看具体分数，点圆点看完整解读。</p>
       <figure class="chart-figure">
         <div id="chart-scatter" style="width:100%;min-height:470px"></div>
       </figure>
@@ -492,6 +470,27 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
         <div id="chart-radar" style="width:100%;min-height:450px"></div>
       </figure>
       <div class="drill-row"><span class="drill-label">快速查看</span><span class="drill-chips" id="radar-drill"></span></div>
+    </section>
+
+    <!-- ---- 场景选型卡 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>🧭 场景选型卡 · 我该用哪个</h2><div class="rule"></div><span class="hint">按场景给推荐 · 点模型名看解读</span></div>
+      <p class="sec-note">不知道选哪个时，先看场景：下面每个场景给出最契合的国产模型，点名字直接看完整解读。纯国产推荐，契合本页定位。</p>
+      <div id="scenario-cards" class="sc-cards"></div>
+    </section>
+
+    <!-- ---- 国产平替映射 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>🔁 国产平替映射 · 海外旗舰替代谁</h2><div class="rule"></div><span class="hint">海外 → 国产 · 点国产名看解读</span></div>
+      <p class="sec-note">想用国产替代海外旗舰？这里给出对应款与一句话理由。海外型号仅作「被替代方」列出，图表 / 雷达 / 价格仍只收国产。</p>
+      <div id="replace-list" class="rep-list"></div>
+    </section>
+
+    <!-- ---- 性价比红黑榜 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>🏆 性价比红黑榜 · 实时算</h2><div class="rule"></div><span class="hint">基于定位图评分自动生成</span></div>
+      <p class="sec-note">综合分 = 能力均分 × 0.5 + 性价比分 × 0.5，实时从上方「能力 vs 价格」数据算出，评分更新即变。仅国产主力。</p>
+      <div id="bang-wrap" class="bang-wrap"></div>
     </section>
 
     <!-- ---- 全部模型表 ---- -->
@@ -1736,11 +1735,94 @@ function renderStatBar() {
     { v: MODELS.length, l: '收录模型' },
     { v: Object.keys(vendors).length, l: '覆盖厂商' },
     { v: Object.keys(cats).length, l: '阵营分类' },
-    { v: '2026-08-29', l: '数据截止' }
+    { v: '2026-08-18', l: '数据截止' }
   ];
   bar.innerHTML = items.map(function (it) {
     return '<div class="stat-item"><div class="sv">' + it.v + '</div><div class="sl">' + it.l + '</div></div>';
   }).join('');
+}
+
+// ==================== 新增模块：场景选型卡 / 国产平替 / 性价比红黑榜 ====================
+var SCENARIOS = [
+  { icon:'💻', name:'写代码 / 工程', picks:['DeepSeek V4','Kimi K3','Qwen3.8-Max'], why:'长上下文 + 低价，主流开源可自部署' },
+  { icon:'📜', name:'长文档 / 研报', picks:['Kimi K3','智谱 GLM-5.3'], why:'1M 上下文，长文不丢重点' },
+  { icon:'🎨', name:'多模态生图', picks:['百度文心 5.1','豆包 2.1 / Seed 系列'], why:'视觉多模态国产领先' },
+  { icon:'💚', name:'省钱优先', picks:['小米 MiMo-V2.5','DeepSeek V4','腾讯混元 Hy3'], why:'输出价 ≤ ¥4，预算友好' },
+  { icon:'🧠', name:'最强推理', picks:['DeepSeek V4','Qwen3.8-Max','智谱 GLM-5.3'], why:'旗舰级能力档' }
+];
+var REPLACEMENTS = [
+  { overseas:'GPT-5.6 系列', domestic:'DeepSeek V4', note:'海外旗舰', reason:'开源 MIT，性价比碾压' },
+  { overseas:'Claude Fable 5', domestic:'智谱 GLM-5.3', note:'海外旗舰', reason:'长上下文 + 国产合规' },
+  { overseas:'Gemini 3.5 / 3.6 Flash', domestic:'Qwen3.8-Max', note:'海外旗舰', reason:'多模态 + 开源生态' },
+  { overseas:'Grok 4.6', domestic:'Kimi K3', note:'海外旗舰', reason:'超长上下文推理' }
+];
+
+function pickPill(name) {
+  var idx = window.WB_IDX ? window.WB_IDX[name] : undefined;
+  if (idx == null) return '<span class="pick-pill" style="opacity:.5;cursor:default">' + name + '</span>';
+  return '<span class="pick-pill" data-idx="' + idx + '">' + name + '</span>';
+}
+
+function renderScenarios() {
+  var box = document.getElementById('scenario-cards');
+  if (!box) return;
+  box.innerHTML = SCENARIOS.map(function (s) {
+    return '<div class="sc-card">' +
+      '<div class="sc-top"><span>' + s.icon + '</span><span>' + s.name + '</span></div>' +
+      '<div class="sc-why">' + s.why + '</div>' +
+      '<div class="sc-picks">' + s.picks.map(pickPill).join('') + '</div>' +
+    '</div>';
+  }).join('');
+  box.querySelectorAll('.pick-pill[data-idx]').forEach(function (el) {
+    el.addEventListener('click', function () { openModal(+el.getAttribute('data-idx')); });
+  });
+}
+
+function renderReplacements() {
+  var box = document.getElementById('replace-list');
+  if (!box) return;
+  box.innerHTML = REPLACEMENTS.map(function (r) {
+    var idx = window.WB_IDX ? window.WB_IDX[r.domestic] : undefined;
+    var d = (idx != null && MODELS[idx]) ? MODELS[idx] : null;
+    var dname = d ? '<span class="pick-pill" data-idx="' + idx + '">' + r.domestic + '</span>'
+                  : '<b style="color:var(--ink)">' + r.domestic + '</b>';
+    return '<div class="rep-item">' +
+      '<div class="rep-from"><b>' + r.overseas + '</b><span>' + r.note + '</span></div>' +
+      '<div class="rep-arrow">→</div>' + dname +
+      '<div class="rep-reason">↳ ' + r.reason + '</div>' +
+    '</div>';
+  }).join('');
+  box.querySelectorAll('.pick-pill[data-idx]').forEach(function (el) {
+    el.addEventListener('click', function () { openModal(+el.getAttribute('data-idx')); });
+  });
+}
+
+function renderBang() {
+  var box = document.getElementById('bang-wrap');
+  if (!box) return;
+  var m = window.WB_MATRIX || { rows: [] };
+  var rows = m.rows.filter(function (r) {
+    var mm = MODELS[r.idx];
+    return mm && isDomestic(mm);
+  }).map(function (r) {
+    var ab = (r.scores[0] + r.scores[1] + r.scores[2] + r.scores[3]) / 4;
+    var s = ab * 0.5 + r.scores[4] * 0.5;
+    return { idx:r.idx, name:r.name, vendor:r.vendor, ability:+ab.toFixed(2), price:r.scores[4], score:+s.toFixed(2) };
+  });
+  if (!rows.length) { box.innerHTML = '<p class="sec-note">暂无数据</p>'; return; }
+  rows.sort(function (a, b) { return b.score - a.score; });
+  var red = rows.slice(0, 3);
+  var black = rows.slice(-3).reverse();
+  function card(r) {
+    return '<div class="bang-item"><span class="bi-name" data-idx="' + r.idx + '">' + r.name +
+      '</span><span class="bi-score">能力 ' + r.ability + ' · 性价比 ' + r.price + '</span></div>';
+  }
+  box.innerHTML =
+    '<div class="bang-col red"><h3>🏆 甜点区 TOP3</h3>' + red.map(card).join('') + '</div>' +
+    '<div class="bang-col black"><h3>⚠️ 坑位 TOP3</h3>' + black.map(card).join('') + '</div>';
+  box.querySelectorAll('.bi-name[data-idx]').forEach(function (el) {
+    el.addEventListener('click', function () { openModal(+el.getAttribute('data-idx')); });
+  });
 }
 
 // ==================== 首屏初始化 ====================
@@ -1748,6 +1830,9 @@ function renderStatBar() {
 window.WB_MATRIX = buildMatrix();
 renderModelTable();
 renderStatBar();
+renderScenarios();
+renderReplacements();
+renderBang();
 
 (function initFirstPane() {
   // 支持用 #library / #price 这样的锚点直达某个知识块
