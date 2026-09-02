@@ -26,9 +26,12 @@
              国外 11 条改收进「海外速览」紧凑区以突出国内主体；图鉴新增搜索框与
              三种排序；修 cnmau 榜因单位混用导致的条形失真；页脚补来源清单；
              update_content.py 新增 AGENT 分支，动态区开始真正每日自动追加。
+        v15：全站接入 AI 对话悬浮球（ChatBot）—— 对话面板由 app.js 动态注入、
+             样式进 app.css（无新增静态文件）；背景视觉高级化（细网格 + 噪点 +
+             暗角 + 玻璃卡片高光发丝线），明暗双主题同步升级；务必清缓存。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v14';
+var CACHE_VERSION = 'ai-wb-v15';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
