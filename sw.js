@@ -18,9 +18,17 @@
              模型页新增三块高价值模块（场景选型卡 / 国产平替映射 / 性价比红黑榜）。
         v12：模型页移除「最新动态」新闻区（news 内容只留在 news.html 与百科页），
              模型页不再参与每日新闻更新；务必清缓存。
+        v13：新增「智能体应用」页（agents.html）——25 个国内外 Agent 应用图鉴、
+             7 组热度榜、4 张图表、场景选型卡与国内外差异；顶部导航由 4 项增至
+             5 页签、移动端底部导航由 3 项增至 4 项；务必清缓存。
+        v14：agents.html 完善 —— 国内应用 14 → 24（新增讯飞星火 / WPS 灵犀 /
+             TRAE / 秘塔 / 飞书 / 纳米 / 天工 / FastGPT / ima / RagFlow），
+             国外 11 条改收进「海外速览」紧凑区以突出国内主体；图鉴新增搜索框与
+             三种排序；修 cnmau 榜因单位混用导致的条形失真；页脚补来源清单；
+             update_content.py 新增 AGENT 分支，动态区开始真正每日自动追加。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v12';
+var CACHE_VERSION = 'ai-wb-v14';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
@@ -29,6 +37,7 @@ var PRECACHE_URLS = [
   './',
   './index.html',
   './models.html',
+  './agents.html',
   './concepts.html',
   './skill.html',
   './mcp.html',
