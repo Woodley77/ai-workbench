@@ -37,7 +37,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add news.html index.html models.html wiki-skills.html wiki-mcp.html
+          git add news.html index.html agents.html models.html wiki-skills.html wiki-mcp.html
           if git diff --staged --quiet; then
             echo "无变更，跳过提交"
           else
