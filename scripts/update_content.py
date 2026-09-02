@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-模型页 + 百科（Agent Skills / MCP）每日内容更新脚本
+模型页 + 智能体应用页 + 百科（Agent Skills / MCP）每日内容更新脚本
 ================================================================================
-用途：为 models.html / wiki-skills.html / wiki-mcp.html 三个页面的「最新动态」
-      区块追加当天检索到的实质变化，并同步更新页脚的「数据截止」日期。
+用途：为 models.html / agents.html / wiki-skills.html / wiki-mcp.html 四个页面的
+      「最新动态」区块追加当天检索到的实质变化，并同步更新页脚的「数据截止」日期。
 
 流程：
   1. 按三组主题各抓一批 RSS（Google News 关键词检索 = 每天一"搜"）
@@ -18,7 +18,7 @@
   - 所有写入页面的文本必须经 html.escape() 转义，杜绝注入。
   - category 必须是白名单内的取值，URL 必须是 http(s) 开头。
   - 本脚本只往「最新动态」标记处追加，以及改页脚日期；
-    绝不改动 MODEL_SCORES、价格表、概念长文等主体内容（那些需人工核实）。
+    绝不改动 MODEL_SCORES、AGENTS、价格表、概念长文等主体内容（那些需人工核实）。
 
 用法：
   python scripts/update_content.py                 # 正常跑（需要 DEEPSEEK_API_KEY）
@@ -114,6 +114,25 @@ TOPICS = [
         "must_kw": ["mcp", "model context protocol", "协议", "server", "服务器",
                     "客户端", "client", "生态", "集成", "anthropic"],
     },
+    {
+        # 智能体应用页：与页面「国内为主」的口径一致，queries 也以国产为主
+        "key": "agent",
+        "label": "智能体应用",
+        "page": "agents.html",
+        "marker": "<!-- __AGENT_DAILY_INSERT__ -->",
+        "max_items": 5,
+        "categories": ["发布", "格局", "开源", "生态"],
+        "cat_css": {"发布": "c-model", "格局": "c-event", "开源": "c-paper", "生态": "c-news"},
+        "queries": [
+            "AI 智能体 OR AI Agent 发布 OR 上线 OR 更新",
+            "豆包 OR 元宝 OR 文心 OR 百度搭子 OR Kimi 智能体",
+            "扣子 Coze OR Dify OR 智能体平台 OR 智能体搭建",
+            "办公智能体 月活 OR 用户规模 OR 数据",
+        ],
+        "must_kw": ["agent", "智能体", "助手", "豆包", "元宝", "文心", "搭子", "kimi",
+                    "coze", "扣子", "dify", "通义", "workbuddy", "qclaw", "trae",
+                    "办公", "月活", "mau", "发布", "上线", "整合", "开源"],
+    },
 ]
 
 # 页脚「数据截至」的正则（硬事实：只改日期，风险最低）
@@ -125,6 +144,9 @@ STAMP_PATTERNS = {
         (re.compile(r"(数据截至\s*)\d{4}-\d{2}-\d{2}"), r"\g<1>" + TODAY),
     ],
     "wiki-mcp.html": [
+        (re.compile(r"(数据截至\s*)\d{4}-\d{2}-\d{2}"), r"\g<1>" + TODAY),
+    ],
+    "agents.html": [
         (re.compile(r"(数据截至\s*)\d{4}-\d{2}-\d{2}"), r"\g<1>" + TODAY),
     ],
 }
@@ -311,9 +333,12 @@ def keyword_fallback(topic, entries):
             "市场": ["市场", "上线", "商店"],
             "平台": ["支持", "集成", "平台"],
             "协议": ["协议", "版本", "规范", "spec"],
-            "生态": ["生态", "服务器", "目录"],
+            "生态": ["生态", "服务器", "目录", "插件", "商店", "接入"],
             "客户端": ["客户端", "client"],
             "新技能": ["技能", "skill"],
+            "发布": ["发布", "上线", "推出", "新版", "更新", "launch", "release"],
+            "格局": ["月活", "mau", "用户规模", "份额", "排名", "数据", "整合", "并入"],
+            "开源": ["开源", "open source", "opensource", "github", "免费"],
         }.items():
             if c in topic["categories"] and any(k in blob for k in kws):
                 cat = c
@@ -410,7 +435,7 @@ def main():
     ap.add_argument("--hours", type=int, default=72, help="RSS 时间窗（小时）")
     args = ap.parse_args()
 
-    print(f"=== 模型页与百科每日更新 {TODAY} ===")
+    print(f"=== 模型页 / 智能体应用页 / 百科每日更新 {TODAY} ===")
     print(f"模式：{'演练（不写文件）' if args.dry_run else '正式写入'}　"
           f"AI：{'关（关键词兜底）' if args.no_ai else '开（DeepSeek）'}\n")
 
@@ -454,7 +479,7 @@ def main():
 
     # 无论有没有新条目，日期戳都刷一遍（证明今天跑过）
     if not args.dry_run:
-        for page in ("models.html", "wiki-skills.html", "wiki-mcp.html"):
+        for page in ("models.html", "agents.html", "wiki-skills.html", "wiki-mcp.html"):
             if update_stamp(page) and page not in changed:
                 changed.append(page)
 
