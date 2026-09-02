@@ -190,7 +190,8 @@
   var bottomNavHtml = (function () {
     var pages = [
       { href: 'index.html',      icon: '🏠', label: '首页' },
-      { href: 'models.html',     icon: '🤖', label: '模型' },
+      { href: 'models.html',     icon: '🧠', label: '模型' },
+      { href: 'agents.html',     icon: '🤖', label: '智能体' },
       { href: 'concepts.html',   icon: '📖', label: '百科' }
     ];
     var current = location.pathname.split('/').pop() || 'index.html';
