@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="theme-color" content="#059669">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AI工作台">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./assets/ai-workbench.ico">
+<link rel="icon" type="image/x-icon" href="./assets/ai-workbench.ico">
+<title>智能体应用 · AI 学习工作台</title>
+<link rel="stylesheet" href="./_shared/css/app.css">
+<style>
+/* ============ 私有样式：智能体应用页 ============ */
+
+/* app.css 未给 figure 定样式，默认 margin 会撑开图表，这里归零 */
+.figure, figure.chart-figure { margin: 0; }
+
+/* ---- 赛道分层阶梯 ---- */
+.tier-stack { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.tier {
+  display: grid; grid-template-columns: 46px 1fr; gap: 14px; align-items: center;
+  border: 1px solid var(--rule); border-radius: 12px; padding: 14px 16px;
+  background: var(--bg2); position: relative; overflow: hidden;
+}
+.tier::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--tc);
+}
+.tier .tier-n {
+  font-family: var(--font-display); font-size: 22px; font-weight: 700;
+  color: var(--tc); text-align: center; line-height: 1;
+}
+.tier .tier-body .tier-name { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+.tier .tier-body .tier-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.tier .tier-body .tier-egs { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 5px; }
+.tier .tier-body .tier-egs span {
+  font-size: 11.5px; color: var(--tc); background: var(--accent-soft);
+  border: 1px solid var(--rule); border-radius: 999px; padding: 2px 9px; cursor: pointer;
+}
+.tier .tier-body .tier-egs span:hover { border-color: var(--tc); }
+
+/* ---- 热度榜（切换式）---- */
+.board-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.board-tab {
+  border: 1px solid var(--rule); background: var(--bg2); color: var(--muted);
+  font-size: 12.5px; font-weight: 600; padding: 6px 13px; border-radius: 999px;
+  cursor: pointer; transition: .15s; -webkit-tap-highlight-color: transparent;
+}
+.board-tab:hover { color: var(--ink); }
+.board-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.board-pane { display: none; }
+.board-pane.active { display: block; }
+.board-box {
+  border: 1px solid var(--rule); border-radius: var(--radius-lg);
+  padding: 18px 20px; background: var(--bg2); box-shadow: var(--shadow);
+}
+.board-box .bb-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; flex-wrap: wrap; }
+.board-box .bb-title { font-size: 15px; font-weight: 700; color: var(--ink); }
+.board-box .bb-src { font-size: 11.5px; color: var(--faint); }
+.board-box .bb-note { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; line-height: 1.6; }
+.brow { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px dashed var(--rule); }
+.brow:last-child { border-bottom: none; }
+.brow .bnum {
+  width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 11.5px; font-weight: 700; background: var(--accent-soft); color: var(--accent);
+}
+.brow:nth-of-type(1) .bnum { background: linear-gradient(135deg, #F59E0B, #D97706); color: #fff; }
+.brow:nth-of-type(2) .bnum { background: linear-gradient(135deg, #9CA3AF, #6B7280); color: #fff; }
+.brow:nth-of-type(3) .bnum { background: linear-gradient(135deg, #D97706, #92400E); color: #fff; }
+.brow .bname { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.brow .bname .bsub { display: block; font-size: 11.5px; color: var(--faint); font-weight: 400; margin-top: 1px; }
+.brow .bval { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+.brow .bval .bdelta { display: block; font-size: 11px; color: #DC2626; text-align: right; margin-top: 1px; }
+.btrack { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--accent-soft); overflow: hidden; }
+.btrack i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 2px; }
+
+/* ---- 应用图鉴：筛选条 ---- */
+.ag-bar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 6px; }
+.ag-chip {
+  border: 1px solid var(--rule); background: var(--bg2); color: var(--muted);
+  font-size: 12.5px; font-weight: 600; padding: 6px 13px; border-radius: 999px;
+  cursor: pointer; transition: .15s; -webkit-tap-highlight-color: transparent;
+}
+.ag-chip:hover { color: var(--ink); }
+.ag-chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.ag-count { font-size: 12.5px; color: var(--faint); margin-left: auto; }
+
+/* ---- 页头时间戳 ---- */
+.page-stamp {
+  margin: 10px 0 0; font-size: 12.5px; color: var(--faint);
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+}
+.page-stamp::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent2); flex: none;
+}
+
+/* ---- 工具条：搜索 + 排序 ---- */
+.ag-tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+.ag-search {
+  flex: 1 1 260px; min-width: 0; box-sizing: border-box;
+  border: 1px solid var(--rule); background: var(--bg2); color: var(--ink);
+  font-size: 13px; font-family: var(--font-sans);
+  padding: 8px 14px; border-radius: 999px; outline: none; transition: .15s;
+}
+.ag-search::placeholder { color: var(--faint); }
+.ag-search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.ag-sorts { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ---- 海外速览：一行式紧凑条目（与国内完整卡片形成主次对比）---- */
+.ov-list {
+  border: 1px solid var(--rule); border-radius: var(--radius-lg);
+  background: var(--bg2); box-shadow: var(--shadow); overflow: hidden; margin-top: 14px;
+}
+.ov-item {
+  display: grid; grid-template-columns: 150px 126px 1fr 84px 30px;
+  gap: 12px; align-items: center; padding: 11px 16px; cursor: pointer;
+  border-top: 1px solid var(--rule); transition: background .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ov-item:first-child { border-top: none; }
+.ov-item:hover { background: var(--accent-soft); }
+.ov-name { font-size: 13.5px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 6px; }
+.ov-new {
+  font-style: normal; font-size: 10px; font-weight: 700; color: #fff;
+  background: #DC2626; border-radius: 999px; padding: 1px 6px;
+}
+.ov-vendor { font-size: 12px; color: var(--faint); }
+.ov-line {
+  font-size: 12.5px; color: var(--muted); line-height: 1.5;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ov-heat { height: 5px; border-radius: 3px; background: var(--accent-soft); overflow: hidden; }
+.ov-heat i { display: block; height: 100%; background: var(--accent2); border-radius: 3px; }
+.ov-num { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); text-align: right; }
+
+/* ---- 应用卡片 ---- */
+.ag-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(288px, 1fr)); gap: 14px; margin-top: 16px; }
+.ag-card {
+  border: 1px solid var(--rule); border-radius: var(--radius-lg); padding: 16px 18px;
+  background: var(--bg2); box-shadow: var(--shadow); cursor: pointer;
+  display: flex; flex-direction: column; gap: 8px; transition: transform .15s, box-shadow .15s, border-color .15s;
+  position: relative; overflow: hidden; -webkit-tap-highlight-color: transparent;
+}
+.ag-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--rc); opacity: .75; }
+.ag-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--rc); }
+.ag-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.ag-name { font-size: 16px; font-weight: 700; color: var(--ink); line-height: 1.3; }
+.ag-en { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); font-weight: 400; }
+.ag-rgn {
+  flex: none; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px;
+  color: #fff; background: var(--rc);
+}
+.ag-vendor { font-size: 12px; color: var(--faint); }
+.ag-line { font-size: 13px; color: var(--muted); line-height: 1.6; flex: 1; }
+.ag-traits { display: flex; flex-wrap: wrap; gap: 5px; }
+.ag-traits span {
+  font-size: 11.5px; padding: 2px 8px; border-radius: 6px;
+  background: var(--accent-soft); color: var(--accent); border: 1px solid var(--rule);
+}
+.ag-heat { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.ag-heat-bar { flex: 1; height: 5px; border-radius: 3px; background: var(--accent-soft); overflow: hidden; }
+.ag-heat-bar i { display: block; height: 100%; background: var(--rc); border-radius: 3px; }
+.ag-heat-num { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); flex: none; }
+.ag-new {
+  position: absolute; right: 10px; top: 10px; font-size: 10.5px; font-weight: 700;
+  color: #fff; background: #DC2626; border-radius: 999px; padding: 1px 7px;
+}
+
+/* ---- 详情弹窗（app.css 未定义，本页自带）---- */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200; display: none;
+  background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
+  align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--bg2); border: 1px solid var(--rule); border-radius: var(--radius-lg);
+  max-width: 620px; width: 100%; box-shadow: var(--shadow-lg); padding: 26px 28px; margin: auto;
+  animation: modalIn .25s ease;
+}
+@keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.modal-close {
+  float: right; width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid var(--rule); background: var(--bg); color: var(--muted);
+  cursor: pointer; font-size: 16px; display: grid; place-items: center; transition: all .15s;
+}
+.modal-close:hover { color: var(--danger); border-color: var(--danger); }
+.modal-box h2 { font-size: 21px; margin: 0 0 2px; padding-right: 40px; }
+.modal-box .modal-en { font-family: var(--font-mono); font-size: 12.5px; color: var(--accent); margin: 0 0 10px; }
+.modal-box .modal-vendor { font-size: 13px; color: var(--faint); margin-bottom: 14px; }
+.modal-box .modal-tags { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+.modal-box .modal-kv { display: grid; grid-template-columns: 74px 1fr; gap: 7px 12px; font-size: 13.5px; margin-bottom: 14px; }
+.modal-box .modal-kv dt { color: var(--faint); font-size: 12.5px; }
+.modal-box .modal-kv dd { margin: 0; color: var(--ink); }
+.modal-box .modal-sec { font-size: 12px; font-weight: 700; color: var(--faint); margin: 14px 0 4px; }
+.modal-box .modal-desc { font-size: 13.5px; color: var(--muted); line-height: 1.75; margin: 0; }
+.modal-box .modal-fact {
+  background: var(--accent-soft); border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0; padding: 11px 15px; font-size: 13px; color: var(--ink); line-height: 1.7;
+}
+.modal-box .modal-fact b { color: var(--accent); }
+.modal-link {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; padding: 10px 18px;
+  background: var(--accent); color: #fff !important; border-radius: 10px;
+  font-size: 14px; font-weight: 600; text-decoration: none; transition: opacity .15s, transform .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.modal-link:hover { opacity: .85; }
+.modal-link:active { transform: scale(.97); }
+
+/* ---- 场景选型卡 ---- */
+.pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.pick-card { border: 1px solid var(--rule); border-radius: 12px; padding: 14px 16px; background: var(--bg2); }
+.pick-card .pc-top { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+.pick-card .pc-why { font-size: 12.5px; color: var(--faint); line-height: 1.6; margin-bottom: 9px; }
+.pc-picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.pc-pill {
+  cursor: pointer; border: 1px solid var(--rule); background: var(--accent-soft);
+  color: var(--accent); font-size: 12.5px; padding: 3px 10px; border-radius: 999px; transition: .15s;
+}
+.pc-pill:hover { border-color: var(--accent); transform: translateY(-1px); }
+
+/* ---- 国内外差异对照 ---- */
+.diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.diff-col { border: 1px solid var(--rule); border-radius: 12px; padding: 16px 18px; background: var(--bg2); }
+.diff-col h3 { font-size: 14.5px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+.diff-col ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--muted); line-height: 1.85; }
+.diff-col li b { color: var(--ink); }
+
+/* ---- 自建路径对比表 ---- */
+.path-table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--bg2); }
+.path-table th, .path-table td { padding: 9px 11px; text-align: left; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.path-table th { background: var(--accent-soft); color: var(--ink); font-size: 12.5px; font-weight: 700; }
+.path-table tr:last-child td { border-bottom: none; }
+.path-table td b { color: var(--ink); }
+
+/* ---- 每日动态区 ---- */
+.daily-feed { border: 1px solid var(--rule); border-radius: var(--radius-lg); background: var(--bg2); padding: 4px 18px; }
+
+/* ---- 口径说明 ---- */
+.note-box {
+  border: 1px dashed var(--rule); border-radius: 12px; padding: 14px 18px;
+  background: color-mix(in srgb, var(--accent-soft) 55%, transparent); font-size: 12.8px; color: var(--muted); line-height: 1.8;
+}
+.note-box b { color: var(--ink); }
+.note-box ul { margin: 6px 0 0; padding-left: 18px; }
+.note-box li { margin-bottom: 4px; }
+
+/* ---- 移动端 ---- */
+@media (max-width: 640px) {
+  .tier { grid-template-columns: 34px 1fr; gap: 10px; padding: 12px 13px; }
+  .tier .tier-n { font-size: 18px; }
+  .tier .tier-body .tier-name { font-size: 14px; }
+  .tier .tier-body .tier-desc { font-size: 12.5px; }
+  .board-box { padding: 14px 15px; }
+  .brow { grid-template-columns: 20px 1fr auto; gap: 8px; }
+  .brow .bname { font-size: 13px; }
+  .ag-grid { grid-template-columns: 1fr; gap: 11px; }
+  .ag-card { padding: 14px 15px; }
+  .ag-name { font-size: 15px; }
+  .ag-tools { gap: 8px; }
+  .ag-search { flex: 1 1 100%; }
+  /* 速览条目在窄屏改为四行堆叠：名字+分数 / 厂商 / 一句话 / 热度条 */
+  .ov-item { grid-template-columns: 1fr auto; gap: 5px 10px; padding: 11px 13px; }
+  .ov-name { grid-column: 1; grid-row: 1; }
+  .ov-num { grid-column: 2; grid-row: 1; }
+  .ov-vendor { grid-column: 1; grid-row: 2; }
+  .ov-line { grid-column: 1 / -1; grid-row: 3; white-space: normal; font-size: 12px; }
+  .ov-heat { grid-column: 1 / -1; grid-row: 4; }
+  .pick-grid { grid-template-columns: 1fr; }
+  .diff-grid { grid-template-columns: 1fr; gap: 12px; }
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal-box { max-width: 100%; border-radius: 16px 16px 0 0; padding: 20px 18px 32px; max-height: 85vh; overflow-y: auto; }
+  .daily-feed { padding: 4px 12px; }
+  .note-box { padding: 12px 14px; font-size: 12.3px; }
+  .path-table { font-size: 12.3px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">
+      <span class="logo">AI</span>
+      <span>AI 学习工作台</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">首页</a>
+      <a href="models.html">模型总览</a>
+      <a href="agents.html" class="active">智能体应用</a>
+      <a href="concepts.html">知识百科</a>
+      <a href="news.html">动态区</a>
+    </div>
+    <div class="nav-actions">
+      <button class="theme-btn" data-theme-btn title="切换主题">☾</button>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <section class="page-head">
+    <span class="kicker">AI Agent Applications</span>
+    <h1>智能体应用</h1>
+    <p class="sub">从「问 AI 一句话」到「给 AI 一个任务」。这里收录 <b>35 个主流智能体应用</b>（<b>国内 24 个</b>为主体，国外 11 个收入「海外速览」简要列出），按赛道分层、按热度排榜、按场景选型 —— 想找「我这个事该用谁」，直接翻最后的选型卡。</p>
+    <p class="page-stamp">主体数据核实于 2026-08-29 · 上方动态区每日自动追加</p>
+    <div class="stat-strip" id="stat-strip"></div>
+  </section>
+
+  <!-- ============ ① 每日动态（Agent 赛道）============ -->
+  <section class="sec" id="agent-daily">
+    <div class="sec-head"><h2>📡 Agent 赛道每日更新</h2><div class="rule"></div><span class="hint">每天自动追加</span></div>
+    <div class="daily-feed" id="agent-daily-feed">
+      <!-- __AGENT_DAILY_INSERT__ -->
+      <div class="news-day">
+        <div class="dhead">
+          <span class="ddate">2026-08-29</span>
+          <span class="dbadge">本期要点</span>
+        </div>
+        <div class="news-item">
+          <span class="cat c-event">格局</span>
+          <div class="body">
+            <h4>办公 Agent 进入「三足鼎立」：腾讯系 / 抖音系 / 阿里系</h4>
+            <p>QuestMobile 2026 年 7 月数据：AI 效率办公赛道合计月活 1.02 亿（同比 +8.2%）。腾讯 WorkBuddy 658.2 万、QClaw 225.9 万；抖音 TRAE Work 190.4 万；阿里 Qoderwork 23.0 万、JVS Claw 5.7 万。</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <span class="cat c-model">新玩家</span>
+          <div class="body">
+            <h4>「百度搭子」桌面端月活 674.30 万，环比 +1063.79%，增速第一</h4>
+            <p>AI 产品榜 7 月桌面端数据，百度搭子一举冲到第二；8 月 27 日发布企业版与专业套件。</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <span class="cat c-news">品牌整合</span>
+          <div class="body">
+            <h4>三大厂同期收拢 Agent 品牌：豆包工作 / 千问办公 / QClaw 并入 WorkBuddy</h4>
+            <p>字节 8/25 发布「豆包工作」（TRAE Work 与扣子、豆包整合，与飞书打通）；阿里 8 月初整合 QoderWork / 悟空 / MuleRun 为「千问办公」并打通钉钉；腾讯 QClaw 并入 WorkBuddy 体系并打通微信与企业微信。</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <span class="cat c-paper">开源</span>
+          <div class="body">
+            <h4>OpenClaw 2.0 发布；DeepSeek 开源 Harness v0.1</h4>
+            <p>OpenClaw 2.0（v2026.8.1）带来共享云会话、浏览器应用重建、Swarm 多智能体、凭证遮蔽与沙箱安全；DeepSeek 8/13 开源 Harness v0.1，提出「Agent = 大模型 + Harness」。</p>
+          </div>
+        </div>
+      </div>
+      <!-- __END_AGENT_DAILY_INSERT__ -->
+    </div>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" data-agtab="overview" role="tab">🗺️ 赛道全景</button>
+    <button class="tab-btn" data-agtab="catalog" role="tab">📱 应用图鉴</button>
+    <button class="tab-btn" data-agtab="pick" role="tab">🧭 选型与对比</button>
+  </div>
+
+  <!-- ==================== 页签 1 · 赛道全景 ==================== -->
+  <div class="tab-pane active" data-agpane="overview">
+
+    <!-- ---- ② 赛道分层 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>🪜 Agent 赛道五层结构</h2><div class="rule"></div><span class="hint">从聊天到系统入口</span></div>
+      <p class="sec-note">「智能体」这个词被用得很泛，先分层就不会选错：越往上自主程度越高，但可控性与稳定性越差；越往下越好落地，但天花板越低。<b>点每层右侧的胶囊可直接跳到该应用的详情。</b></p>
+      <div class="tier-stack" id="tier-stack"></div>
+    </section>
+
+    <!-- ---- ③ 热度排行榜 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>🔥 热度排行榜</h2><div class="rule"></div><span class="hint">7 组口径 · 点标签切换</span></div>
+      <p class="sec-note">Agent 赛道<b>没有单一权威热度指标</b>：国内看月活与设备数，国外看访问份额与 Token 消耗。下面 7 组榜各自口径独立，<b>只能组内横比，不能跨组换算</b>。切换标签查看。</p>
+      <div class="board-tabs" id="board-tabs"></div>
+      <div id="board-body"></div>
+    </section>
+
+    <!-- ---- ④ 办公 Agent 使用次数 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>📊 国内办公 Agent · 使用次数与增幅</h2><div class="rule"></div><span class="hint">双轴 · 柱=次数 线=增幅</span></div>
+      <p class="sec-note">QuestMobile 2026 年 6 月数据。<b>腾讯 WorkBuddy 以 7433 万次断层第一</b>，且是唯一「高基数 + 高增速」的选手（+167.2%）；第二梯队里 Qoderwork（+62.5%）与 QwenPaw（+269.3%）增速更猛但绝对量还小。柱看体量、线看势头，两条线一起涨才算真起来。</p>
+      <figure class="chart-figure">
+        <div id="chart-ag-office" style="width:100%;min-height:360px"></div>
+      </figure>
+    </section>
+
+    <!-- ---- ⑤ 手机厂商助手 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>📱 手机厂商 AI 助手 · 规模与渗透率</h2><div class="rule"></div><span class="hint">双轴 · 柱=月活 线=渗透率</span></div>
+      <p class="sec-note">2026 年 6 月，单位：万。<b>规模最大的是 OPPO 小布（1.65 亿）</b>，但<b>渗透率最高的是小米超级小爱（74.4%）</b> —— 规模取决于出货量，渗透率才反映「自家用户里有多少人真在用」。苹果 Siri 以 17.8% 垫底，是这份榜里最值得注意的信号。</p>
+      <figure class="chart-figure">
+        <div id="chart-ag-phone" style="width:100%;min-height:360px"></div>
+      </figure>
+    </section>
+
+    <!-- ---- ⑥ 国外 Agent Token 消耗 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>⚡ 纯自主 Agent · 周 Token 消耗榜</h2><div class="rule"></div><span class="hint">OpenRouter · 2026-05 快照</span></div>
+      <p class="sec-note">这是最能反映「<b>纯 Agent 产品真实用量</b>」的榜：聊天助手的 Token 不在这里。<b>OpenClaw 以 9.66T 断层第一</b>，几乎是第二名的 1.6 倍。注意这是应用/框架维度的分类口径，<b>与「模型维度 Token 榜」（DeepSeek V4 Flash 等）不是一回事，不能混用比较</b>。</p>
+      <figure class="chart-figure">
+        <div id="chart-ag-token" style="width:100%;min-height:340px"></div>
+      </figure>
+    </section>
+
+  </div>
+
+  <!-- ==================== 页签 2 · 应用图鉴 ==================== -->
+  <div class="tab-pane" data-agpane="catalog">
+
+    <p class="pane-lead" style="font-size:13.5px;color:var(--muted);line-height:1.75;margin-bottom:14px;">
+      共 <b id="ag-total">35</b> 个应用（国内 <b id="ag-total-cn">24</b> · 海外 <b id="ag-total-gl">11</b>）。
+      <b>国内是主体</b>，以完整卡片展开；海外主流收在下方「🌍 海外速览」里简要列出。默认按<b>综合热度指数</b>从高到低排列。
+      点任意卡片或条目看完整解读：定位、最强维度、短板、最近变化与官网入口。<b>右上角带「新」标的，是 8 月以来有实质变化的应用。</b>
+    </p>
+
+    <section class="sec" style="margin-top:12px;">
+      <div class="ag-tools">
+        <input type="search" id="ag-search" class="ag-search"
+               placeholder="搜名字 / 厂商 / 特质，如「开源」「办公」「编程」" autocomplete="off">
+        <div class="ag-sorts" id="ag-sort-bar"></div>
+      </div>
+      <div class="ag-bar" id="ag-region-bar"></div>
+      <div class="ag-bar" id="ag-type-bar"></div>
+      <div class="ag-grid" id="ag-grid"></div>
+      <p class="empty hidden" id="ag-empty">该筛选下暂无应用</p>
+    </section>
+
+    <!-- 海外速览：紧凑一行式，与国内完整卡片形成主次对比 -->
+    <section class="sec" id="overseas-sec" style="margin-top:22px;">
+      <div class="sec-head">
+        <h2>🌍 海外速览</h2><div class="rule"></div>
+        <span class="hint">简要了解为主，点条目看详情</span>
+      </div>
+      <div class="ov-list" id="ov-list"></div>
+    </section>
+  </div>
+
+  <!-- ==================== 页签 3 · 选型与对比 ==================== -->
+  <div class="tab-pane" data-agpane="pick">
+
+    <!-- ---- ⑦ 代表 Agent 能力雷达 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>📐 五款代表 Agent 能力画像</h2><div class="rule"></div><span class="hint">六维示意评分 · 5 分制</span></div>
+      <p class="sec-note">挑了 5 个不同路线的代表（3 国内 + 2 国外）。<b>评分为示意值，用于看形状差异，不是基准分。</b>可以看出：豆包是「全面但偏多模态」的圆形，Kimi 是「长文档突出」的偏形，Claude Code 与 OpenClaw 在「工具/本地执行」上顶格但生态弱，WorkBuddy 是「工具执行 + 均衡」的办公型。</p>
+      <figure class="chart-figure">
+        <div id="chart-ag-radar" style="width:100%;min-height:430px"></div>
+      </figure>
+    </section>
+
+    <!-- ---- ⑧ 场景选型卡 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>🎯 场景选型卡</h2><div class="rule"></div><span class="hint">点胶囊 → 看应用详情</span></div>
+      <p class="sec-note">别问「哪个 Agent 最强」，先问「我要干什么」。下面是 10 个高频场景的推荐，<b>点胶囊直接看该应用的完整解读</b>。</p>
+      <div class="pick-grid" id="pick-grid"></div>
+    </section>
+
+    <!-- ---- ⑨ 国内外差异 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>🌏 国内外差异</h2><div class="rule"></div><span class="hint">不是谁强谁弱，是路线不同</span></div>
+      <div class="diff-grid">
+        <div class="diff-col">
+          <h3>🌍 国外路线</h3>
+          <ul>
+            <li><b>模型上限更高</b>：GPT / Gemini / Claude 原生 agentic 能力领先</li>
+            <li><b>开源 Agent 繁荣</b>：OpenClaw / Hermes 可完全自托管</li>
+            <li><b>全球化生态</b>：Slack / Discord / VS Code 插件最全</li>
+            <li><b>短板</b>：国内访问受限、需科学上网、高峰期排队、企业数据出境合规</li>
+          </ul>
+        </div>
+        <div class="diff-col">
+          <h3>🇨🇳 国内路线</h3>
+          <ul>
+            <li><b>生态深度融合</b>：微信 / 抖音 / 飞书 / 钉钉原生打通</li>
+            <li><b>免费为主</b>：C 端几乎不收费，合规与私有化完善（Dify / AutoClaw）</li>
+            <li><b>系统级入口</b>：手机厂商预装，覆盖人数最多的入口</li>
+            <li><b>办公 Agent 爆发</b>：WorkBuddy / 百度搭子 / 千问办公三强混战</li>
+            <li><b>短板</b>：顶尖模型上限略逊、国际渠道与多语言弱</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- ⑩ 自建路径 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>🧩 想自己搭一个，选哪条路</h2><div class="rule"></div><span class="hint">4 条主路径</span></div>
+      <p class="sec-note">「用别人的 Agent」和「自己搭 Agent」是两件事。如果你的需求是<b>企业内网、数据不能出本机、流程要可控</b>，就得走自建。四条主路径的取舍如下。</p>
+      <div class="table-wrap">
+        <table class="path-table">
+          <thead><tr><th>路径</th><th>门槛</th><th>部署</th><th>最适合</th><th>代价</th></tr></thead>
+          <tbody>
+            <tr><td><b>扣子 Coze</b></td><td>零代码</td><td>云托管</td><td>5 分钟搭 Bot 并分发到飞书 / 抖音</td><td>数据在云上，复杂流程编排受限</td></tr>
+            <tr><td><b>Dify</b></td><td>会配置</td><td>可私有化</td><td>企业知识库问答、可控 LLMOps</td><td>需要运维，C 端体验不是目标</td></tr>
+            <tr><td><b>智谱 AutoClaw</b></td><td>装个客户端</td><td>本地一键</td><td>本机文件 / 浏览器自动化，数据留本地</td><td>偏个人，团队协作能力弱</td></tr>
+            <tr><td><b>OpenClaw</b></td><td>会折腾</td><td>完全自托管</td><td>接入 IM、自定义工具、模型自由路由</td><td>无官方 SLA，安全需自己加固</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ---- ⑪ 口径与来源 ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>📌 数据口径与来源</h2><div class="rule"></div><span class="hint">务必先看这段</span></div>
+      <div class="note-box">
+        <b>核实时间：2026-08-29</b>。本页数据来自用户 2026-08-18 底稿《AI Agent 应用全面对比》，并联网补充了 8 月 18 日以来的实质变化。
+        <ul>
+          <li><b>热度数据多为快照</b>：Agent 赛道周度波动极大（尤其 Token 榜与月活榜），看到的是某一时点的切片，不是稳定结论。</li>
+          <li><b>跨榜不可换算</b>：月活、访问份额、Token 消耗、使用次数是四种完全不同的口径，<b>只能在同一张榜内横比</b>。</li>
+          <li><b>模型榜 ≠ 应用榜</b>：OpenRouter 的 Token 榜分「模型维度」和「应用/框架维度」两套，本页用的是后者（OpenClaw 9.66T 起），与模型维度榜（DeepSeek V4 Flash 17.34T 等）<b>不可混用</b>。</li>
+          <li><b>综合热度指数为示意值</b>：卡片上的 0–100 分是我按各榜量级归一化后的排序参考，<b>不是任何机构的官方指标</b>，仅用于决定卡片先后。</li>
+          <li><b>能力雷达为示意评分</b>：六维 5 分制，用于看形状差异，不代表基准测试结果。</li>
+          <li><b>品牌整合频繁</b>：8 月三大厂都在收拢 Agent 品牌（豆包工作 / 千问办公 / QClaw 并入 WorkBuddy），部分产品的名称与入口可能已经变化。</li>
+        </ul>
+        <b>主要来源：</b>QuestMobile《AI 应用走到哪里了》（2026-06 / 2026-07）、AI 产品榜（2026-07 桌面端）、OpenRouter Global Ranking（2026-05 快照）、红杉中国 xbench《AgentIF-OneDay》（2026-01）、FirstPageSage《Agentic AI Statistics 2026》、InsightMark Research、各厂商官网与公开评测。选型前请以官方最新版本与自身场景实测为准。
+      </div>
+    </section>
+
+  </div>
+
+</div>
+
+<footer>
+  <div class="sources">
+    <div>AI 学习工作台 · 智能体应用 · 数据截至 2026-08-29，动态区每日自动更新。热度数据均为第三方机构的公开快照，卡片上的综合热度指数是排序用的示意值（非任何机构官方指标），主要信息来源：</div>
+    <ol>
+      <li><span class="src-title">QuestMobile《AI 应用走到哪里了》（2026-06 / 2026-07）</span><a class="src-url" href="https://www.questmobile.com.cn/" target="_blank" rel="noopener">https://www.questmobile.com.cn/</a></li>
+      <li><span class="src-title">AI 产品榜（2026-07 桌面端月活）</span><a class="src-url" href="https://ai-bot.cn/" target="_blank" rel="noopener">https://ai-bot.cn/</a></li>
+      <li><span class="src-title">OpenRouter Global Ranking（2026-05 快照 · 应用 / 框架维度）</span><a class="src-url" href="https://openrouter.ai/rankings" target="_blank" rel="noopener">https://openrouter.ai/rankings</a></li>
+      <li><span class="src-title">Dify 开源仓库</span><a class="src-url" href="https://github.com/langgenius/dify" target="_blank" rel="noopener">https://github.com/langgenius/dify</a></li>
+      <li><span class="src-title">FastGPT 开源仓库</span><a class="src-url" href="https://github.com/labring/FastGPT" target="_blank" rel="noopener">https://github.com/labring/FastGPT</a></li>
+      <li><span class="src-title">RAGFlow 开源仓库</span><a class="src-url" href="https://github.com/infiniflow/ragflow" target="_blank" rel="noopener">https://github.com/infiniflow/ragflow</a></li>
+      <li><span class="src-title">红杉中国 xbench《AgentIF-OneDay》评测（2026-01，无公开固定入口，见官方发布报告）</span></li>
+      <li><span class="src-title">FirstPageSage《Agentic AI Statistics 2026》</span></li>
+      <li><span class="src-title">各应用官网与公开评测（见「应用图鉴」内各条目的官网入口）</span></li>
+    </ol>
+  </div>
+</footer>
+
+<!-- ============ 详情弹窗 ============ -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeAgent()">
+  <div class="modal-box" id="modal-content"></div>
+</div>
+
+<script src="./_shared/js/app.js"></script>
+<script src="./_shared/js/echarts.min.js"></script>
+<script src="assets/charts.js"></script>
+<script>
+/* ==========================================================================
+   智能体应用页 · 数据层
+   数据来源：2026-08-18 底稿《AI Agent 应用全面对比》+ 2026-08-29 联网补充
+   ========================================================================== */
+
+var REGION_META = {
+  cn:     { label: '国内', color: '#E0532A' },
+  global: { label: '国外', color: '#2F6DF6' }
+};
+
+var TYPE_META = {
+  general:  { label: '综合助手', icon: '💬' },
+  office:   { label: '办公执行', icon: '📄' },
+  code:     { label: '编程工程', icon: '⌨️' },
+  research: { label: '研究检索', icon: '🔍' },
+  builder:  { label: '搭建平台', icon: '🧩' },
+  local:    { label: '本地开源', icon: '🖥️' },
+  system:   { label: '系统入口', icon: '📱' }
+};
+
+/* heat：综合热度指数（示意值 0-100），仅用于卡片排序 */
+var AGENTS = [
+  /* ---------------- 国外 11 ---------------- */
+  {
+    id: 'chatgpt', name: 'ChatGPT', en: 'Agent Mode / GPTs', vendor: 'OpenAI',
+    region: 'global', type: 'general', heat: 100,
+    heatLabel: '周活 9 亿+ · 访问份额 54.7%',
+    traits: ['Agent Mode', 'GPTs 生态最大', '浏览器与文件工具'],
+    oneLine: '综合助手 + Agent 模式，全球体量与生态的双料第一。',
+    best: '专业工作场景 —— AgentIF-OneDay 工作维度 72.18，全榜最高。',
+    weak: '国内访问受限、高峰排队、企业数据出境合规要自己解决。',
+    scene: '英文工作环境、跨工具长链路任务、需要成熟插件生态。',
+    url: 'https://chatgpt.com'
+  },
+  {
+    id: 'gemini', name: 'Gemini', en: 'Google Gemini', vendor: 'Google',
+    region: 'global', type: 'general', heat: 82,
+    heatLabel: '月活 7.5 亿 · 访问份额 27.4%',
+    traits: ['搜索 + 安卓 + Workspace', '实时联网检索', '多模态原生'],
+    oneLine: '谷歌全生态内置 Agent，搜索与多模态是它的护城河。',
+    best: '实时信息检索、在安卓与 Workspace 里顺手完成的任务。',
+    weak: '国内不可用；长链路自主执行弱于 ChatGPT 与 Manus。',
+    scene: '需要最新信息、且你已经重度使用谷歌全家桶。',
+    url: 'https://gemini.google.com'
+  },
+  {
+    id: 'openclaw', name: 'OpenClaw', en: 'Open-source General Agent', vendor: '开源社区',
+    region: 'global', type: 'local', heat: 78,
+    heatLabel: '周 Token 9.66T · 纯 Agent 全球第一',
+    traits: ['消息应用内直接干活', '跑命令/浏览/管文件/发邮件', '多模型路由', '可自托管'],
+    oneLine: '「养龙虾」现象级开源通用 Agent，纯 Agent 赛道 Token 消耗全球第一。',
+    best: '真正动手干活：本地命令、浏览器、文件系统全打通。',
+    weak: '有部署门槛、无官方 SLA、安全加固要自己做。',
+    scene: '想在自己的机器或服务器上跑一个能动手的 Agent。',
+    upd: '2026-08-30 发布 2.0（v2026.8.1）：共享云会话、浏览器应用重建、Swarm 多智能体、凭证遮蔽与沙箱安全。',
+    isNew: true, url: ''
+  },
+  {
+    id: 'claudecode', name: 'Claude Code / Claude', en: 'Anthropic', vendor: 'Anthropic',
+    region: 'global', type: 'code', heat: 70,
+    heatLabel: '周 Token 3.23T · 代码能力顶尖',
+    traits: ['命令行编程 Agent', 'Computer Use 操作电脑', '长上下文稳定'],
+    oneLine: '代码能力全球顶尖的编程 Agent，附带 Computer Use 直接操作电脑。',
+    best: '复杂代码库重构、在终端里自主完成多步编程任务。',
+    weak: '国内直连受限、价格偏高、非编程场景表现一般。',
+    scene: '工程量大、对代码质量要求高的开发任务。',
+    url: 'https://claude.ai'
+  },
+  {
+    id: 'codetools', name: '编程 Agent 工具群', en: 'Cursor / Replit / Cline / Kilo Code', vendor: '各厂商',
+    region: 'global', type: 'code', heat: 66,
+    heatLabel: 'Kilo Code 周 Token 5.51T（第 3）',
+    traits: ['IDE 内自主编程', '多文件改写', '全应用生成', '有开源可选'],
+    oneLine: 'IDE 内的自主编程阵营，Cursor / Kilo Code / Cline 各有拥趸。',
+    best: '日常开发提效、在现有工程里连续改代码。',
+    weak: '各家能力参差；长任务仍需人工盯着，容易跑偏。',
+    scene: '已经有一个工程，想让 AI 在里面改东西而不是从零造。',
+    url: ''
+  },
+  {
+    id: 'hermes', name: 'Hermes Agent', en: 'Nous Research', vendor: 'Nous Research',
+    region: 'global', type: 'local', heat: 62,
+    heatLabel: '周 Token 6.08T（第 2）',
+    traits: ['自我进化', '跨会话持久记忆', '子 Agent 调度', '40+ 工具'],
+    oneLine: '自我进化型开源 Agent，跨会话记忆与子 Agent 调度是它的独门特色。',
+    best: '长期陪伴式任务、需要记住上下文的连续工作流。',
+    weak: '社区规模小于 OpenClaw，文档与中文资料都偏少。',
+    scene: '希望 Agent「记得上次聊到哪」的长周期任务。',
+    url: ''
+  },
+  {
+    id: 'manus', name: 'Manus', en: 'Butterfly Effect', vendor: 'Butterfly Effect（总部新加坡）',
+    region: 'global', type: 'general', heat: 58,
+    heatLabel: 'AgentIF 综合 ~64% · 生活场景 73.40（最强）',
+    traits: ['通用自主 Agent', '生活场景全榜第一', '长链路执行稳定'],
+    oneLine: '通用自主 Agent，生活助手类任务全场最强。',
+    best: '生活 / 出行 / 订票这类开放工作流的端到端执行。',
+    weak: '综合成功率略逊 Genspark 与 ChatGPT；重度任务仍会卡壳。',
+    scene: '把一件生活琐事整个交给它，只要结果不要过程。',
+    url: 'https://manus.im'
+  },
+  {
+    id: 'genspark', name: 'Genspark', en: 'MainFunc', vendor: 'MainFunc',
+    region: 'global', type: 'research', heat: 55,
+    heatLabel: 'AgentIF 综合 ~70% · 全榜第一',
+    traits: ['多智能体并行研究', '隐式指令推断', '学习场景 71.19'],
+    oneLine: '多智能体并行研究，AgentIF-OneDay 综合成功率榜首。',
+    best: '学习与研究类任务，从一句话生成完整调研报告。',
+    weak: '国内访问受限；中文场景明显不如国产。',
+    scene: '要一份有结构、有引用的调研材料，且是中文以外的议题。',
+    url: 'https://www.genspark.ai'
+  },
+  {
+    id: 'perplexity', name: 'Perplexity Computer', en: 'Perplexity', vendor: 'Perplexity',
+    region: 'global', type: 'research', heat: 48,
+    heatLabel: '自主 Agent MAU 98 万',
+    traits: ['深度研究', '多模型栈', '多模态输入', '引用可溯源'],
+    oneLine: '深度研究检索 Agent，答案自带引用来源，可逐条核对。',
+    best: '事实核查、需要带出处的研究资料。',
+    weak: '执行类能力弱 —— 不会帮你写文件或跑命令。',
+    scene: '先查清楚再动手，且你必须能追溯每条结论的来源。',
+    url: 'https://www.perplexity.ai'
+  },
+  {
+    id: 'janitor', name: 'Janitor AI / SillyTavern', en: 'Community', vendor: '社区',
+    region: 'global', type: 'general', heat: 45,
+    heatLabel: '周 Token 953B（第 8）',
+    traits: ['角色扮演', '长上下文连续对话', 'C 端付费黏性极高'],
+    oneLine: '角色扮演 / 陪伴赛道头部，C 端付费黏性高得离谱。',
+    best: '角色扮演与长篇连续对话。',
+    weak: '不是生产力工具；内容安全与合规需自行承担。',
+    scene: '陪伴、创作向的长对话，而非处理工作任务。',
+    url: ''
+  },
+  {
+    id: 'devin', name: 'Devin', en: 'Cognition', vendor: 'Cognition',
+    region: 'global', type: 'code', heat: 40,
+    heatLabel: '自主完成率 86%（全球最高）· MAU 33 万',
+    traits: ['端到端软件工程', '无人工干预完成率 86%', '完整工程交付'],
+    oneLine: '端到端软件工程 Agent，任务自主完成率全球最高（86%）。',
+    best: '完整工程任务从 0 到 1 交付，人工介入最少。',
+    weak: '价格高；对需求描述的清晰度依赖极大。',
+    scene: '需求描述清楚、希望几乎不用盯的工程任务。',
+    url: 'https://cognition.ai'
+  },
+
+  /* ---------------- 国内 24（14 原有 + 10 新增）---------------- */
+  {
+    id: 'doubao', name: '豆包', en: 'Doubao', vendor: '字节跳动',
+    region: 'cn', type: 'general', heat: 100,
+    heatLabel: '月独立设备 4.38 亿台 · 日活 1.03 亿+',
+    traits: ['多模态断层领先', '中文语感最好', '公文写作', '全网检索', '抖音生态'],
+    oneLine: '国内体量断层第一的大众综合助手，多模态与中文语感最强。',
+    best: '日常多模态问答、中文写作、图文与视频理解。',
+    weak: '深度专业推理弱于 DeepSeek / Kimi；超长文档不是强项。',
+    scene: '中文日常场景的通吃选择，尤其是要「看得懂图」的时候。',
+    upd: 'QuestMobile 2026 上半年数据：MAU 3.82 亿，居 AI 原生 APP 榜第一。',
+    isNew: true, url: 'https://www.doubao.com'
+  },
+  {
+    id: 'phoneai', name: '终端厂商助手', en: '小布 / 小艺 / 超级小爱 / 蓝心 / YOYO', vendor: 'OPPO / 华为 / 小米 / vivo / 荣耀',
+    region: 'cn', type: 'system', heat: 90,
+    heatLabel: 'OPPO 小布 1.65 亿 · 华为小艺 1.48 亿（2026-06）',
+    traits: ['系统级入口', '预装免安装', '覆盖人数最多', '可跨 App 调用'],
+    oneLine: '手机预装的系统级 Agent，是覆盖人数最多的 Agent 入口。',
+    best: '手机上的日常唤起、跨 App 的一句话操作。',
+    weak: '能力深度有限、各家割裂、复杂任务仍需跳转出去。',
+    scene: '不想装任何东西，手机上随手唤起就用。',
+    url: ''
+  },
+  {
+    id: 'workbuddy', name: 'WorkBuddy', en: 'Tencent WorkBuddy', vendor: '腾讯',
+    region: 'cn', type: 'office', heat: 88,
+    heatLabel: '月活 658.2 万（2026-07）· 使用次数 7433 万次（+167.2%）',
+    traits: ['一句话到交付', '全场景职场工作台', 'DAU 最高办公智能体', 'PC 桌面端第一'],
+    oneLine: '国内 DAU 最高的办公效率智能体，主打「一句话到交付」。',
+    best: '职场任务的端到端交付 —— 写材料、做表、出报告。',
+    weak: '偏办公场景；开放生态与自定义流程仍在补齐。',
+    scene: '职场里那些「说一遍就该出成品」的事。',
+    upd: '2026-07 月活 658.2 万；6 月 PC 端访问量 2097 万居首（TRAE 1279 万、QoderWork 788 万）。QClaw 已并入 WorkBuddy 体系并打通微信与企业微信。',
+    isNew: true, url: 'https://workbuddy.cn'
+  },
+  {
+    id: 'baidudazi', name: '百度文心 / 百度搭子', en: 'ERNIE Agent Family', vendor: '百度',
+    region: 'cn', type: 'office', heat: 80,
+    heatLabel: '百度搭子 7 月桌面端月活 674.30 万（环比 +1063.79%）',
+    traits: ['任务拆解', '文件/网页/数据/报告/PPT', '搜索加持', '零代码智能体'],
+    oneLine: '搜索 + 零代码智能体，「百度搭子」是 2026 年增速最猛的新玩家。',
+    best: '信息检索类办公任务、批量生成报告与 PPT。',
+    weak: '生态协同弱于腾讯与字节；品牌矩阵较散（秒哒 / DuMate / GenFlow）。',
+    scene: '需要先查资料再成稿的办公任务。',
+    upd: '2026-07 桌面端月活 674.30 万，环比 +1063.79%，增速第一、总量第二；8/27 发布企业版与专业套件。',
+    isNew: true, url: 'https://chat.baidu.com'
+  },
+  {
+    id: 'yuanbao', name: '腾讯元宝', en: 'Tencent Yuanbao', vendor: '腾讯',
+    region: 'cn', type: 'general', heat: 76,
+    heatLabel: '微信生态独家 · 2026-06 MAU 4984 万（第四）',
+    traits: ['公众号/群聊/视频号独家解析', '对话里直接交付 PPT/Word/Excel', '混元模型'],
+    oneLine: '唯一能读懂微信生态内容的综合助手，对话里直接交付文档。',
+    best: '微信内容处理、一句话出 PPT / Word / Excel。',
+    weak: '通用推理与代码弱于头部；生态之外的能力一般。',
+    scene: '素材在微信里、产出也要发回微信的工作流。',
+    url: 'https://yuanbao.tencent.com'
+  },
+  {
+    id: 'deepseek', name: 'DeepSeek', en: 'DeepSeek', vendor: '深度求索',
+    region: 'cn', type: 'general', heat: 74,
+    heatLabel: '推理 / 代码 / 数学见长 · API 性价比高',
+    traits: ['推理能力最强', '代码与数学好', '开源权重', 'API 便宜'],
+    oneLine: '推理与代码见长，Agent 能力扎实，是自建 Agent 最常用的底座。',
+    best: '复杂推理、作为自建 Agent 的底座模型。',
+    weak: 'C 端 Agent 产品形态弱；8/17 起峰谷调价，高峰时段涨最多 350%。',
+    scene: '需要强推理的任务，或你要自己搭一个 Agent。',
+    upd: '2026-08-13 开源 Harness v0.1，提出「Agent = 大模型 + Harness」，半小时 GitHub 星标破万。',
+    isNew: true, url: 'https://chat.deepseek.com'
+  },
+  {
+    id: 'coze', name: '扣子 Coze', en: 'Coze', vendor: '字节跳动',
+    region: 'cn', type: 'builder', heat: 72,
+    heatLabel: '月活 1500 万 · 开发者 300 万+',
+    traits: ['零代码搭建', '飞书 / 抖音原生分发', '模板丰富', '插件市场'],
+    oneLine: '国内最大的零代码 Agent 搭建与分发平台。',
+    best: '5 分钟搭一个 Bot 并发布到飞书 / 抖音。',
+    weak: '复杂企业流程编排弱于 Dify；数据托管在云上。',
+    scene: '想快速做一个给大家用的 Bot，且不需要私有化。',
+    url: 'https://www.coze.cn'
+  },
+  {
+    id: 'kimi', name: 'Kimi', en: 'Moonshot Kimi', vendor: '月之暗面',
+    region: 'cn', type: 'research', heat: 68,
+    heatLabel: '200 万字无损上下文',
+    traits: ['200 万字长上下文', '专业文档研读', '法律 / 科研', '逻辑严谨'],
+    oneLine: '200 万字长上下文专家，专业文档与深度研读的首选。',
+    best: '超长文档研读、法律案卷、科研综述。',
+    weak: '多模态与生态弱于豆包；日常闲聊不是它的方向。',
+    scene: '扔进去一整本合同或几十篇论文，要它给结论。',
+    url: 'https://www.kimi.com'
+  },
+  {
+    id: 'dify', name: 'Dify', en: 'Open-source LLM Platform', vendor: '开源社区',
+    region: 'cn', type: 'builder', heat: 66,
+    heatLabel: 'GitHub 14.2 万★ · 已支撑 400 万次部署',
+    traits: ['开源可私有化', 'RAG 最强', 'LLMOps 完善', '混合检索 + 重排序'],
+    oneLine: '开源 Agent 开发平台的事实标准，私有化与 RAG 能力最强。',
+    best: '企业私有化部署、知识库问答、可控的 LLMOps。',
+    weak: '需要运维能力；C 端体验不是它的目标。',
+    scene: '数据不能出内网，还要一套能管起来的 Agent 平台。',
+    url: 'https://dify.ai'
+  },
+  {
+    id: 'tongyi', name: '通义 / 百炼', en: 'Alibaba Tongyi & Bailian', vendor: '阿里',
+    region: 'cn', type: 'builder', heat: 64,
+    heatLabel: '钉钉 + 阿里云深度集成',
+    traits: ['企业级 Agent', '钉钉 / 阿里云集成', '百炼平台', 'AI 智能体耳机'],
+    oneLine: '阿里系企业级 Agent，与钉钉、阿里云深度集成。',
+    best: '企业内部流程自动化，尤其是已有阿里云 / 钉钉资产的场景。',
+    weak: 'C 端存在感弱；品牌整合频繁，入口一直在变。',
+    scene: '公司本来就在用钉钉和阿里云。',
+    upd: '2026 年 8 月初整合 QoderWork / 悟空 / MuleRun 为「千问办公」，并打通钉钉。',
+    isNew: true, url: 'https://tongyi.aliyun.com'
+  },
+  {
+    id: 'autoclaw', name: '智谱清言 / AutoClaw', en: 'AutoGLM', vendor: '智谱 AI',
+    region: 'cn', type: 'local', heat: 60,
+    heatLabel: 'AutoGLM 任务型 Agent',
+    traits: ['国内首个一键本地版 OpenClaw', '浏览器自动化', 'IM 接入', '办公自动化'],
+    oneLine: 'AutoGLM 任务型 Agent，附带国内首个一键安装的本地版 OpenClaw。',
+    best: '本地执行 + 办公自动化 + 数据可私有。',
+    weak: '大众普及度低于豆包与元宝；上手有一定门槛。',
+    scene: '既要 Agent 能操作本机，又不想折腾部署。',
+    url: 'https://chatglm.cn'
+  },
+  {
+    id: 'minimax', name: 'MiniMax Agent', en: 'MiniMax Agent', vendor: 'MiniMax',
+    region: 'cn', type: 'general', heat: 54,
+    heatLabel: '多智能体协同「项目执行者」',
+    traits: ['多 Agent 协同', '复杂任务拆解', '网站 / 报告 / PPT 原型'],
+    oneLine: '多智能体协同的「项目执行者」，一次交付成型的产物。',
+    best: '一次性产出网站、报告、PPT 的可用原型。',
+    weak: '稳定性与可复现性一般；深度定制能力弱。',
+    scene: '要一个能立刻演示的成品原型，不追求精细打磨。',
+    url: ''
+  },
+  {
+    id: 'qclaw', name: 'QClaw', en: 'Tencent QClaw', vendor: '腾讯',
+    region: 'cn', type: 'local', heat: 52,
+    heatLabel: '月活 225.9 万（2026-07）· 使用次数 2810 万次',
+    traits: ['本地执行', '电脑自动化', 'IM 接入', '现并入 WorkBuddy 体系'],
+    oneLine: '腾讯的本地执行型 Agent，现已并入 WorkBuddy 体系。',
+    best: '本机文件与浏览器自动化，数据留在本地。',
+    weak: '品牌整合进行中，入口与能力边界还在调整。',
+    scene: '需要 Agent 动你电脑上的东西，但数据不外传。',
+    upd: '2026 年 8 月并入 WorkBuddy 体系，打通微信与企业微信。',
+    isNew: true, url: ''
+  },
+  {
+    id: 'step', name: '阶跃 AI', en: 'StepFun', vendor: '阶跃星辰',
+    region: 'cn', type: 'general', heat: 44,
+    heatLabel: '智能体原生 OS · STEPX Neo',
+    traits: ['图 / 视频 / 语音多模态', '智能体原生 OS', '软硬一体'],
+    oneLine: '多模态见长，押注智能体原生操作系统与终端。',
+    best: '多模态内容理解与生成、端侧智能体。',
+    weak: '生态与大众认知度低于头部选手。',
+    scene: '多模态内容处理，或关注端侧 Agent 的走向。',
+    url: 'https://www.stepfun.com'
+  },
+
+  /* ---------------- 国内补充 10（2026-09-02 新增）----------------
+     说明：以下条目的 heatLabel 一律用定性描述，不写未经核实的精确数值。
+     heat 仍为排序用的示意指数，插入现有序列后由 AGENTS.sort 自动归位。 */
+  {
+    id: 'xinghuo', name: '讯飞星火', en: 'iFlytek Spark', vendor: '科大讯飞',
+    region: 'cn', type: 'general', heat: 78,
+    heatLabel: '语音与垂直行业见长 · 信创适配好',
+    traits: ['语音能力国内最强', '教育 / 医疗 / 政务深耕', '软硬一体', '信创环境友好'],
+    oneLine: '语音与垂直行业是护城河，教育、医疗、政务场景落地最深。',
+    best: '语音交互、会议转写、教育与医疗这类垂直场景。',
+    weak: '通用推理与 C 端生态弱于豆包、DeepSeek。',
+    scene: '需要语音能力，或在政务 / 教育 / 医疗这类信创环境里落地。',
+    url: 'https://xinghuo.xfyun.cn'
+  },
+  {
+    id: 'wpslingxi', name: 'WPS 灵犀', en: 'WPS Lingxi', vendor: '金山办公',
+    region: 'cn', type: 'office', heat: 71,
+    heatLabel: 'WPS 全端内置 · 政企覆盖率高',
+    traits: ['文档内直接调用', 'WPS 全端覆盖', '表格与公文处理', '政企渗透深'],
+    oneLine: '嵌在 WPS 里的办公 Agent，文档场景的装机量优势无人能及。',
+    best: '在 Word / Excel / PPT 里就地改内容、写公式、生成表格。',
+    weak: '跨应用与长链路任务弱；复杂流程编排不是它的方向。',
+    scene: '你的工作本来就在 WPS 里，不想为了用 AI 换一套工具。',
+    url: 'https://ai.wps.cn'
+  },
+  {
+    id: 'trae', name: 'TRAE / TRAE Work', en: 'TRAE', vendor: '字节跳动',
+    region: 'cn', type: 'code', heat: 70,
+    heatLabel: 'TRAE Work 月活 190.4 万（2026-07）',
+    traits: ['AI 编程 IDE', '国内版 + 国际版', '免费额度充足', '已并入豆包工作'],
+    oneLine: '字节的 AI 编程 IDE，办公版 TRAE Work 月活 190.4 万，是编程 Agent 里唯一挤进办公榜的选手。',
+    best: '日常写代码、在 IDE 里让 AI 连续改工程。',
+    weak: '超大型工程的重构能力弱于 Claude Code；深度定制要自己配规则。',
+    scene: '想要一个免费、中文友好、开箱就能写代码的 IDE。',
+    upd: '2026-08-25 TRAE Work 与扣子、豆包整合为「豆包工作」，并打通飞书。',
+    isNew: true, url: 'https://www.trae.ai'
+  },
+  {
+    id: 'metaso', name: '秘塔 AI 搜索', en: 'MetaSo', vendor: '秘塔科技',
+    region: 'cn', type: 'research', heat: 62,
+    heatLabel: '研究模式长报告 · 引用可逐条溯源',
+    traits: ['无广告搜索', '研究模式自动成稿', '引用可溯源', '中文学术检索强'],
+    oneLine: '无广告的 AI 搜索，「研究模式」能直接产出带引用的长报告。',
+    best: '先搜再成稿 —— 中文议题的资料搜集与综述。',
+    weak: '无执行能力，不会帮你跑命令或改文件。',
+    scene: '要一份每条结论都能点回原文的中文调研材料。',
+    url: 'https://metaso.cn'
+  },
+  {
+    id: 'feishu', name: '飞书智能伙伴', en: 'Feishu AI Partner', vendor: '字节跳动',
+    region: 'cn', type: 'office', heat: 58,
+    heatLabel: '企业知识库 + 流程自动化',
+    traits: ['企业知识库问答', '多维表格 + 审批流', '零代码创建', '组织架构级权限'],
+    oneLine: '长在飞书里的企业 Agent，知识库问答与审批流是它的主场。',
+    best: '企业内部问答、把流程固化成可复用的 Bot。',
+    weak: '离开飞书生态几乎没有价值；外部场景不适用。',
+    scene: '公司用飞书，且要让 AI 读得到内部文档与流程。',
+    url: 'https://www.feishu.cn'
+  },
+  {
+    id: 'nanoai', name: '纳米 AI', en: '360 Nano AI', vendor: '360',
+    region: 'cn', type: 'general', heat: 56,
+    heatLabel: '多模型聚合 · 免费额度大',
+    traits: ['多模型聚合', '搜索增强', '安全厂商背景', '免费额度充足'],
+    oneLine: '360 的多模型聚合助手，搜索增强 + 大免费额度是它的打法。',
+    best: '想在一个入口里试不同模型，且不想花钱。',
+    weak: '能力深度与生态弱于头部；产品迭代快但方向时有摇摆。',
+    scene: '轻度使用、想免费对比多个模型的普通用户。',
+    url: 'https://www.n.cn'
+  },
+  {
+    id: 'skywork', name: '天工超级智能体', en: 'Skywork Super Agent', vendor: '昆仑万维',
+    region: 'cn', type: 'research', heat: 50,
+    heatLabel: 'Deep Research · 多格式一次生成',
+    traits: ['Deep Research', '文档 / 表格 / 网页 / PPT 一次生成', '多模态', '有海外版'],
+    oneLine: '主打 Deep Research 的国产超级智能体，能一次吐出文档、表格、网页和 PPT。',
+    best: '深度调研并直接产出可交付的多格式成果。',
+    weak: '国内 C 端声量不大；稳定性与速度有波动。',
+    scene: '要一份深度调研，且希望连排版好的 PPT 一起拿到。',
+    url: 'https://www.tiangong.cn'
+  },
+  {
+    id: 'fastgpt', name: 'FastGPT', en: 'FastGPT', vendor: '开源社区',
+    region: 'cn', type: 'builder', heat: 48,
+    heatLabel: '开源知识库 Agent · 轻量易部署',
+    traits: ['开源可私有化', '知识库开箱即用', '可视化编排', '部署轻量'],
+    oneLine: '国内最流行的开源知识库 Agent 平台，比 Dify 更轻、上手更快。',
+    best: '想快速搭一个能问答的知识库，且要私有化。',
+    weak: '企业级 LLMOps 与权限体系弱于 Dify；复杂流程编排能力有限。',
+    scene: '中小团队要一个「今天就能跑起来」的私有知识库 Agent。',
+    url: 'https://fastgpt.in'
+  },
+  {
+    id: 'ima', name: '腾讯 ima', en: 'Tencent ima', vendor: '腾讯',
+    region: 'cn', type: 'research', heat: 46,
+    heatLabel: '个人知识库 · 微信内容一键收藏',
+    traits: ['个人知识库', '微信 / 网页内容一键收藏', '基于知识库问答', '混元 + 多模型'],
+    oneLine: '个人知识库助手，把看过的东西攒起来，再只基于这些材料问答。',
+    best: '把散落的资料沉淀成可检索的第二大脑。',
+    weak: '只做知识库问答，不执行任务；知识库规模有上限。',
+    scene: '资料散在微信和网页里，想让 AI 只基于这些材料回答。',
+    url: 'https://ima.qq.com'
+  },
+  {
+    id: 'ragflow', name: 'RagFlow', en: 'RAGFlow', vendor: 'InfiniFlow',
+    region: 'cn', type: 'builder', heat: 42,
+    heatLabel: '开源 RAG 引擎 · 复杂文档解析强',
+    traits: ['开源 RAG 引擎', '深度文档解析', '表格 / 扫描件识别强', '引用可溯源'],
+    oneLine: '国产开源 RAG 引擎，复杂文档（表格、扫描件、版式混乱）的解析是强项。',
+    best: '企业文档解析与检索，尤其是版式复杂的 PDF。',
+    weak: '只解决检索这一环，Agent 编排要另接；需要运维能力。',
+    scene: '资料是一堆难解析的 PDF / 扫描件，得先让机器读懂。',
+    url: 'https://ragflow.io'
+  }
+];
+
+/* 赛道五层结构 */
+var TIERS = [
+  { n: 'L1', name: '系统级入口', color: '#059669',
+    desc: '预装在手机 / 操作系统里，覆盖人数最多，但能力深度有限。是大多数人接触 Agent 的第一站。',
+    egs: ['phoneai'] },
+  { n: 'L2', name: '综合助手（带 Agent 能力）', color: '#0EA5A5',
+    desc: '本质是聊天助手，但已经能调用工具、联网、读文件。国内豆包、国外 ChatGPT 都在这层。',
+    egs: ['doubao', 'chatgpt', 'gemini', 'yuanbao', 'deepseek', 'step', 'xinghuo', 'nanoai'] },
+  { n: 'L3', name: '办公 / 生产力执行', color: '#2563EB',
+    desc: '面向具体职场交付：写材料、做表、出报告、跑流程。2026 年国内竞争最激烈的一层。',
+    egs: ['workbuddy', 'baidudazi', 'wpslingxi', 'feishu', 'qclaw', 'autoclaw', 'minimax', 'manus'] },
+  { n: 'L4', name: '专业 / 垂直 Agent', color: '#7C3AED',
+    desc: '把一件事做到极致：编程、深度研究、超长文档。选它们的前提是你明确知道自己要什么。',
+    egs: ['claudecode', 'codetools', 'trae', 'devin', 'kimi', 'genspark',
+          'perplexity', 'metaso', 'skywork', 'ima', 'janitor'] },
+  { n: 'L5', name: '搭建平台 / 自托管', color: '#D97706',
+    desc: '不只是「用一个 Agent」，而是「造一个 Agent」。数据主权与流程可控是这一层的全部意义。',
+    egs: ['coze', 'dify', 'tongyi', 'fastgpt', 'ragflow', 'openclaw', 'hermes'] }
+];
+
+/* 热度榜 7 组。val 为展示值，num 为条形长度基准（组内最大值=100） */
+var HEAT_BOARDS = [
+  {
+    key: 'share', title: '综合 AI 助手 · 全球访问份额', src: '2026 Q2',
+    note: '看的是「网民去 AI 助手那里，去了谁家」。ChatGPT 与 Gemini 两家吃掉 82%，其余全部是长尾。',
+    unit: '%',
+    rows: [
+      { name: 'ChatGPT', sub: '周活 9 亿+ · 月活超 10 亿', val: 54.7 },
+      { name: 'Gemini', sub: '月活 7.5 亿', val: 27.4 }
+    ]
+  },
+  {
+    key: 'token', title: '纯自主 Agent · 周 Token 消耗', src: 'OpenRouter 2026-05 快照',
+    note: '最能反映纯 Agent 产品真实用量的榜 —— 聊天助手的 Token 不计入。OpenClaw 9.66T 断层第一。注意：这是应用/框架维度口径，与模型维度 Token 榜（DeepSeek V4 Flash 17.34T 等）不可混用。',
+    unit: 'T',
+    rows: [
+      { name: 'OpenClaw', sub: '开源通用 Agent，蝉联榜首', val: 9.66 },
+      { name: 'Hermes Agent', sub: '自我进化开源 Agent', val: 6.08 },
+      { name: 'Kilo Code', sub: 'VS Code 编程 Agent', val: 5.51 },
+      { name: 'Claude Code', sub: '终端编程 Agent', val: 3.23 },
+      { name: 'BLACKBOXAI', sub: '面向构建者', val: 1.56 },
+      { name: 'liteLLM', sub: 'LLM 调用框架（网关）', val: 1.38 },
+      { name: 'Janitor AI', sub: '角色扮演头部', val: 0.953 },
+      { name: 'Cline', sub: 'IDE 自主编程', val: 0.913 }
+    ]
+  },
+  {
+    key: 'mau', title: '自主 Agent · 月活 MAU', src: '2026 Q1 调研',
+    note: '「纯 Agent 产品」的月活口径，与综合助手的月活不是一个量级 —— 说明自主 Agent 整体还在早期。',
+    unit: '万',
+    rows: [
+      { name: 'OpenAI Agents', sub: '企业 API Agents', val: 270 },
+      { name: 'OpenClaw', sub: '开源通用 Agent', val: 230 },
+      { name: 'Perplexity', sub: '深度研究', val: 98 },
+      { name: 'Replit', sub: '云端编程', val: 57 },
+      { name: 'Devin', sub: '端到端软件工程', val: 33 }
+    ]
+  },
+  {
+    key: 'cnmau', title: '国内通用 AI 助手 · 规模', src: 'QuestMobile / 2026-06',
+    note: '豆包是国内断层第一，量级上没有任何对手。★ 口径警告：豆包是「月独立设备数」，其余三个是「月活 MAU」，两者不可横比 —— 条形已统一换算到「万」作量级示意，只用来感受体量差，不要当成同一个指标来读。',
+    unit: '',
+    custom: [
+      { name: '豆包', sub: '月独立设备 4.38 亿台 · 日活 1.03 亿+（设备口径）', val: 4.38, unit: '亿台', bar: 43800 },
+      { name: '千问', sub: 'AI 原生 APP 榜第二（月活口径）', val: 1.67, unit: '亿 MAU', bar: 16700 },
+      { name: '腾讯元宝', sub: 'AI 原生 APP 榜第四（月活口径）', val: 4984, unit: '万 MAU', bar: 4984 },
+      { name: '扣子 Coze（Web）', sub: '国内搭建自定义 Agent 第一平台（月活口径）', val: 1500, unit: '万月活', bar: 1500 }
+    ],
+    rows: []
+  },
+  {
+    key: 'office', title: '国内办公 Agent · 使用次数与增幅', src: 'QuestMobile 2026-06',
+    note: 'WorkBuddy 以 7433 万次断层第一，且是唯一「高基数 + 高增速」的选手。增速看的是势头，绝对量才是体量。',
+    unit: '万次',
+    rowsWithDelta: [
+      { name: '腾讯 WorkBuddy', val: 7433, delta: '+167.2%' },
+      { name: '腾讯 QClaw', val: 2810, delta: '+8.6%' },
+      { name: '阿里 Qoderwork', val: 130, delta: '+62.5%' },
+      { name: '阿里 QwenPaw', val: 101, delta: '+269.3%' },
+      { name: '智谱 AutoClaw', val: 66, delta: '+45.9%' },
+      { name: '阿里 JVS Claw', val: 63, delta: '+132.4%' }
+    ],
+    rows: []
+  },
+  {
+    key: 'officemau', title: '办公 Agent · 月活（最新）', src: 'QuestMobile 2026-07 · AI 产品榜',
+    note: '★ 2026-08-29 联网补充：赛道合计月活 1.02 亿（同比 +8.2%）。百度搭子以 674.30 万冲到第二、环比 +1063.79% 是全场增速第一 —— 办公 Agent 的格局在两个月内被改写。',
+    unit: '万',
+    rowsWithDelta: [
+      { name: '百度搭子', val: 674.30, delta: '+1063.79%' },
+      { name: '腾讯 WorkBuddy', val: 658.2, delta: 'PC 客户端' },
+      { name: '腾讯 QClaw', val: 225.9, delta: 'PC 客户端' },
+      { name: '抖音 TRAE Work', val: 190.4, delta: 'PC 客户端' },
+      { name: '阿里 Qoderwork', val: 23.0, delta: 'PC 客户端' },
+      { name: '阿里 JVS Claw', val: 5.7, delta: 'PC 客户端' }
+    ],
+    rows: []
+  },
+  {
+    key: 'phone', title: '手机厂商 AI 助手 · 规模与渗透率', src: '2026-06 · 单位：万',
+    note: '规模最大的是 OPPO 小布（1.65 亿），但渗透率最高的是小米超级小爱（74.4%）—— 规模看出货量，渗透率才反映自家用户里有多少人真在用。苹果 Siri 17.8% 垫底。',
+    unit: '万',
+    rowsWithDelta: [
+      { name: 'OPPO 小布', val: 16509, delta: '渗透率 70.8%' },
+      { name: '华为 小艺', val: 14770, delta: '渗透率 53.5%' },
+      { name: '小米 超级小爱', val: 9594, delta: '渗透率 74.4%' },
+      { name: 'vivo 蓝心小V', val: 7375, delta: '渗透率 34.9%' },
+      { name: '荣耀 YOYO', val: 6282, delta: '渗透率 63.1%' },
+      { name: '苹果 Siri', val: 4786, delta: '渗透率 17.8%' },
+      { name: '三星 Bixby', val: 969, delta: '渗透率 43.6%' }
+    ],
+    rows: []
+  }
+];
+
+/* 代表 Agent 能力雷达（六维 5 分制示意评分） */
+var RADAR_DIMS = ['通用对话', '代码工程', '长文档', '多模态', '工具/本地执行', '生态与分发'];
+var RADAR_ROWS = [
+  { name: '豆包',       id: 'doubao',    scores: [5, 3, 3, 5, 3, 5], color: '#E0532A' },
+  { name: 'WorkBuddy',  id: 'workbuddy', scores: [4, 4, 4, 3, 5, 4], color: '#059669' },
+  { name: 'Kimi',       id: 'kimi',      scores: [4, 3, 5, 3, 2, 3], color: '#2563EB' },
+  { name: 'Claude Code',id: 'claudecode',scores: [3, 5, 4, 2, 5, 3], color: '#7C3AED' },
+  { name: 'OpenClaw',   id: 'openclaw',  scores: [3, 4, 3, 2, 5, 2], color: '#D97706' }
+];
+
+/* 场景选型卡 */
+var PICKS = [
+  { icon: '📄', name: '读一整本合同 / 几十篇论文', why: '上下文不够长就白搭，这一项国内没有对手', picks: ['kimi'] },
+  { icon: '📊', name: '一句话出 PPT / Word / Excel', why: '要的是「交付文件」，不是「给你内容」', picks: ['yuanbao', 'workbuddy', 'baidudazi'] },
+  { icon: '💼', name: '职场任务端到端交付', why: '说一遍就该出成品，中间别让我操心', picks: ['workbuddy', 'qclaw'] },
+  { icon: '🖼️', name: '日常多模态问答（看图/视频）', why: '中文语感 + 多模态理解，两者都要强', picks: ['doubao'] },
+  { icon: '🔍', name: '先查资料再成稿', why: '检索能力是底座，产出格式是表面', picks: ['baidudazi', 'genspark', 'perplexity'] },
+  { icon: '⌨️', name: '写代码 / 改现有工程', why: 'IDE 内连续改，比从零生成更常用', picks: ['claudecode', 'codetools', 'devin'] },
+  { icon: '🔒', name: '数据不能出本机 / 内网', why: '这条一票否决，其他能力都往后排', picks: ['autoclaw', 'dify', 'openclaw'] },
+  { icon: '🧩', name: '给团队搭一个 Bot 给大家用', why: '要的是分发渠道，不是模型能力', picks: ['coze', 'dify', 'tongyi'] },
+  { icon: '🧠', name: '复杂推理 / 当自建 Agent 的底座', why: '推理扎实且便宜，性价比决定能不能跑量', picks: ['deepseek'] },
+  { icon: '📱', name: '手机上随手唤起，不想装东西', why: '免安装就是最大的优势', picks: ['phoneai'] }
+];
+
+/* ==========================================================================
+   渲染层
+   ========================================================================== */
+
+var AGENT_BY_ID = {};
+AGENTS.forEach(function (a) { AGENT_BY_ID[a.id] = a; });
+AGENTS.sort(function (a, b) { return b.heat - a.heat; });
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+function byId(id) { return document.getElementById(id); }
+
+/* ---------- 页头统计 ---------- */
+function renderStatStrip() {
+  var cn = AGENTS.filter(function (a) { return a.region === 'cn'; }).length;
+  var gl = AGENTS.length - cn;
+  var upd = AGENTS.filter(function (a) { return a.isNew; }).length;
+  var html = [
+    [String(AGENTS.length), '收录智能体应用'],
+    [cn + ' 个', '国内应用'],
+    [gl + ' 个', '国外主流'],
+    [upd + ' 个', '8 月有新变化']
+  ].map(function (p) {
+    return '<div class="stat"><div class="num">' + p[0] + '</div><div class="lbl">' + p[1] + '</div></div>';
+  }).join('');
+  var el = byId('stat-strip');
+  if (el) el.innerHTML = html;
+}
+
+/* ---------- 赛道分层 ---------- */
+function renderTiers() {
+  var box = byId('tier-stack');
+  if (!box) return;
+  box.innerHTML = TIERS.map(function (t) {
+    var egs = t.egs.map(function (id) {
+      var a = AGENT_BY_ID[id];
+      if (!a) return '';
+      return '<span data-agent="' + a.id + '">' + esc(a.name) + '</span>';
+    }).join('');
+    return '<div class="tier" style="--tc:' + t.color + '">' +
+      '<div class="tier-n">' + t.n + '</div>' +
+      '<div class="tier-body">' +
+        '<div class="tier-name">' + esc(t.name) + '</div>' +
+        '<div class="tier-desc">' + esc(t.desc) + '</div>' +
+        '<div class="tier-egs">' + egs + '</div>' +
+      '</div></div>';
+  }).join('');
+  box.querySelectorAll('[data-agent]').forEach(function (el) {
+    el.addEventListener('click', function () { openAgent(el.getAttribute('data-agent')); });
+  });
+}
+
+/* ---------- 热度榜 ---------- */
+function boardRows(b) {
+  var rows = b.rowsWithDelta || b.custom || b.rows || [];
+  var max = 0;
+  // bar = 条形基准。组内单位不一致时用它统一换算后再归一化，
+  // 否则「4.38 亿台」会被「4984 万」压成 3%，视觉上完全失真（cnmau 组即此坑）。
+  rows.forEach(function (r) {
+    var base = (r.bar !== undefined) ? r.bar : r.val;
+    if (base > max) max = base;
+  });
+  return rows.map(function (r, i) {
+    var base = (r.bar !== undefined) ? r.bar : r.val;
+    var pct = max ? Math.max(3, Math.round(base / max * 100)) : 3;
+    var unit = r.unit || b.unit || '';
+    var delta = r.delta ? '<span class="bdelta">' + esc(r.delta) + '</span>' : '';
+    return '<div class="brow">' +
+      '<div class="bnum">' + (i + 1) + '</div>' +
+      '<div class="bname">' + esc(r.name) +
+        (r.sub ? '<span class="bsub">' + esc(r.sub) + '</span>' : '') +
+      '</div>' +
+      '<div class="bval">' + r.val + (unit ? ' ' + unit : '') + delta + '</div>' +
+      '<div class="btrack"><i style="width:' + pct + '%"></i></div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderBoards() {
+  var tabs = byId('board-tabs'), body = byId('board-body');
+  if (!tabs || !body) return;
+  tabs.innerHTML = HEAT_BOARDS.map(function (b, i) {
+    return '<button class="board-tab' + (i === 0 ? ' active' : '') + '" data-board="' + b.key + '">' +
+      esc(b.title) + '</button>';
+  }).join('');
+  body.innerHTML = HEAT_BOARDS.map(function (b, i) {
+    return '<div class="board-pane' + (i === 0 ? ' active' : '') + '" data-boardpane="' + b.key + '">' +
+      '<div class="board-box">' +
+        '<div class="bb-head"><span class="bb-title">' + esc(b.title) + '</span>' +
+        '<span class="bb-src">来源：' + esc(b.src) + '</span></div>' +
+        '<p class="bb-note">' + esc(b.note) + '</p>' +
+        boardRows(b) +
+      '</div></div>';
+  }).join('');
+  tabs.querySelectorAll('.board-tab').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var key = btn.getAttribute('data-board');
+      tabs.querySelectorAll('.board-tab').forEach(function (b) {
+        b.classList.toggle('active', b === btn);
+      });
+      body.querySelectorAll('.board-pane').forEach(function (p) {
+        p.classList.toggle('active', p.getAttribute('data-boardpane') === key);
+      });
+    });
+  });
+}
+
+/* ---------- 应用图鉴 ---------- */
+var filter = { region: 'all', type: 'all', q: '', sort: 'heat' };
+
+/* 搜索匹配：名字 / 英文名 / 厂商 / 特质标签 / 一句话定位 */
+function matchQuery(a, q) {
+  if (!q) return true;
+  var s = (a.name + ' ' + (a.en || '') + ' ' + a.vendor + ' ' +
+           a.traits.join(' ') + ' ' + a.oneLine).toLowerCase();
+  return s.indexOf(q.toLowerCase()) !== -1;
+}
+
+/* 排序：热度降序（默认） / 国内优先 / 名称 */
+function sortAgents(list, mode) {
+  var out = list.slice();
+  if (mode === 'region') {
+    out.sort(function (x, y) {
+      if (x.region !== y.region) return x.region === 'cn' ? -1 : 1;
+      return y.heat - x.heat;
+    });
+  } else if (mode === 'name') {
+    out.sort(function (x, y) { return x.name.localeCompare(y.name, 'zh-Hans-CN'); });
+  } else {
+    out.sort(function (x, y) { return y.heat - x.heat; });
+  }
+  return out;
+}
+
+/* 卡片 / 速览条目的 HTML 与点击绑定，renderCards 复用 */
+function agentCardHTML(a) {
+  var rm = REGION_META[a.region];
+  return '<div class="ag-card" data-agent="' + a.id + '" style="--rc:' + rm.color + '">' +
+    (a.isNew ? '<span class="ag-new">新</span>' : '') +
+    '<div class="ag-top">' +
+      '<div><div class="ag-name">' + esc(a.name) +
+        (a.en ? ' <span class="ag-en">' + esc(a.en) + '</span>' : '') + '</div>' +
+        '<div class="ag-vendor">' + esc(a.vendor) + ' · ' + TYPE_META[a.type].label + '</div>' +
+      '</div>' +
+      '<span class="ag-rgn">' + rm.label + '</span>' +
+    '</div>' +
+    '<div class="ag-line">' + esc(a.oneLine) + '</div>' +
+    '<div class="ag-traits">' + a.traits.map(function (t) {
+      return '<span>' + esc(t) + '</span>';
+    }).join('') + '</div>' +
+    '<div class="ag-heat">' +
+      '<div class="ag-heat-bar"><i style="width:' + a.heat + '%"></i></div>' +
+      '<span class="ag-heat-num">' + a.heat + '</span>' +
+    '</div>' +
+  '</div>';
+}
+
+/* 海外速览：一行式紧凑条目 */
+function agentOverseasHTML(a) {
+  return '<div class="ov-item" data-agent="' + a.id + '">' +
+    '<span class="ov-name">' + esc(a.name) + (a.isNew ? '<i class="ov-new">新</i>' : '') + '</span>' +
+    '<span class="ov-vendor">' + esc(a.vendor) + '</span>' +
+    '<span class="ov-line">' + esc(a.oneLine) + '</span>' +
+    '<span class="ov-heat"><i style="width:' + a.heat + '%"></i></span>' +
+    '<span class="ov-num">' + a.heat + '</span>' +
+  '</div>';
+}
+
+function bindAgentClicks(root) {
+  if (!root) return;
+  root.querySelectorAll('[data-agent]').forEach(function (el) {
+    el.addEventListener('click', function () { openAgent(el.getAttribute('data-agent')); });
+  });
+}
+
+/* ---------- 工具条：搜索 + 排序 ---------- */
+var SORT_OPTS = [['heat', '按热度'], ['region', '国内优先'], ['name', '按名称']];
+
+function renderTools() {
+  var box = byId('ag-sort-bar');
+  if (box) {
+    box.innerHTML = SORT_OPTS.map(function (o) {
+      return '<button class="ag-chip' + (filter.sort === o[0] ? ' active' : '') +
+        '" data-fsort="' + o[0] + '">' + o[1] + '</button>';
+    }).join('');
+    box.querySelectorAll('[data-fsort]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        filter.sort = el.getAttribute('data-fsort');
+        renderTools(); renderCards();
+      });
+    });
+  }
+  // 搜索框只绑一次监听（输入过程中不重建 DOM，否则光标会丢）
+  var inp = byId('ag-search');
+  if (inp && !inp.dataset.bound) {
+    inp.dataset.bound = '1';
+    var t = null;
+    inp.addEventListener('input', function () {
+      clearTimeout(t);
+      t = setTimeout(function () {
+        filter.q = inp.value.trim();
+        renderCards();
+      }, 180);
+    });
+  }
+}
+
+function renderFilterBars() {
+  var rbar = byId('ag-region-bar'), tbar = byId('ag-type-bar');
+  if (rbar) {
+    var opts = [['all', '全部']].concat(Object.keys(REGION_META).map(function (k) {
+      return [k, REGION_META[k].label];
+    }));
+    rbar.innerHTML = opts.map(function (o) {
+      return '<button class="ag-chip' + (filter.region === o[0] ? ' active' : '') +
+        '" data-frgn="' + o[0] + '">' + o[1] + '</button>';
+    }).join('') + '<span class="ag-count" id="ag-count"></span>';
+    rbar.querySelectorAll('[data-frgn]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        filter.region = el.getAttribute('data-frgn');
+        renderFilterBars(); renderCards();
+      });
+    });
+  }
+  if (tbar) {
+    var keys = Object.keys(TYPE_META);
+    tbar.innerHTML = keys.map(function (k) {
+      return '<button class="ag-chip' + (filter.type === k ? ' active' : '') +
+        '" data-ftype="' + k + '">' + TYPE_META[k].icon + ' ' + TYPE_META[k].label + '</button>';
+    }).join('');
+    tbar.querySelectorAll('[data-ftype]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var k = el.getAttribute('data-ftype');
+        filter.type = (filter.type === k) ? 'all' : k;   // 再点一次取消
+        renderFilterBars(); renderCards();
+      });
+    });
+  }
+  renderTools();
+}
+
+function renderCards() {
+  var grid = byId('ag-grid'), empty = byId('ag-empty');
+  var ovSec = byId('overseas-sec'), ovList = byId('ov-list');
+  if (!grid) return;
+
+  var list = sortAgents(AGENTS.filter(function (a) {
+    var okR = filter.region === 'all' || a.region === filter.region;
+    var okT = filter.type === 'all' || a.type === filter.type;
+    return okR && okT && matchQuery(a, filter.q);
+  }), filter.sort);
+
+  // 主次分离：region=all 时国内走完整卡片、海外收进「海外速览」紧凑区；
+  // 一旦选定具体地区，就全部用完整卡片展示，速览区也就没有意义了。
+  var split = (filter.region === 'all');
+  var mainList = split ? list.filter(function (a) { return a.region === 'cn'; }) : list;
+  var ovArr = split ? list.filter(function (a) { return a.region === 'global'; }) : [];
+
+  if (ovSec) ovSec.classList.toggle('hidden', ovArr.length === 0);
+  if (empty) empty.classList.toggle('hidden', mainList.length > 0);
+
+  var cnt = byId('ag-count');
+  if (cnt) {
+    cnt.textContent = filter.q
+      ? '命中 ' + list.length + ' / 共 ' + AGENTS.length
+      : '共 ' + list.length + ' 个';
+  }
+
+  grid.innerHTML = mainList.map(agentCardHTML).join('');
+  bindAgentClicks(grid);
+
+  if (ovList) {
+    ovList.innerHTML = ovArr.map(agentOverseasHTML).join('');
+    bindAgentClicks(ovList);
+  }
+
+  var tot = byId('ag-total'), tcn = byId('ag-total-cn'), tgl = byId('ag-total-gl');
+  if (tot) tot.textContent = String(AGENTS.length);
+  if (tcn) tcn.textContent = String(AGENTS.filter(function (a) { return a.region === 'cn'; }).length);
+  if (tgl) tgl.textContent = String(AGENTS.filter(function (a) { return a.region === 'global'; }).length);
+}
+
+/* ---------- 场景选型卡 ---------- */
+function renderPicks() {
+  var box = byId('pick-grid');
+  if (!box) return;
+  box.innerHTML = PICKS.map(function (p) {
+    var pills = p.picks.map(function (id) {
+      var a = AGENT_BY_ID[id];
+      if (!a) return '';
+      return '<span class="pc-pill" data-agent="' + a.id + '">' + esc(a.name) + '</span>';
+    }).join('');
+    return '<div class="pick-card">' +
+      '<div class="pc-top"><span>' + p.icon + '</span><span>' + esc(p.name) + '</span></div>' +
+      '<div class="pc-why">' + esc(p.why) + '</div>' +
+      '<div class="pc-picks">' + pills + '</div>' +
+    '</div>';
+  }).join('');
+  box.querySelectorAll('[data-agent]').forEach(function (el) {
+    el.addEventListener('click', function () { openAgent(el.getAttribute('data-agent')); });
+  });
+}
+
+/* ---------- 详情弹窗 ---------- */
+function openAgent(id) {
+  var a = AGENT_BY_ID[id];
+  if (!a) return;
+  var rm = REGION_META[a.region];
+  var tags = ['<span class="tag t-accent">' + rm.label + '</span>',
+              '<span class="tag">' + TYPE_META[a.type].icon + ' ' + TYPE_META[a.type].label + '</span>']
+    .concat(a.traits.map(function (t) { return '<span class="tag t-teal">' + esc(t) + '</span>'; }))
+    .join('');
+  var kv = '';
+  kv += '<dt>热度</dt><dd>' + esc(a.heatLabel) + '　<span style="color:var(--faint);font-size:12px">指数 ' + a.heat + '/100</span></dd>';
+  kv += '<dt>最强</dt><dd>' + esc(a.best) + '</dd>';
+  kv += '<dt>短板</dt><dd>' + esc(a.weak) + '</dd>';
+  kv += '<dt>适合</dt><dd>' + esc(a.scene) + '</dd>';
+
+  var link = a.url
+    ? '<a class="modal-link" href="' + esc(a.url) + '" target="_blank" rel="noopener">🔗 访问 ' + esc(a.name) + ' 官网 →</a>'
+    : '';
+
+  byId('modal-content').innerHTML =
+    '<button class="modal-close" onclick="closeAgent()" aria-label="关闭">×</button>' +
+    '<h2>' + esc(a.name) + '</h2>' +
+    (a.en ? '<p class="modal-en">' + esc(a.en) + '</p>' : '') +
+    '<div class="modal-vendor">' + esc(a.vendor) + '</div>' +
+    '<div class="modal-tags">' + tags + '</div>' +
+    '<dl class="modal-kv">' + kv + '</dl>' +
+    '<div class="modal-sec">一句话定位</div>' +
+    '<p class="modal-desc">' + esc(a.oneLine) + '</p>' +
+    (a.upd
+      ? '<div class="modal-sec">最近变化</div><div class="modal-fact">🆕 ' + esc(a.upd) + '</div>'
+      : '') +
+    link;
+  byId('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAgent() {
+  byId('modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+window.closeAgent = closeAgent;
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') closeAgent();
+});
+
+/* ==========================================================================
+   图表：注册到 WB_CHARTS，由它统一做延迟初始化 / 主题重建
+   ========================================================================== */
+function axisCommon(v) {
+  return {
+    axisLine: { lineStyle: { color: v.rule } },
+    axisTick: { show: false },
+    axisLabel: { color: v.muted, fontSize: 11.5 }
+  };
+}
+
+if (window.WB_CHARTS) {
+  /* 图 1 · 办公 Agent 使用次数 + 增幅（双轴） */
+  window.WB_CHARTS.def('chart-ag-office', function (v) {
+    var b = HEAT_BOARDS.filter(function (x) { return x.key === 'office'; })[0];
+    var rows = b.rowsWithDelta;
+    var names = rows.map(function (r) { return r.name.replace('腾讯 ', '').replace('阿里 ', ''); });
+    var vals = rows.map(function (r) { return r.val; });
+    var deltas = rows.map(function (r) { return parseFloat(String(r.delta).replace('%', '').replace('+', '')); });
+    return {
+      animation: false,
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, appendToBody: true },
+      legend: { data: ['使用次数', '增幅'], top: 0, textStyle: { color: v.muted, fontSize: 12 } },
+      grid: { left: 62, right: 56, top: 42, bottom: 68 },
+      xAxis: Object.assign({
+        type: 'category', data: names,
+        axisLabel: { color: v.muted, fontSize: 11.5, interval: 0, rotate: 30, overflow: 'break' }
+      }, { axisLine: axisCommon(v).axisLine, axisTick: { show: false } }),
+      yAxis: [
+        Object.assign({ type: 'value', name: '万次', nameTextStyle: { color: v.faint || v.muted, fontSize: 11 },
+          splitLine: { lineStyle: { color: v.rule, type: 'dashed' } } }, axisCommon(v)),
+        Object.assign({ type: 'value', name: '增幅 %', nameTextStyle: { color: v.faint || v.muted, fontSize: 11 },
+          splitLine: { show: false }, axisLabel: { color: v.muted, fontSize: 11.5, formatter: '{value}%' } },
+          { axisLine: axisCommon(v).axisLine, axisTick: { show: false } })
+      ],
+      series: [
+        {
+          name: '使用次数', type: 'bar', data: vals, barMaxWidth: 38,
+          itemStyle: { color: '#059669', borderRadius: [5, 5, 0, 0] },
+          label: { show: true, position: 'top', color: v.muted, fontSize: 11, formatter: '{c}' }
+        },
+        {
+          name: '增幅', type: 'line', yAxisIndex: 1, data: deltas, smooth: true,
+          lineStyle: { color: '#E0532A', width: 2 },
+          itemStyle: { color: '#E0532A' }, symbolSize: 7,
+          label: { show: true, position: 'top', color: '#E0532A', fontSize: 11, formatter: '{c}%' }
+        }
+      ]
+    };
+  });
+
+  /* 图 2 · 手机厂商助手 月活 + 渗透率（双轴） */
+  window.WB_CHARTS.def('chart-ag-phone', function (v) {
+    var b = HEAT_BOARDS.filter(function (x) { return x.key === 'phone'; })[0];
+    var rows = b.rowsWithDelta;
+    var names = rows.map(function (r) { return r.name; });
+    var vals = rows.map(function (r) { return r.val; });
+    var rates = rows.map(function (r) { return parseFloat(String(r.delta).replace('渗透率 ', '').replace('%', '')); });
+    return {
+      animation: false,
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, appendToBody: true,
+        formatter: function (ps) {
+          var i = ps[0].dataIndex;
+          return '<b>' + names[i] + '</b><br/>月活：<b>' + vals[i] + '</b> 万<br/>渗透率：<b>' + rates[i] + '%</b>';
+        } },
+      legend: { data: ['月活（万）', '渗透率'], top: 0, textStyle: { color: v.muted, fontSize: 12 } },
+      grid: { left: 68, right: 56, top: 42, bottom: 68 },
+      xAxis: { type: 'category', data: names,
+        axisLine: { lineStyle: { color: v.rule } }, axisTick: { show: false },
+        axisLabel: { color: v.muted, fontSize: 11, interval: 0, rotate: 30 } },
+      yAxis: [
+        Object.assign({ type: 'value', name: '万', nameTextStyle: { color: v.muted, fontSize: 11 },
+          splitLine: { lineStyle: { color: v.rule, type: 'dashed' } } }, axisCommon(v)),
+        Object.assign({ type: 'value', name: '渗透率', max: 80, nameTextStyle: { color: v.muted, fontSize: 11 },
+          splitLine: { show: false }, axisLabel: { color: v.muted, fontSize: 11.5, formatter: '{value}%' } },
+          { axisLine: axisCommon(v).axisLine, axisTick: { show: false } })
+      ],
+      series: [
+        {
+          name: '月活（万）', type: 'bar', data: vals, barMaxWidth: 34,
+          itemStyle: { color: '#2563EB', borderRadius: [5, 5, 0, 0] }
+        },
+        {
+          name: '渗透率', type: 'line', yAxisIndex: 1, data: rates, smooth: true,
+          lineStyle: { color: '#D97706', width: 2 },
+          itemStyle: { color: '#D97706' }, symbolSize: 7,
+          label: { show: true, position: 'top', color: '#D97706', fontSize: 11, formatter: '{c}%' }
+        }
+      ]
+    };
+  });
+
+  /* 图 3 · 纯自主 Agent 周 Token 消耗（横向条形） */
+  window.WB_CHARTS.def('chart-ag-token', function (v) {
+    var b = HEAT_BOARDS.filter(function (x) { return x.key === 'token'; })[0];
+    var rows = b.rows.slice().reverse();      // ECharts y 轴自下而上，反转后大的在顶
+    var names = rows.map(function (r) { return r.name; });
+    var vals = rows.map(function (r) { return r.val; });
+    return {
+      animation: false,
+      tooltip: { trigger: 'item', appendToBody: true,
+        formatter: function (p) {
+          return '<b>' + p.name + '</b><br/>周 Token 消耗：<b>' + p.value + 'T</b>';
+        } },
+      grid: { left: 108, right: 66, top: 16, bottom: 26 },
+      xAxis: Object.assign({ type: 'value', name: 'T Token / 周',
+        nameTextStyle: { color: v.muted, fontSize: 11 },
+        splitLine: { lineStyle: { color: v.rule, type: 'dashed' } } }, axisCommon(v)),
+      yAxis: Object.assign({ type: 'category', data: names }, axisCommon(v)),
+      series: [{
+        type: 'bar', data: vals, barMaxWidth: 22,
+        itemStyle: { color: '#7C3AED', borderRadius: [0, 4, 4, 0] },
+        label: { show: true, position: 'right', color: v.muted, fontSize: 11.5,
+          formatter: function (p) { return p.value + 'T'; } }
+      }]
+    };
+  });
+
+  /* 图 4 · 代表 Agent 能力雷达 */
+  window.WB_CHARTS.def('chart-ag-radar', function (v) {
+    return {
+      animation: false,
+      tooltip: { appendToBody: true },
+      legend: { data: RADAR_ROWS.map(function (r) { return r.name; }), bottom: 0,
+        textStyle: { color: v.muted, fontSize: 12 }, itemGap: 14 },
+      radar: {
+        indicator: RADAR_DIMS.map(function (d) { return { name: d, max: 5 }; }),
+        radius: '62%', center: ['50%', '47%'],
+        axisName: { color: v.ink, fontSize: 12, fontWeight: 600 },
+        splitLine: { lineStyle: { color: v.rule } },
+        splitArea: { areaStyle: { color: ['transparent'] } },
+        axisLine: { lineStyle: { color: v.rule } }
+      },
+      series: [{
+        type: 'radar',
+        data: RADAR_ROWS.map(function (r) {
+          return {
+            name: r.name, value: r.scores, aid: r.id,
+            lineStyle: { color: r.color, width: 2 },
+            itemStyle: { color: r.color },
+            areaStyle: { color: r.color, opacity: 0.08 }
+          };
+        })
+      }]
+    };
+  });
+}
+
+/* ==========================================================================
+   页签切换（自带 resize：app.js 的通用页签不做图表重排）
+   ========================================================================== */
+function switchAgPane(name) {
+  var btns = document.querySelectorAll('[data-agtab]');
+  btns.forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-agtab') === name); });
+  var panes = document.querySelectorAll('[data-agpane]');
+  panes.forEach(function (p) { p.classList.toggle('active', p.getAttribute('data-agpane') === name); });
+  // 切到可见页签后再初始化该页图表，并resize 已存在的
+  if (window.WB_CHARTS) {
+    if (window.WB_CHARTS.ensureVisible) window.WB_CHARTS.ensureVisible();
+    if (window.WB_CHARTS.resizeVisible) setTimeout(window.WB_CHARTS.resizeVisible, 30);
+  }
+}
+
+/* ==========================================================================
+   首屏初始化
+   ========================================================================== */
+renderStatStrip();
+renderTiers();
+renderBoards();
+renderFilterBars();
+renderCards();
+renderPicks();
+
+document.querySelectorAll('[data-agtab]').forEach(function (btn) {
+  btn.addEventListener('click', function () { switchAgPane(btn.getAttribute('data-agtab')); });
+});
+
+(function initPane() {
+  var hash = (location.hash || '').replace('#', '');
+  var known = ['overview', 'catalog', 'pick'];
+  if (known.indexOf(hash) !== -1) switchAgPane(hash);
+  else if (window.WB_CHARTS && window.WB_CHARTS.ensureVisible) window.WB_CHARTS.ensureVisible();
+})();
+</script>
+</body>
+</html>
