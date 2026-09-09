@@ -29,6 +29,18 @@ AI 新闻自动更新脚本 —— 抓取 RSS 源并插入 news.html。
 ══════════════════════════════════════════════════════════════
 
 ══════════════════════════════════════════════════════════════
+新闻侧重策略（v20 起，2026-09-09）
+══════════════════════════════════════════════════════════════
+在不改板块结构的前提下，给「抓取过滤 + 选稿排序」加侧重：
+  ① 滤噪：边缘弱关联 AI（智能汽车/消费数码/泛娱乐等贴牌新闻）在抓取层滤除，
+     只保留主流 AI 厂商/模型的核心动态浓度；
+  ② 优先：主流 AI 公司白名单（AI_COMPANY_WHITELIST，头部 ~20 家）与
+     模型发布/重磅形态（_release_form）的条目在选稿时加权优先入选，
+     权重相同者仍按时间倒序取新。
+过滤/加权仅作用于 update_news.py 内部，news.html 结构与 marker 完全不变。
+══════════════════════════════════════════════════════════════
+
+══════════════════════════════════════════════════════════════
 每日新闻展示格式规范（严格遵循，不可违反）
 ══════════════════════════════════════════════════════════════
 
@@ -201,12 +213,104 @@ MILESTONE_KW = ["ipo", "上市", "融资", "收购", "并购", "关停", "下架
                 "判决", "监管", "框架协议", "战略合作", "成立新公司"]
 
 
-def is_release_item(item) -> bool:
-    t = (item["title"]).lower()
-    if not any(k in t for k in RELEASE_SIGNAL):
+# ── 主流 AI 公司白名单（v20 侧重：头部 ~20 家，命中 = 重点关注，选稿加权 +2）──
+# 国外 10 家 + 国内 10 家。词表给出公司名/核心产品/模型的常用写法（匹配小写化后的
+# 标题+摘要）。刻意不放 iphone/windows/kindle 等终端品类名，避免贴牌消费新闻冒充
+# 公司动态；如需扩充公司，直接往对应分组追加别名即可。
+AI_COMPANY_WHITELIST = [
+    # 国外：OpenAI / Anthropic / Google(DeepMind) / Meta / Microsoft /
+    #       NVIDIA / xAI / Amazon / Apple / Mistral
+    "openai", "chatgpt", "anthropic", "claude",
+    "google", "谷歌", "deepmind", "gemini",
+    "meta", "facebook", "llama",
+    "microsoft", "微软", "copilot", "azure",
+    "nvidia", "英伟达", "黄仁勋",
+    "xai", "grok",
+    "amazon", "aws", "alexa", "亚马逊",
+    "apple", "苹果", "apple intelligence", "siri",
+    "mistral",
+    # 国内：DeepSeek / 阿里(通义千问) / 字节(豆包) / 腾讯(混元) / 百度(文心) /
+    #       智谱(GLM) / 月之暗面(Kimi) / MiniMax(海螺) / 华为(昇腾·盘古) / 商汤(日日新)
+    "deepseek", "阿里", "alibaba", "通义", "qwen", "千问",
+    "字节", "bytedance", "豆包", "doubao",
+    "腾讯", "tencent", "混元", "hunyuan",
+    "百度", "baidu", "文心", "ernie",
+    "智谱", "glm", "z.ai",
+    "月之暗面", "moonshot", "kimi",
+    "minimax", "海螺",
+    "华为", "huawei", "昇腾", "ascend", "盘古",
+    "商汤", "sensetime", "日日新",
+]
+
+
+# ── 噪声关键词（v20 滤噪：贴牌泛 AI 的边缘科技）────────────────────────
+# 命中 NOISE_KW 的条目若标题不含核心保护词、又不属白名单公司/模型发布形态，
+# 即判为噪声在抓取层滤除——这类新闻只是带了 'AI' 字样，主体是智能汽车/消费
+# 数码/家电/泛娱乐等，收进来会稀释「主流 AI 公司行动」的侧重浓度。
+NOISE_KW = [
+    # 智能汽车 / 出行
+    "汽车", "车型", "新车", "suv", "智能驾驶", "智驾", "自动驾驶", "座舱", "续航",
+    "问界", "理想汽车", "小鹏", "蔚来", "极氪", "比亚迪", "特斯拉", "tesla",
+    "小米su7", "小米汽车", "路测",
+    # 消费数码终端
+    "手机", "iphone", "智能手机", "旗舰", "平板", "笔记本", "笔电", "耳机",
+    "智能手表", "智能眼镜", "ar眼镜", "vr", "头显", "电视", "显示器", "屏幕",
+    "折叠屏", "投影",
+    # 家电 / 泛消费
+    "家电", "空调", "冰箱", "洗衣机", "扫地机", "电动牙刷",
+    # 泛娱乐 / 金融边缘
+    "游戏", "电竞", "比特币", "区块链", "web3", "nft", "数字货币",
+]
+
+# 核心保护词（标题命中其一则绝不判噪声）：真实模型名/强主题词，避免误伤
+NOISE_SAFE_KW = [
+    "模型", "大模型", "智能体", "agent", "gpt", "chatgpt", "claude", "gemini",
+    "deepseek", "qwen", "kimi", "glm", "llama", "openai", "anthropic", "mistral",
+    "多模态", "生成式", "sora", "veo", "seedance", "推理", "算力", "芯片",
+    "aigc", "open source", "开源模型",
+]
+
+
+def is_key_company(title: str, summary: str = "") -> bool:
+    """是否命中主流 AI 公司白名单（国内外头部厂商的核心动态）。"""
+    text = (title + " " + summary).lower()
+    return any(kw in text for kw in AI_COMPANY_WHITELIST)
+
+
+def _release_form(title: str) -> bool:
+    """标题级判定：模型发布/预告/重磅形态（发布类信号词 + 模型名/产品词）。
+    语义与原 is_release_item 一致，供「速报」判定与 v20 加权排序共用。"""
+    t = title.lower()
+    return any(k in t for k in RELEASE_SIGNAL) and any(k in t for k in RELEASE_MODEL_NAME)
+
+
+def is_noise_weak_ai(title: str, summary: str = "") -> bool:
+    """边缘弱关联 AI 滤除。返回 True 表示判为噪声、应跳过。
+
+    判定链：① 未命中 NOISE_KW → 放行；② 标题含核心保护词 → 放行；
+    ③ 属白名单主流公司 → 放行；④ 构成模型发布/重磅形态 → 放行；
+    否则（仅 'AI' 字样的贴牌新闻）→ 噪声。
+    """
+    t = title.lower()
+    if not any(k in t for k in NOISE_KW):
         return False
-    # 排除纯 API/平台类开放消息（无新模型实体的发布），保留模型名/版本号命中
-    return any(k in t for k in RELEASE_MODEL_NAME)
+    if any(k in t for k in NOISE_SAFE_KW):
+        return False
+    if is_key_company(title, summary):
+        return False
+    return not _release_form(title)
+
+
+def _priority_score(item) -> int:
+    """侧重分：主流公司 +2、模型发布/重磅形态 +1。越高越优先入选。
+    防御旧缓存条目缺字段：用 .get 兜底为 False。"""
+    return (2 if item.get("is_key_company") else 0) \
+        + (1 if item.get("is_priority_form") else 0)
+
+
+def is_release_item(item) -> bool:
+    # 与 _release_form 共用同一判定：发布类信号词 + 模型名/版本号命中
+    return _release_form(item["title"])
 
 
 def is_milestone_item(item) -> bool:
@@ -371,6 +475,7 @@ def translate_to_chinese(title: str, summary: str = "") -> tuple[str, str]:
 def fetch_news():
     """抓取并筛选所有 RSS 源的新闻，中文优先。"""
     items = []
+    noise_cnt = 0
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=24)
 
@@ -423,6 +528,12 @@ def fetch_news():
                     title = clean_title(title)
                     summary = clean_summary(summary)
 
+                # v20：侧重滤噪——贴牌泛 AI（智能汽车/消费数码/泛娱乐等）在源头滤除，
+                # 只保留主流 AI 厂商/模型核心动态，避免稀释每日动态浓度
+                if is_noise_weak_ai(title, summary):
+                    noise_cnt += 1
+                    continue
+
                 items.append({
                     "title": title,
                     "link": link,
@@ -432,16 +543,24 @@ def fetch_news():
                     "category": classify(title),
                     "is_chinese": contains_chinese(title),
                     "is_domestic": is_domestic(title, summary),
+                    "is_key_company": is_key_company(title, summary),
+                    "is_priority_form": _release_form(title),
                 })
         except Exception as e:
             print(f"  [错误] {feed_info['name']}: {e}")
 
     items.sort(key=lambda x: x["published"], reverse=True)
+    if noise_cnt:
+        print(f"  [滤噪] 边缘弱相关 AI 新闻滤除 {noise_cnt} 条（智能汽车/消费数码/泛娱乐等）")
     return items
 
 
 def select_items(items, cap=6):
-    """对单个模块桶做选稿：源均衡(cap2/源) + 国内优先 + 国内 ≥ 国外 + 总量 cap。
+    """对单个模块桶做选稿：侧重加权 + 源均衡(cap2/源) + 国内优先 + 国内 ≥ 国外 + 总量 cap。
+
+    v20 侧重：先按「主流公司(+2) / 模型发布·重磅形态(+1)」降序排序（同权内新者在前），
+    后续各轮均衡对已排序列表先到先得 ⇒ 高权重条目优先占满 cap、普通条目垫底。
+    最终顺序仍按时间倒序 + 国内在前展示，改动只影响「谁被选中」。
 
     注意：v19 起动态区桶已按国内外拆开（domestic 桶全为国内、foreign 桶全为国外），
     桶内再分国内外时仅单边有内容，此处的均衡约束自动退化为「单边选满 cap」。
@@ -449,6 +568,11 @@ def select_items(items, cap=6):
     返回按时间倒序的最终列表（domestic 在前）。
     """
     per_source_cap = 2
+
+    # v20 加权排序：先按时间倒序（新者在前），再按侧重分稳定排序 ⇒
+    # 高权重条目优先入选、同权重内仍保持「新者优先」（sorted 稳定）。
+    items = sorted(items, key=lambda x: x["published"], reverse=True)
+    items = sorted(items, key=lambda x: -_priority_score(x))
 
     def balanced(arr):
         cnt = {}
@@ -691,7 +815,10 @@ def _main_inner():
 
     chinese_count = sum(1 for i in items if i.get("is_chinese"))
     domestic_count = sum(1 for i in items if i.get("is_domestic"))
-    print(f"抓到 {len(items)} 条 AI 候选（中文 {chinese_count} 条，国内 {domestic_count} 条）")
+    key_count = sum(1 for i in items if i.get("is_key_company"))
+    form_count = sum(1 for i in items if i.get("is_priority_form"))
+    print(f"抓到 {len(items)} 条 AI 候选（中文 {chinese_count} 条，国内 {domestic_count} 条，"
+          f"主流公司 {key_count} 条，发布/重磅形态 {form_count} 条）")
 
     # 按国内外归档：domestic 桶 = 国产模型/厂商相关；foreign 桶 = 海外动态
     buckets = {
