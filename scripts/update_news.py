@@ -201,6 +201,59 @@ MODULES = [
     ("__DYN_MISC_INSERT__",  "misc",   "综合要闻"),
 ]
 
+# ── 归档区（news.html 的另外三个 tab：新模型速报/行业大事记/论文快报）────
+# 有命中才更新（无则跳过），与四模块共用每日抓取。三个区互斥：release=模型发布/预告，
+# milestone=产业级大事，paper=论文研究。避免把同一条重复写进两个归档区。
+ARCHIVES = [
+    # (marker, key, 展示名, 选稿上限, 判定函数)
+    ("__RELEASE_INSERT__", "release",  "新模型速报", 3, "is_release_item"),
+    ("__MILESTONE_INSERT__", "milestone", "行业大事记", 4, "is_milestone_item"),
+    ("__PAPERS_INSERT__", "paper",    "论文快报", 3, "is_paper_item"),
+]
+
+# 发布信号词（标题须含其一，且再满足「模型信号」才算新模型速报）
+RELEASE_SIGNAL = ["发布", "预告", "上线", "公测", "内测", "正式版", "开源", "亮相", "推出", "开售"]
+# 模型信号：具体模型名或"模型"类词
+RELEASE_MODEL_NAME = ["gpt", "chatgpt", "claude", "gemini", "deepseek", "qwen", "kimi",
+                      "glm", "混元", "豆包", "minimax", "文心", "百灵", "llama", "模型",
+                      "大模型", "v4", "v4.1", "v5", "flash", "opus", "sonnet", "haiku",
+                      "aistudio", "images", "sora", "veo", "seedance"]
+# 大事记强词：产业/公司级信号（标题导向；模型发布已被 release 收走，避免泛社会新闻）
+MILESTONE_KW = ["ipo", "上市", "融资", "收购", "并购", "关停", "下架", "退出", "禁令",
+                "立法", "制裁", "政策", "官宣", "登顶", "破纪录", "刷新纪录", "sota",
+                "榜单第一", "排行第一", "财报", "市值", "股价", "裁员", "重组", "起诉",
+                "判决", "监管", "框架协议", "战略合作", "成立新公司"]
+
+
+def is_release_item(item) -> bool:
+    t = (item["title"]).lower()
+    if not any(k in t for k in RELEASE_SIGNAL):
+        return False
+    # 排除纯 API/平台类开放消息（无新模型实体的发布），保留模型名/版本号命中
+    return any(k in t for k in RELEASE_MODEL_NAME)
+
+
+def is_milestone_item(item) -> bool:
+    # 标题导向 + 要求长度足够（过滤一句话新闻），避免把琐碎社会新闻当大事
+    t = item["title"].lower()
+    return len(item["title"]) >= 18 and any(k in t for k in MILESTONE_KW)
+
+
+def is_paper_item(item) -> bool:
+    # 严格标题导向：只收明确学术形态的条目（论文/技术报告/系统卡/基准/学术）
+    t = item["title"].lower()
+    return any(k in t for k in ["论文", "arxiv", "技术报告", "系统卡", "benchmark",
+                                "基准测试", "学术", "预印本", "研究发现", "研究团队",
+                                "发布研究", "研究称"])
+
+
+def archive_for(key: str) -> str:
+    """返回归档 marker 全前缀（含注释）。"""
+    for mk, k, _label, _cap, _fn in ARCHIVES:
+        if k == key:
+            return f"<!-- {mk}"
+    raise ValueError(key)
+
 
 def classify(title: str) -> str:
     """根据标题关键词分类新闻。"""
@@ -539,37 +592,33 @@ def generate_block(items, date_str):
     return "\n".join(lines)
 
 
-def insert_module(block, topic, date_label):
-    """把 block 插入 news.html 对应主题模块的 marker 之后。
+def insert_module(block, marker, label, date_label):
+    """把 block 插入 news.html 指定 marker 注释行之后。
 
-    防重粒度 = 模块区：从本模块 marker 到下一个模块 marker 之间的文本，
-    若已含 date_label（如「2026-09-09 晚间更新」）则跳过——四个模块各自
-    可拥有同日同段的块，互不干扰。
+    marker 示例：'<!-- __DYN_AGENT_INSERT__'、'<!-- __RELEASE_INSERT__'。
+    防重粒度 = 区段：从本 marker 到下一个 HTML 注释 marker（<!-- __XXX_INSERT__）
+    之间的文本，若已含 date_label（如「2026-09-09 晚间更新」）则跳过——
+    每个模块/归档区可各自拥有同日同段的块，互不干扰。
     """
     path = Path("news.html")
     content = path.read_text(encoding="utf-8")
-    marker = f"<!-- __DYN_{topic.upper()}_INSERT__"
     if marker not in content:
-        print(f"错误：未找到标记 {marker}，跳过 {topic} 模块")
+        print(f"错误：未找到标记 {marker}，跳过 {label}")
         return False
 
     idx = content.find(marker)
-    # 模块区终点：下一个模块 marker；最后一个模块(misc)到第一个后续「<!-- __DYN_」不存在，
-    # 取到模块 section 之后最近一次出现 '</section>' 的位置（dyn-misc 的 section 闭合）。
+    # 区段终点：自 idx 起第一个后续注释 marker（<!-- __…_INSERT__）；无则到 </section> 或文件尾
     nxt = len(content)
-    for other_marker in [f"<!-- __DYN_{m}_INSERT__" for m, _, _ in MODULES]:
-        if other_marker == marker:
-            continue
-        pos = content.find(other_marker, idx + len(marker))
-        if pos != -1 and pos < nxt:
-            nxt = pos
+    for m in re.finditer(r'<!--\s*__[A-Za-z]+_INSERT__', content):
+        if m.start() > idx and m.start() < nxt:
+            nxt = m.start()
     if nxt == len(content):
-        end_section = content.find("</section>", idx)
-        nxt = end_section if end_section != -1 else len(content)
+        end_sec = content.find("</section>", idx)
+        nxt = end_sec if end_sec != -1 else len(content)
 
     section_text = content[idx:nxt]
     if f'<span class="ddate">{date_label}</span>' in section_text:
-        print(f"· {topic} 模块 {date_label} 已存在，跳过（防重）")
+        print(f"· {label} {date_label} 已存在，跳过（防重）")
         return False
 
     # 在 marker 所在行的行尾之后插入 block
@@ -662,7 +711,7 @@ def _main_inner():
     for topic in ("agent", "model", "tools", "misc"):
         print(f"  [{topic}] 候选 {len(buckets[topic])} 条")
 
-    # 每个模块独立选稿 + 插入（防重按模块区）；首页代表 = 各模块最终入选首条
+    # 每个模块独立选稿 + 插入（防重按区段）；首页代表 = 各模块最终入选首条
     any_inserted = False
     picks = []
     for marker, topic, label in MODULES:
@@ -671,10 +720,34 @@ def _main_inner():
             print(f"· {label}（{topic}）今日无合适内容，跳过")
             continue
         block = generate_block(sel, date_label)
-        if insert_module(block, topic, date_label):
+        if insert_module(block, f"<!-- {marker}", label, date_label):
             print(f"✓ news.html [{label}] 已追加 {date_label}（{len(sel)} 条）")
             any_inserted = True
         picks.append(sel[0])  # 代表（模块已写或已存在都取同一条，保证首页与页面一致）
+
+    # 三个归档区（速报/大事记/论文）：有命中才更新，无命中跳过
+    archive_fns = {"release": is_release_item, "milestone": is_milestone_item, "paper": is_paper_item}
+    for mk, key, label, cap, fn_name in ARCHIVES:
+        fn = archive_fns[key]
+        cand = [it for it in items if fn(it)]
+        if not cand:
+            print(f"· {label}（{key}）今日无命中条目，跳过")
+            continue
+        # 去重（同一标题可能多条），源均衡后再选
+        seen_titles, uniq = set(), []
+        for it in cand:
+            if it["title"] in seen_titles:
+                continue
+            seen_titles.add(it["title"])
+            uniq.append(it)
+        sel = select_items(uniq, cap=cap)
+        if not sel:
+            print(f"· {label}（{key}）无合适内容，跳过")
+            continue
+        block = generate_block(sel, date_label)
+        if insert_module(block, f"<!-- {mk}", label, date_label):
+            print(f"✓ news.html [{label}] 已追加 {date_label}（{len(sel)} 条）")
+            any_inserted = True
 
     # 首页「今日 AI 动态」：pick 顺序 = agent/model/tools/misc
     if picks:
