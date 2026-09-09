@@ -32,9 +32,13 @@
         v16：内容新鲜度探针从仅 news 页推广到全部动态页（首页/新闻/agents/
              wiki-skills/wiki-mcp）—— 每 15 分钟 + 切回前台静默比对最大日期，
              有更新弹「✨ 有新内容」刷新条；修复长开页面看不到每日更新的问题。
+        v17：动态区重构——news.html「每日动态」由一天一坨时间线改为四个主题模块
+             （智能体/大模型/技能与MCP/综合要闻），各模块每日 08:23/18:23 独立
+             追加、模块级防重；历史 Google 链接旧块整块清除；agents.html 的
+             「Agent 赛道每日更新」并入动态区「智能体动态」模块；国外区保留。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v16';
+var CACHE_VERSION = 'ai-wb-v17';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
