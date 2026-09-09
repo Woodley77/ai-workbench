@@ -29,9 +29,12 @@
         v15：全站接入 AI 对话悬浮球（ChatBot）—— 对话面板由 app.js 动态注入、
              样式进 app.css（无新增静态文件）；背景视觉高级化（细网格 + 噪点 +
              暗角 + 玻璃卡片高光发丝线），明暗双主题同步升级；务必清缓存。
+        v16：内容新鲜度探针从仅 news 页推广到全部动态页（首页/新闻/agents/
+             wiki-skills/wiki-mcp）—— 每 15 分钟 + 切回前台静默比对最大日期，
+             有更新弹「✨ 有新内容」刷新条；修复长开页面看不到每日更新的问题。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v15';
+var CACHE_VERSION = 'ai-wb-v16';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
