@@ -36,9 +36,13 @@
              （智能体/大模型/技能与MCP/综合要闻），各模块每日 08:23/18:23 独立
              追加、模块级防重；历史 Google 链接旧块整块清除；agents.html 的
              「Agent 赛道每日更新」并入动态区「智能体动态」模块；国外区保留。
+        v18：动态区其余三 tab（新模型速报/行业大事记/论文快报）动态化——
+             各加 __RELEASE__/__MILESTONE__/__PAPERS__ marker 每日自动追加
+             （有命中才更新），置顶「2026-09」精编块（补 OpenAI GPT-6 Astra /
+             ChatGPT Images 2.5 / DeepSeek V4.1 Flash 预告 等窗口外内容）。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v17';
+var CACHE_VERSION = 'ai-wb-v18';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
