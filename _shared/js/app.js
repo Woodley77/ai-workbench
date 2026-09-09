@@ -118,6 +118,18 @@
   }
 
   /* ---------- 自动更新保险：切回前台 / 定时 检查更新 ---------- */
+  // v16：内容新鲜度探针从仅 news 页推广到全部「动态类」页面（见 PROBE_PAGES），
+  // 每 15 分钟 / 切回前台时静默拉取当前页最新版本，比对最大日期，有新内容弹刷新条。
+  var PROBE_PAGES = {
+    'index.html': 1, 'news.html': 1, 'agents.html': 1,
+    'wiki-skills.html': 1, 'wiki-mcp.html': 1
+  };
+  function maxDateInText(text) {
+    var m = String(text).match(/20\d\d-\d\d-\d\d/g);
+    if (!m) return '';
+    m.sort();
+    return m[m.length - 1];
+  }
   function initAutoUpdate() {
     if (!('serviceWorker' in navigator)) return;
 
@@ -133,7 +145,7 @@
         'background:#2563eb;color:#fff;font-size:14px;text-align:center;' +
         'padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:12px;' +
         'box-shadow:0 2px 8px rgba(0,0,0,.2)';
-      bar.innerHTML = '<span>📰 有新的每日动态，</span>' +
+      bar.innerHTML = '<span>✨ 本站内容有新更新，</span>' +
         '<button id="update-now" style="background:#fff;color:#2563eb;border:0;border-radius:6px;' +
         'padding:4px 12px;font-weight:600;cursor:pointer;">立即刷新</button>' +
         '<button id="update-close" style="background:transparent;color:#fff;border:0;' +
@@ -162,18 +174,18 @@
         }).catch(function () {});
       }
 
-      // 2) 内容新鲜度探针：仅新闻页。拉最新 news.html，对比首条日期
-      var cur = document.querySelector('.ddate');
-      if (!cur) return;
-      fetch('news.html', { cache: 'no-store' }).then(function (res) {
+      // 2) 内容新鲜度探针（v16 全站通用）：拉当前页最新版，对比「最大日期」。
+      //    页面含动态区的才探测（无动态的静态页跳过）；两端口径一致
+      //    （当前页取 outerHTML，与拉取的远端 HTML 同为含 script 的完整文本），
+      //    静态部分两边日期相同，差只会来自 CI 每日追加/刷新的部分。
+      var page = location.pathname.split('/').pop() || 'index.html';
+      if (!PROBE_PAGES[page]) return;
+      fetch(page, { cache: 'no-store' }).then(function (res) {
         return res.text();
       }).then(function (html) {
-        var m = html.match(/class="ddate">([^<]+)</);
-        if (!m) return;
-        var fresh = m[1].trim();
-        var curTxt = cur.textContent.trim();
-        // 首条日期更新（晚于当前展示）即认为有新版内容
-        if (fresh && curTxt && fresh > curTxt) showUpdateBanner();
+        var curMax = maxDateInText(document.documentElement.outerHTML);
+        var remoteMax = maxDateInText(html);
+        if (curMax && remoteMax && remoteMax > curMax) showUpdateBanner();
       }).catch(function () {});
     }
 
