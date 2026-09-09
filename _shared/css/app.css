@@ -1079,3 +1079,56 @@ body::before {
   .ai-fab, .ai-fab-spark { animation: none; }
   .ai-panel { transition: none; }
 }
+
+/* ============================================================
+   动态区 · 按主题分模块（v17）
+   news.html「每日动态」四模块：智能体/大模型/技能与MCP/综合要闻
+   ============================================================ */
+.dyn-intro { color: var(--faint); font-size: 14px; margin: 4px 0 14px; }
+
+.dyn-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 22px; }
+.dyn-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 999px;
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  color: var(--text2); background: var(--accent-soft);
+  border: 1px solid transparent;
+  transition: color .18s, background .18s, border-color .18s;
+}
+.dyn-pill:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-strong); }
+
+.dyn-mod {
+  position: relative;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  background: var(--bg2);
+  padding: 20px 22px 6px;
+  margin: 0 0 26px;
+  overflow: hidden;
+}
+.dyn-mod::before { /* 顶部高光发丝线，与卡片体系一致 */
+  content: ""; position: absolute; top: 0; left: 16px; right: 16px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent2), transparent);
+  opacity: .55;
+}
+.dyn-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.dyn-ico {
+  flex: none; width: 40px; height: 40px; border-radius: 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 20px; background: var(--accent-soft);
+}
+.dyn-t { flex: 1; min-width: 0; }
+.dyn-t h2 { margin: 0; font-size: 19px; letter-spacing: -0.2px; }
+.dyn-t p { margin: 2px 0 0; font-size: 13px; color: var(--faint); }
+.dyn-note {
+  flex: none; font-size: 12px; color: var(--faint);
+  padding: 4px 10px; border-radius: 999px; background: var(--bg-grid);
+  border: 1px dashed var(--rule);
+}
+.dyn-feed > .news-day:first-child { margin-top: 6px; }
+.dyn-feed .news-day { border: none; padding: 0; }
+.dyn-feed .news-day + .news-day { border-top: 1px dashed var(--rule); padding-top: 18px; margin-top: 18px; }
+@media (max-width: 640px) {
+  .dyn-head { flex-wrap: wrap; }
+  .dyn-note { display: none; }
+}
