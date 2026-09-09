@@ -3,8 +3,12 @@
 """
 模型页 + 智能体应用页 + 百科（Agent Skills / MCP）每日内容更新脚本
 ================================================================================
-用途：为 models.html / agents.html / wiki-skills.html / wiki-mcp.html 四个页面的
-      「最新动态」区块追加当天检索到的实质变化，并同步更新页脚的「数据截止」日期。
+用途：为 models.html / wiki-skills.html / wiki-mcp.html 页面的「最新动态」区块追加
+      当天检索到的实质变化，并同步更新各页（含 agents.html）页脚的「数据截止」日期。
+
+      （v17 起：agents.html 的「Agent 赛道每日更新」已并入 news.html 动态区
+       「智能体动态」模块，由 update_news.py 统一维护；本脚本仅继续为 agents.html
+       刷新页脚日期，不再写任何动态块。）
 
 流程：
   1. 从国内可直连媒体源池（量子位 / 爱范儿 / IT之家 / 极客公园）抓取近 N 小时条目，
@@ -129,25 +133,8 @@ TOPICS = [
         "must_kw": ["mcp", "model context protocol", "协议", "server", "服务器",
                     "客户端", "client", "生态", "集成", "anthropic"],
     },
-    {
-        # 智能体应用页：与页面「国内为主」的口径一致，queries 也以国产为主
-        "key": "agent",
-        "label": "智能体应用",
-        "page": "agents.html",
-        "marker": "<!-- __AGENT_DAILY_INSERT__ -->",
-        "max_items": 5,
-        "categories": ["发布", "格局", "开源", "生态"],
-        "cat_css": {"发布": "c-model", "格局": "c-event", "开源": "c-paper", "生态": "c-news"},
-        "queries": [
-            "AI 智能体 OR AI Agent 发布 OR 上线 OR 更新",
-            "豆包 OR 元宝 OR 文心 OR 百度搭子 OR Kimi 智能体",
-            "扣子 Coze OR Dify OR 智能体平台 OR 智能体搭建",
-            "办公智能体 月活 OR 用户规模 OR 数据",
-        ],
-        "must_kw": ["agent", "智能体", "助手", "豆包", "元宝", "文心", "搭子", "kimi",
-                    "coze", "扣子", "dify", "通义", "workbuddy", "qclaw", "trae",
-                    "办公", "月活", "mau", "发布", "上线", "整合", "开源"],
-    },
+    # 注：agent 主题于 v17（2026-09-09）移除——agents.html 的「Agent 赛道每日更新」
+    # 已整体并入 news.html 动态区「智能体动态」模块（由 update_news.py 统一维护）。
 ]
 
 # 页脚「数据截至」的正则（硬事实：只改日期，风险最低）
