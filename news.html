@@ -52,77 +52,44 @@
 
   <!-- ============ 每日动态 ============ -->
   <div class="tab-pane active" data-tab-pane="daily">
-    <p class="dyn-intro">按主题分区，每天 08:23 / 18:23 自动追加。想盯哪类看哪类，不混排。</p>
+    <p class="dyn-intro">每天 08:23 / 18:23 自动追加当日 AI 动态：<b>国内动态</b>收录国产模型与国内厂商进展，<b>国外动态</b>收录 OpenAI、Anthropic、Google 等海外动态。主题不再细分，一屏扫完。</p>
 
-    <nav class="dyn-nav" aria-label="主题模块">
-      <a class="dyn-pill" href="#dyn-agent">🤖 智能体</a>
-      <a class="dyn-pill" href="#dyn-model">🦾 大模型</a>
-      <a class="dyn-pill" href="#dyn-tools">🧩 技能与 MCP</a>
-      <a class="dyn-pill" href="#dyn-misc">📰 综合要闻</a>
-    </nav>
-
-    <!-- ================= 模块 ① 智能体动态 ================= -->
-    <section class="dyn-mod" id="dyn-agent">
+    <!-- ================= 🇨🇳 国内动态 ================= -->
+    <section class="dyn-mod" id="dyn-domestic">
       <header class="dyn-head">
-        <span class="dyn-ico">🤖</span>
-        <div class="dyn-t"><h2>智能体动态</h2><p>智能体应用 · Agent 产品 · 生态与开源</p></div>
+        <span class="dyn-ico">🇨🇳</span>
+        <div class="dyn-t"><h2>国内动态</h2><p>国产大模型 · 国内厂商 · 产品与生态进展</p></div>
         <span class="dyn-note">每日自动追加</span>
       </header>
       <div class="dyn-feed">
-        <!-- __DYN_AGENT_INSERT__：每日定时任务在此标记后插入当日「智能体」区块，勿手动改 -->
+        <!-- __DOMESTIC_INSERT__：每日定时任务在此标记后插入当日「国内」区块，勿手动改 -->
     <div class="news-day">
       <div class="dhead">
         <span class="ddate">2026-09-09 晚间更新</span>
         <span class="dbadge">晚间</span>
       </div>
-
-      <div class="news-region">
-        <span class="region-tag region-global">🌍 国外</span>
-      </div>
       <div class="news-item">
         <span class="cat c-news">热点</span>
         <div class="body">
-          <h4><a href="https://www.ithome.com/1/000/237.htm" target="_blank" rel="noopener">脉脉 CEO 林凡：明年科技公司将只招 AI 人才，白领绝大部分工作都可以用 Coding Agent 实现</a></h4>
-          <p>IT之家 9 月 9 日消息，据界面新闻报道，脉脉 CEO 林凡接受采访时表示，今年各家大厂和头部创业公司对基础模型人才的争夺愈演愈烈，预训练、后训练、推理优化等方向的 AI 人才，一些应届毕业生的薪酬已达到几百万甚至千万元年薪。IT之家从报道获悉，林凡介绍称今年脉脉平台的 AI 人才招聘规模又增长了 7.9 倍。目前平台在招岗位中，三四成已经是 AI…</p>
-          <span class="src">来源：<a href="https://www.ithome.com/1/000/237.htm" target="_blank" rel="noopener">IT之家</a></span>
+          <h4><a href="https://www.ithome.com/1/000/433.htm" target="_blank" rel="noopener">消息称鸿蒙智行问界 M9 Ultimate 领世加长版先行者将于 9 月 12 日交付</a></h4>
+          <p>HUD，支持近焦面显示辅助驾驶、安全信息。该车内置星环散射体、小艺智能体、时钟等功能。星寰岛支持专属表盘自定义显示、AI 形象动态展示等，同时提供指南针、海拔、月相等实用工具。全车还有超 30 处水晶工艺饰件、168 多切面水晶旋钮、10 处天然实木饰板，采用立体镶嵌工艺，对纹拼缝工⁠艺。问界 M9 Ultimate 尺寸为…</p>
+          <span class="src">来源：<a href="https://www.ithome.com/1/000/433.htm" target="_blank" rel="noopener">IT之家</a></span>
         </div>
-      </div>
-      <div class="news-item">
-        <span class="cat c-news">热点</span>
-        <div class="body">
-          <h4><a href="https://www.ifanr.com/1679152?utm_source=rss&utm_medium=rss&utm_campaign=" target="_blank" rel="noopener">办公 Agent 大乱战，新势力TeleAgent 凭什么坐上牌桌</a></h4>
-          <p>谁能成为真正的「国民级AI 办公助理」#欢迎关注爱范儿官方微信公众号：爱范儿（微信号：ifanr），更多精彩内容第一时间为您奉上。</p>
-          <span class="src">来源：<a href="https://www.ifanr.com/1679152?utm_source=rss&utm_medium=rss&utm_campaign=" target="_blank" rel="noopener">爱范儿</a></span>
-        </div>
-      </div>
-    </div>
-      </div>
-    </section>
-
-    <!-- ================= 模块 ② 大模型动态 ================= -->
-    <section class="dyn-mod" id="dyn-model">
-      <header class="dyn-head">
-        <span class="dyn-ico">🦾</span>
-        <div class="dyn-t"><h2>大模型动态</h2><p>模型发布 · 升级开源 · 调价评测</p></div>
-        <span class="dyn-note">每日自动追加</span>
-      </header>
-      <div class="dyn-feed">
-        <!-- __DYN_MODEL_INSERT__：每日定时任务在此标记后插入当日「大模型」区块，勿手动改 -->
-    <div class="news-day">
-      <div class="dhead">
-        <span class="ddate">2026-09-09 晚间更新</span>
-        <span class="dbadge">晚间</span>
-      </div>
-
-      <div class="news-region">
-        <span class="region-tag region-cn">🇨🇳 国内</span>
       </div>
       <div class="news-item">
         <span class="cat c-model">模型</span>
         <div class="body">
-          <h4><a href="https://www.ithome.com/1/000/222.htm" target="_blank" rel="noopener">DeepSeek 计划 9 月 10 日前后发布 V4.1 Flash 模型，各项指标全面超越 V4 Pro</a></h4>
-          <p>IT之家 9 月 9 日消息，DeepSeek 开放平台今日发布通知，DeepSeek 计划于北京时间 2026 年 9 月 10 日前后正式发布 V4.1 Flash 模型。DeepSeek 官方表示，经内部、外部多方测试，V4.1 Flash 在性能、费用、速度、总用时等各项指标上已全面超越 V4 Pro。“秉持着对用户负责的态度，在 V4.1…</p>
-          <span class="src">来源：<a href="https://www.ithome.com/1/000/222.htm" target="_blank" rel="noopener">IT之家</a></span>
+          <h4><a href="https://www.ithome.com/1/000/429.htm" target="_blank" rel="noopener">我国发布第八批新职业：具身智能机器人应用技术员等 11 个新职业、新能源汽车检测员等 23 个新工种</a></h4>
+          <p>IT之家 9 月 9 日消息，据新华社今天（9 日）报道，人力资源社会保障部等部门发布第八批新职业，包括 11 个新职业和 23 个新工种。11 个新职业包括数字孪生工程技术人员、具身智能机器人应用技术员、运动数据分析师、微电网管理员等。其中，数字职业和绿色职业分别占到了 45% 和…</p>
+          <span class="src">来源：<a href="https://www.ithome.com/1/000/429.htm" target="_blank" rel="noopener">IT之家</a></span>
+        </div>
+      </div>
+      <div class="news-item">
+        <span class="cat c-news">热点</span>
+        <div class="body">
+          <h4><a href="https://www.qbitai.com/2026/09/486370.html" target="_blank" rel="noopener">国产AI4S计算平台登场亮相2026外滩大会 算力技术与人才布局双向发力</a></h4>
+          <p></p>
+          <span class="src">来源：<a href="https://www.qbitai.com/2026/09/486370.html" target="_blank" rel="noopener">量子位</a></span>
         </div>
       </div>
       <div class="news-item">
@@ -140,25 +107,9 @@
       <div class="news-item">
         <span class="cat c-model">模型</span>
         <div class="body">
-          <h4><a href="https://www.ithome.com/1/000/188.htm" target="_blank" rel="noopener">曝 DeepSeek 已聘请中信证券筹备 IPO 事宜：目标是在今年递交申请、明年正式挂牌上市</a></h4>
-          <p>IT之家 9 月 9 日消息，路透社今日报道称，深度求索 DeepSeek 已聘请中信证券筹备科创板上市事宜，计划于年内启动 IPO 进程。目前具体募资规模与目标估值尚未确定。深度求索希望通过 IPO 募集资金，扩大算力基础设施建设、加大模型研发与芯片自研投入，并强化核心人才激励。据此前报道，DeepSeek 目标是在今年递交 IPO…</p>
-          <span class="src">来源：<a href="https://www.ithome.com/1/000/188.htm" target="_blank" rel="noopener">IT之家</a></span>
-        </div>
-      </div>
-      <div class="news-item">
-        <span class="cat c-model">模型</span>
-        <div class="body">
           <h4><a href="https://www.qbitai.com/2026/09/486288.html" target="_blank" rel="noopener">蚂蚁百灵发布首个金融增强模型，AI开始进入真实投研工作流</a></h4>
           <p>3.0-flash-Fin发布。</p>
           <span class="src">来源：<a href="https://www.qbitai.com/2026/09/486288.html" target="_blank" rel="noopener">量子位</a></span>
-        </div>
-      </div>
-      <div class="news-item">
-        <span class="cat c-model">模型</span>
-        <div class="body">
-          <h4><a href="https://www.qbitai.com/2026/09/486052.html" target="_blank" rel="noopener">SkyProduction限免活动第二期：MiniMax H3会员限时免费无限用！</a></h4>
-          <p>9月1日，SkyProduction（天工工作台）联合阿里巴巴通义万相，推出了Wan 3.0模型限时免费活动</p>
-          <span class="src">来源：<a href="https://www.qbitai.com/2026/09/486052.html" target="_blank" rel="noopener">量子位</a></span>
         </div>
       </div>
       <div class="news-item">
@@ -176,64 +127,61 @@ API 支持多种分辨率，包括…</p>
         </div>
       </div>
     </div>
-      </div>
+              </div>
     </section>
 
-    <!-- ================= 模块 ③ 技能与 MCP ================= -->
-    <section class="dyn-mod" id="dyn-tools">
+    <!-- ================= 🌍 国外动态 ================= -->
+    <section class="dyn-mod" id="dyn-foreign">
       <header class="dyn-head">
-        <span class="dyn-ico">🧩</span>
-        <div class="dyn-t"><h2>技能与 MCP</h2><p>Agent Skills · MCP 协议 · 插件生态</p></div>
+        <span class="dyn-ico">🌍</span>
+        <div class="dyn-t"><h2>国外动态</h2><p>OpenAI · Anthropic · Google · Meta 等海外动态</p></div>
         <span class="dyn-note">每日自动追加</span>
       </header>
       <div class="dyn-feed">
-        <!-- __DYN_TOOLS_INSERT__：每日定时任务在此标记后插入当日「技能与 MCP」区块，勿手动改 -->
-      </div>
-    </section>
-
-    <!-- ================= 模块 ④ 综合要闻 ================= -->
-    <section class="dyn-mod" id="dyn-misc">
-      <header class="dyn-head">
-        <span class="dyn-ico">📰</span>
-        <div class="dyn-t"><h2>综合要闻</h2><p>行业事件 · 论文 · 国内外大公司动态</p></div>
-        <span class="dyn-note">每日自动追加</span>
-      </header>
-      <div class="dyn-feed">
-        <!-- __DYN_MISC_INSERT__：每日定时任务在此标记后插入当日「综合要闻」区块，勿手动改 -->
+        <!-- __FOREIGN_INSERT__：每日定时任务在此标记后插入当日「国外」区块，勿手动改 -->
     <div class="news-day">
       <div class="dhead">
         <span class="ddate">2026-09-09 晚间更新</span>
         <span class="dbadge">晚间</span>
       </div>
-
-      <div class="news-region">
-        <span class="region-tag region-cn">🇨🇳 国内</span>
-      </div>
       <div class="news-item">
-        <span class="cat c-news">热点</span>
+        <span class="cat c-paper">论文</span>
         <div class="body">
-          <h4><a href="https://www.ithome.com/1/000/272.htm" target="_blank" rel="noopener">北京：打造下一代新型智能终端，推动 8K 超高清、裸眼 3D 等技术规模化应用</a></h4>
-          <p>V)、芯粒、光电量电融合等创新平台，持续推进存算一体等新型架构产品迭代演进，聚力培育自主计算产业生态。打造全国领先的综合性集成电路制造基地，提升量产产线工艺良率与服务效能。发展先进封装技术，加强设计制造联动，系统打造全栈交付体系。建立国内领先的电子设计自动化（EDA）工具和工艺设计套件（PDK）配套服务能力，加快特色工艺、量测装备的研发及产业化进程。空天技术…</p>
-          <span class="src">来源：<a href="https://www.ithome.com/1/000/272.htm" target="_blank" rel="noopener">IT之家</a></span>
+          <h4><a href="https://www.ithome.com/1/000/405.htm" target="_blank" rel="noopener">科学家乘私人飞机追踪卫星再入大气层，研究太空碎片燃烧污染</a></h4>
+          <p>IT之家 9 月 9…</p>
+          <span class="src">来源：<a href="https://www.ithome.com/1/000/405.htm" target="_blank" rel="noopener">IT之家</a></span>
         </div>
       </div>
-
-      <div class="news-region">
-        <span class="region-tag region-global">🌍 国外</span>
+      <div class="news-item">
+        <span class="cat c-model">模型</span>
+        <div class="body">
+          <h4><a href="https://www.ithome.com/1/000/403.htm" target="_blank" rel="noopener">上汽大众：奥迪 E7X 上市百日销售破万台，第四季度将 OTA 升级奥迪世界模型全景辅助驾驶</a></h4>
+          <p>IT之家 9 月 9 日消息，上汽大众今日宣布，奥迪 E7X 上市以来热度持续攀升，并公布了该车型上市百日的阶段性销售成果。截至 8 月底，奥迪 E7X 累计销售 10,434 台，成为首款上市百日内销售破万台的豪华纯电车型，目前各项交付工作正全力推进。上汽大众还宣布推出限时购车福利。9 月 30 日前，消费者订购奥迪 E7X，即可享受综合价值高达…</p>
+          <span class="src">来源：<a href="https://www.ithome.com/1/000/403.htm" target="_blank" rel="noopener">IT之家</a></span>
+        </div>
+      </div>
+      <div class="news-item">
+        <span class="cat c-model">模型</span>
+        <div class="body">
+          <h4><a href="https://www.ifanr.com/1679329?utm_source=rss&utm_medium=rss&utm_campaign=" target="_blank" rel="noopener">GPT Images 2.5 突发上线！网友的「灵魂画作」一个比一个离谱</a></h4>
+          <p>过于抽象#欢迎关注爱范儿官方微信公众号：爱范儿（微信号：ifanr），更多精彩内容第一时间为您奉上。</p>
+          <span class="src">来源：<a href="https://www.ifanr.com/1679329?utm_source=rss&utm_medium=rss&utm_campaign=" target="_blank" rel="noopener">爱范儿</a></span>
+        </div>
       </div>
       <div class="news-item">
         <span class="cat c-news">热点</span>
         <div class="body">
-          <h4><a href="https://www.ithome.com/1/000/304.htm" target="_blank" rel="noopener">OpenAI 奥尔特曼传记影片《Artificial》首支预告公开，展示“地堡”场景</a></h4>
-          <p>IT之家 9 月 9 日消息，OpenAI CEO 萨姆 · 奥尔特曼所谓的“末日地堡”究竟长什么样？不必再让 ChatGPT 帮你想象了。当地时间 8 日，曾在北美发行《寄生虫》的独立电影公司 Neon 公布了卢卡 · 瓜达尼诺新片《Artificial》的首支预告。这部明星云集的电影预计将围绕 2023 年 11 月奥尔特曼短暂遭罢免期间，OpenAI…</p>
-          <span class="src">来源：<a href="https://www.ithome.com/1/000/304.htm" target="_blank" rel="noopener">IT之家</a></span>
+          <h4><a href="https://www.ifanr.com/1678673?utm_source=rss&utm_medium=rss&utm_campaign=" target="_blank" rel="noopener">首个走进联合国的中国教育 Agent，正在打开下一个 Token 入口</a></h4>
+          <p>Coding 之后，教育 Agent 正在成为下一场 Token 战争#欢迎关注爱范儿官方微信公众号：爱范儿（微信号：ifanr），更多精彩内容第一时间为您奉上。</p>
+          <span class="src">来源：<a href="https://www.ifanr.com/1678673?utm_source=rss&utm_medium=rss&utm_campaign=" target="_blank" rel="noopener">爱范儿</a></span>
         </div>
       </div>
     </div>
-      </div>
+              </div>
     </section>
 
   </div>
+
 
   <!-- ============ 新模型速报 ============ -->
   <div class="tab-pane" data-tab-pane="models">
