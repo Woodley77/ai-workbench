@@ -87,23 +87,24 @@ AI 新闻自动更新脚本 —— 抓取 RSS 源并插入 news.html。
 import feedparser
 import html
 import re
+import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-# ── RSS 源（中文优先，英文仅补充）──────────────────────────────
+# ── RSS 源（全部为国内可直连媒体，2026-09-09 起弃用 Google News / 英文源：
+#    原 Google News 搜索链接为 news.google.com 跳转壳，国内用户无法打开；
+#    英文源（HN/TechCrunch）原文亦多需代理。国内媒体会同步报道海外公司动态，
+#    经 is_domestic 判定后自然落入「🌍 国外」区，链接仍是国内可直连的原文。）─
 FEEDS = [
-    # 中文源（优先抓取，国际可访问）
-    {"url": "https://news.google.com/rss/search?q=AI+大模型+OR+人工智能+OR+大语言模型&hl=zh-CN&gl=CN&ceid=CN:zh-Hans",
-     "name": "Google 新闻·AI", "lang": "zh"},
-    {"url": "https://news.google.com/rss/search?q=DeepSeek+OR+通义千问+OR+智谱+OR+字节+AI&hl=zh-CN&gl=CN&ceid=CN:zh-Hans",
-     "name": "Google 新闻·国产模型", "lang": "zh"},
-    {"url": "https://news.google.com/rss/search?q=OpenAI+OR+Anthropic+OR+Gemini+OR+Claude&hl=zh-CN&gl=CN&ceid=CN:zh-Hans",
-     "name": "Google 新闻·海外模型", "lang": "zh"},
-    {"url": "https://tech.ifeng.com/c/ai/rss", "name": "凤凰科技·AI", "lang": "zh"},
-    # 英文源（仅补充，需翻译）
-    {"url": "https://news.ycombinator.com/rss", "name": "Hacker News", "lang": "en"},
-    {"url": "https://techcrunch.com/feed/", "name": "TechCrunch", "lang": "en"},
+    {"url": "https://www.qbitai.com/feed",     "name": "量子位",   "lang": "zh"},
+    {"url": "https://www.ifanr.com/feed",      "name": "爱范儿",   "lang": "zh"},
+    {"url": "https://www.ithome.com/rss/",     "name": "IT之家",   "lang": "zh"},
+    {"url": "https://www.geekpark.net/rss",    "name": "极客公园", "lang": "zh"},
 ]
+
+FEED_UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+           '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36')
+FEED_TIMEOUT = 20  # 单源抓取超时秒数：CI runner 在海外访问国内源，防个别源拖垮整个 job
 
 # ── AI 相关关键词 ────────────────────────────────────────────
 AI_KEYWORDS = [
@@ -136,12 +137,13 @@ INDUSTRY_KW = ["funding", "融资", "收购", "acquisition", "ipo", "上市",
 
 # ── 国内企业/产品关键词（用于区分国内外）─────────────────────────
 DOMESTIC_KW = [
-    "deepseek", "qwen", "通义千问", "阿里", "alibaba", "智谱", "glm", "z.ai",
+    "deepseek", "qwen", "通义千问", "千问", "阿里", "alibaba", "智谱", "glm", "z.ai",
     "字节", "bytedance", "豆包", "doubao", "腾讯", "tencent", "混元", "hunyuan",
     "华为", "huawei", "昇腾", "ascend", "商汤", "sensetime", "sensenova",
     "百度", "baidu", "文心", "ernie", "kimi", "月之暗面", "moonshot",
     "minimax", "美团", "meituan", "京东", "jd.com",
     "字节跳动", "veGiantModel", "seedrealtime", "welM", "华为昇腾",
+    "蚂蚁", "百灵", "科大讯飞", "讯飞", "腾讯云", "阿里云", "百度智能云",
     "杭州", "浙江", "深圳", "北京", "上海", "国产", "国内",
 ]
 
@@ -181,10 +183,27 @@ def is_domestic(title: str, summary: str = "") -> bool:
     return any(kw in text for kw in DOMESTIC_KW)
 
 
+# 摘要侧的「强信号」词：标题没命中时，仅当摘要含这些才放行（避免泛 AI 词误放）
+SUMMARY_STRONG_KW = [
+    "人工智能", "大模型", "大语言模型", "智能体", "深度学习", "生成式",
+    "多模态", "llm", "gpt", "chatgpt", "deepseek", "openai", "claude",
+    "gemini", "agent", "aigc", "diffusion", "transformer", "神经网络",
+    "机器学习", "模型", "推理芯片", "算力", "算法",
+]
+
+
 def is_ai_related(title: str, summary: str = "") -> bool:
-    """判断新闻是否与 AI 相关。"""
-    text = (title + " " + summary).lower()
-    return any(kw in text for kw in AI_KEYWORDS)
+    """判断新闻是否与 AI 相关。
+
+    标题导向：标题必须命中 AI 关键词；标题未命中时，摘要需含『强信号』词
+    才放行（如 人工智能/大模型/智能体/模型/gpt 等），杜绝摘要里泛 'ai'
+    字样就误放手机/电商/会员类新闻。
+    """
+    t = title.lower()
+    s = summary.lower()
+    if any(kw in t for kw in AI_KEYWORDS):
+        return True
+    return any(kw in s for kw in SUMMARY_STRONG_KW)
 
 
 def clean_summary(text: str, limit: int = 180) -> str:
@@ -274,7 +293,14 @@ def fetch_news():
 
     for feed_info in FEEDS:
         try:
-            feed = feedparser.parse(feed_info["url"])
+            req = urllib.request.Request(
+                feed_info["url"],
+                headers={"User-Agent": FEED_UA,
+                         "Accept": "application/rss+xml, application/xml, text/xml, */*"},
+            )
+            with urllib.request.urlopen(req, timeout=FEED_TIMEOUT) as resp:
+                raw = resp.read().decode("utf-8", "ignore")
+            feed = feedparser.parse(raw)
             if feed.bozo and not feed.entries:
                 print(f"  [警告] RSS 源异常: {feed_info['name']}")
                 continue
@@ -333,9 +359,23 @@ def fetch_news():
     chinese_items = [i for i in items if i["is_chinese"]]
     translated_items = [i for i in items if not i["is_chinese"]]
 
-    # 国内中文新闻（最高优先级）→ 国外中文 → 翻译英文
-    domestic_chinese = [i for i in chinese_items if i.get("is_domestic")]
-    foreign_chinese = [i for i in chinese_items if not i.get("is_domestic")]
+    # 源均衡：同一源在「国内 / 国外」候选里各最多保留 per_source_cap 条
+    # （按时间倒序取最新），防止单一大源霸榜、保证量子位/爱范儿等都能入选。
+    per_source_cap = 2
+
+    def balanced(arr):
+        cnt = {}
+        out = []
+        for it in arr:
+            if cnt.get(it["source"], 0) >= per_source_cap:
+                continue
+            out.append(it)
+            cnt[it["source"]] = cnt.get(it["source"], 0) + 1
+        return out
+
+    # 国内中文新闻（最高优先级）→ 国外中文 → 翻译英文（英文源已弃用，保留兜底）
+    domestic_chinese = balanced([i for i in chinese_items if i.get("is_domestic")])
+    foreign_chinese = balanced([i for i in chinese_items if not i.get("is_domestic")])
 
     selected = []
     # 第一轮：国内中文条目，每类最多 2 条
@@ -516,6 +556,14 @@ def update_homepage(items, date_label):
 
 
 def main():
+    """入口：整体容错——任何意外错误只打印，不让 CI job 中断（否则 update_content 不会执行）。"""
+    try:
+        _main_inner()
+    except Exception as e:
+        print(f"✗ update_news 意外错误（已跳过，update_content 将继续）: {e}")
+
+
+def _main_inner():
     beijing_tz = timezone(timedelta(hours=8))
     now_bj = datetime.now(beijing_tz)
     date_str = now_bj.strftime("%Y-%m-%d")
