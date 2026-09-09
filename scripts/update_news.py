@@ -17,6 +17,21 @@ AI 新闻自动更新脚本 —— 抓取 RSS 源并插入 news.html。
 ══════════════════════════════════════════════════════════════
 
 ══════════════════════════════════════════════════════════════
+按主题分模块（v17 起，2026-09-09）
+══════════════════════════════════════════════════════════════
+动态区（news.html 每日动态）不再是一天一坨混排时间线，而是四个
+主题模块，各自独立归档、每日自动追加（每天 08:23/18:23 两次）：
+  ① __DYN_AGENT_INSERT__  → 🤖 智能体动态（智能体应用/Agent 产品/生态开源）
+  ② __DYN_MODEL_INSERT__  → 🦾 大模型动态（模型发布/升级开源/调价评测）
+  ③ __DYN_TOOLS_INSERT__  → 🧩 技能与 MCP（Agent Skills/MCP/插件生态）
+  ④ __DYN_MISC_INSERT__   → 📰 综合要闻（行业事件/论文/大公司动态，兜底）
+抓取条目先按标题关键词归档（topic_for_title），同一时段内每个模块
+各自生成一个区块（块内仍按 🇨🇳国内/🌍国外 分区），插入对应 marker。
+防重按「模块区」粒度：某模块该 date_label（YYYY-MM-DD 早间/晚间）已存在则跳过。
+首页「今日动态」卡改为四个模块各取最新 1 条。
+══════════════════════════════════════════════════════════════
+
+══════════════════════════════════════════════════════════════
 每日新闻展示格式规范（严格遵循，不可违反）
 ══════════════════════════════════════════════════════════════
 
@@ -153,6 +168,40 @@ def contains_chinese(text: str) -> bool:
     return bool(re.search(r'[\u4e00-\u9fff]', text))
 
 
+# ── 主题模块关键词（v17：动态区按主题分模块归档）──────────────────────
+# 优先级：agent > model > tools，都不中则落 misc（综合要闻兜底）
+AGENT_TOPIC_KW = [
+    "智能体", "助手", "数字员工", "扣子", "coze", "dify", "机器人",
+    "agentic", "ai agent", "agents", "agent", "muse",
+]
+MODEL_TOPIC_KW = MODEL_KW  # 复用原「模型」分类词表
+TOOLS_TOPIC_KW = [
+    "mcp", "model context protocol", "skill", "skills", "插件",
+    "function calling", "工具调用", "workflow",
+]
+
+
+def topic_for_title(title: str) -> str:
+    """把标题归档到主题模块：agent / model / tools / misc。"""
+    t = title.lower()
+    if re.search(r'(?<![a-z])agent(?![a-z])', t) or any(k in t for k in AGENT_TOPIC_KW):
+        return "agent"
+    if any(k in t for k in TOOLS_TOPIC_KW):
+        return "tools"
+    if any(k in t for k in MODEL_TOPIC_KW):
+        return "model"
+    return "misc"
+
+
+# 主题模块注册表：marker → topic → 展示名（顺序即 news.html 模块顺序）
+MODULES = [
+    ("__DYN_AGENT_INSERT__", "agent",  "智能体动态"),
+    ("__DYN_MODEL_INSERT__", "model",  "大模型动态"),
+    ("__DYN_TOOLS_INSERT__", "tools",  "技能与 MCP"),
+    ("__DYN_MISC_INSERT__",  "misc",   "综合要闻"),
+]
+
+
 def classify(title: str) -> str:
     """根据标题关键词分类新闻。"""
     t = title.lower()
@@ -198,9 +247,14 @@ def is_ai_related(title: str, summary: str = "") -> bool:
     标题导向：标题必须命中 AI 关键词；标题未命中时，摘要需含『强信号』词
     才放行（如 人工智能/大模型/智能体/模型/gpt 等），杜绝摘要里泛 'ai'
     字样就误放手机/电商/会员类新闻。
+
+    附加排除：多主题早报/晚报合集（形如「早报｜A/B/C」）即便含片段 AI 词
+    也拒绝——合集首屏多是非 AI 的消费电子消息，主题不纯。
     """
     t = title.lower()
     s = summary.lower()
+    if re.match(r'^(早报|晚报|午报|快讯)｜', title) or re.match(r'^(早报|晚报|午报|快讯)\|', t):
+        return False
     if any(kw in t for kw in AI_KEYWORDS):
         return True
     return any(kw in s for kw in SUMMARY_STRONG_KW)
@@ -354,65 +408,66 @@ def fetch_news():
             print(f"  [错误] {feed_info['name']}: {e}")
 
     items.sort(key=lambda x: x["published"], reverse=True)
+    return items
 
-    # 中文优先 + 国内优先选择
-    chinese_items = [i for i in items if i["is_chinese"]]
-    translated_items = [i for i in items if not i["is_chinese"]]
 
-    # 源均衡：同一源在「国内 / 国外」候选里各最多保留 per_source_cap 条
-    # （按时间倒序取最新），防止单一大源霸榜、保证量子位/爱范儿等都能入选。
+def select_items(items, cap=6):
+    """对单个主题桶做选稿：源均衡(cap2/源) + 国内优先 + 国内 ≥ 国外 + 总量 cap。
+
+    返回按时间倒序的最终列表（domestic 在前）。
+    """
     per_source_cap = 2
 
     def balanced(arr):
         cnt = {}
         out = []
-        for it in arr:
+        for it in arr:  # arr 已按时间倒序，先到先得 = 优先取最新
             if cnt.get(it["source"], 0) >= per_source_cap:
                 continue
             out.append(it)
             cnt[it["source"]] = cnt.get(it["source"], 0) + 1
         return out
 
-    # 国内中文新闻（最高优先级）→ 国外中文 → 翻译英文（英文源已弃用，保留兜底）
+    chinese_items = [i for i in items if i.get("is_chinese")]
+    translated_items = [i for i in items if not i.get("is_chinese")]
+
     domestic_chinese = balanced([i for i in chinese_items if i.get("is_domestic")])
     foreign_chinese = balanced([i for i in chinese_items if not i.get("is_domestic")])
 
     selected = []
-    # 第一轮：国内中文条目，每类最多 2 条
+    # 第一轮：国内中文条目（按原分类轮询，每类至多 2，保证覆盖面）
     for cat in ("模型", "热点", "行业", "论文"):
         cat_items = [i for i in domestic_chinese if i["category"] == cat and i not in selected]
         selected.extend(cat_items[:2])
     # 第二轮：国内中文条目填充剩余名额
     for item in domestic_chinese:
-        if len(selected) >= 8:
+        if len(selected) >= cap:
             break
         if item not in selected:
             selected.append(item)
-    # 第三轮：国外中文条目补充（但国内数量必须 ≥ 国外数量）
+    # 第三轮：国外中文条目补充（桶内无国内条目时允许全国外，否则国外 ≤ 国内）
     domestic_count = len(selected)
-    max_foreign = domestic_count  # 国外条目数不得超过国内条目数
     for item in foreign_chinese:
-        if len(selected) >= 8:
+        if len(selected) >= cap:
             break
-        foreign_in_selected = len(selected) - domestic_count
-        if foreign_in_selected >= max_foreign:
+        if domestic_count > 0 and len(selected) - domestic_count >= domestic_count:
             break
         if item not in selected:
             selected.append(item)
-    # 第四轮：仍不足时用翻译后的英文条目补充（同样受国内 ≥ 国外约束）
+    # 第四轮：翻译英文条目兜底（英文源已弃用，保留以防未来恢复）
     domestic_count = sum(1 for i in selected if i.get("is_domestic"))
     foreign_count = len(selected) - domestic_count
     for item in translated_items:
-        if len(selected) >= 8:
+        if len(selected) >= cap:
             break
         if not item.get("is_domestic") and foreign_count >= domestic_count:
-            continue  # 国外已达到国内数量上限，跳过
+            continue
         if item not in selected:
             selected.append(item)
             if not item.get("is_domestic"):
                 foreign_count += 1
-
-    return selected[:8]
+    # 稳定：国内在前
+    return sorted(selected[:cap], key=lambda x: (not x.get("is_domestic"), x["published"]), reverse=True)
 
 
 def generate_block(items, date_str):
@@ -484,27 +539,45 @@ def generate_block(items, date_str):
     return "\n".join(lines)
 
 
-def update_news_html(block):
-    """在 __DAILY_INSERT__ 标记后插入新闻区块。"""
+def insert_module(block, topic, date_label):
+    """把 block 插入 news.html 对应主题模块的 marker 之后。
+
+    防重粒度 = 模块区：从本模块 marker 到下一个模块 marker 之间的文本，
+    若已含 date_label（如「2026-09-09 晚间更新」）则跳过——四个模块各自
+    可拥有同日同段的块，互不干扰。
+    """
     path = Path("news.html")
     content = path.read_text(encoding="utf-8")
-    marker = "<!-- __DAILY_INSERT__"
+    marker = f"<!-- __DYN_{topic.upper()}_INSERT__"
     if marker not in content:
-        print("错误：未找到插入标记")
+        print(f"错误：未找到标记 {marker}，跳过 {topic} 模块")
         return False
 
-    lines = content.split("\n")
-    out = []
-    inserted = False
-    for line in lines:
-        out.append(line)
-        if marker in line and not inserted:
-            out.append(block)
-            inserted = True
+    idx = content.find(marker)
+    # 模块区终点：下一个模块 marker；最后一个模块(misc)到第一个后续「<!-- __DYN_」不存在，
+    # 取到模块 section 之后最近一次出现 '</section>' 的位置（dyn-misc 的 section 闭合）。
+    nxt = len(content)
+    for other_marker in [f"<!-- __DYN_{m}_INSERT__" for m, _, _ in MODULES]:
+        if other_marker == marker:
+            continue
+        pos = content.find(other_marker, idx + len(marker))
+        if pos != -1 and pos < nxt:
+            nxt = pos
+    if nxt == len(content):
+        end_section = content.find("</section>", idx)
+        nxt = end_section if end_section != -1 else len(content)
 
-    if not inserted:
+    section_text = content[idx:nxt]
+    if f'<span class="ddate">{date_label}</span>' in section_text:
+        print(f"· {topic} 模块 {date_label} 已存在，跳过（防重）")
         return False
-    path.write_text("\n".join(out), encoding="utf-8")
+
+    # 在 marker 所在行的行尾之后插入 block
+    line_end = content.find("\n", idx)
+    if line_end == -1:
+        line_end = idx
+    content = content[:line_end + 1] + block + "\n" + content[line_end + 1:]
+    path.write_text(content, encoding="utf-8")
     return True
 
 
@@ -514,7 +587,7 @@ def update_homepage(items, date_label):
 
     格式规定：
     1. 卡片内容位于 __TODAY_CARD__ / __END_TODAY_CARD__ 标记之间
-    2. 取前 4 条新闻（fetch_news 已保证国内在前）
+    2. 接收四个主题模块的代表列表（≤4 条，各模块最新 1 条）
     3. 每条格式：<li><b>分类</b> · 🇨🇳/🌍：<a>标题</a></li>，标题截断 60 字
     4. 徽标更新为「更新于 {date_label}」
     """
@@ -572,14 +645,7 @@ def _main_inner():
     period = "早间" if now_bj.hour < 14 else "晚间"
     date_label = f"{date_str} {period}更新"
 
-    # 跳过已存在的时段
-    news_path = Path("news.html")
-    content = news_path.read_text(encoding="utf-8")
-    if date_label in content:
-        print(f"{date_label} 的新闻已存在，跳过。")
-        return
-
-    print(f"正在抓取 {date_label} 的 AI 新闻（中文优先）...")
+    print(f"正在抓取 {date_label} 的 AI 新闻（国内源，按主题归档）...")
     items = fetch_news()
     if not items:
         print("未找到 AI 相关新闻，跳过。")
@@ -587,17 +653,38 @@ def _main_inner():
 
     chinese_count = sum(1 for i in items if i.get("is_chinese"))
     domestic_count = sum(1 for i in items if i.get("is_domestic"))
-    foreign_count = len(items) - domestic_count
-    print(f"找到 {len(items)} 条相关新闻（中文 {chinese_count} 条，国内 {domestic_count} 条，国外 {foreign_count} 条）")
-    block = generate_block(items, date_label)
-    if update_news_html(block):
-        print(f"✓ news.html 已更新：{date_label}")
-        if update_homepage(items, date_label):
-            print(f"✓ index.html 首页「今日 AI 动态」已联动更新")
+    print(f"抓到 {len(items)} 条 AI 候选（中文 {chinese_count} 条，国内 {domestic_count} 条）")
+
+    # 按主题归档
+    buckets = {"agent": [], "model": [], "tools": [], "misc": []}
+    for it in items:
+        buckets.setdefault(topic_for_title(it["title"]), []).append(it)
+    for topic in ("agent", "model", "tools", "misc"):
+        print(f"  [{topic}] 候选 {len(buckets[topic])} 条")
+
+    # 每个模块独立选稿 + 插入（防重按模块区）；首页代表 = 各模块最终入选首条
+    any_inserted = False
+    picks = []
+    for marker, topic, label in MODULES:
+        sel = select_items(buckets.get(topic, []), cap=6)
+        if not sel:
+            print(f"· {label}（{topic}）今日无合适内容，跳过")
+            continue
+        block = generate_block(sel, date_label)
+        if insert_module(block, topic, date_label):
+            print(f"✓ news.html [{label}] 已追加 {date_label}（{len(sel)} 条）")
+            any_inserted = True
+        picks.append(sel[0])  # 代表（模块已写或已存在都取同一条，保证首页与页面一致）
+
+    # 首页「今日 AI 动态」：pick 顺序 = agent/model/tools/misc
+    if picks:
+        if update_homepage(picks, date_label):
+            print(f"✓ index.html 首页「今日 AI 动态」已联动更新（{len(picks)} 条代表）")
         else:
             print("✗ index.html 首页联动更新失败")
-    else:
-        print("✗ news.html 更新失败")
+
+    if not any_inserted:
+        print(f"{date_label} 所有模块均已存在或无可写内容，无改动。")
 
 
 if __name__ == "__main__":
