@@ -40,9 +40,12 @@
              各加 __RELEASE__/__MILESTONE__/__PAPERS__ marker 每日自动追加
              （有命中才更新），置顶「2026-09」精编块（补 OpenAI GPT-6 Astra /
              ChatGPT Images 2.5 / DeepSeek V4.1 Flash 预告 等窗口外内容）。
+        v19：每日动态取消四主题模块，只按国内外分两块——
+             🇨🇳 国内动态(__DOMESTIC_INSERT__) / 🌍 国外动态(__FOREIGN_INSERT__)，
+             历史分模块内容清空重来；块内不再重复国内外标签（模块本身即单边）。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v18';
+var CACHE_VERSION = 'ai-wb-v19';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
