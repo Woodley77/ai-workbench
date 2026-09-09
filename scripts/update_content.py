@@ -7,7 +7,9 @@
       「最新动态」区块追加当天检索到的实质变化，并同步更新页脚的「数据截止」日期。
 
 流程：
-  1. 按三组主题各抓一批 RSS（Google News 关键词检索 = 每天一"搜"）
+  1. 从国内可直连媒体源池（量子位 / 爱范儿 / IT之家 / 极客公园）抓取近 N 小时条目，
+     按主题 must_kw 初筛（2026-09-09 起弃用 Google News 检索：其链接为
+     news.google.com 跳转壳，国内用户无法打开）
   2. 按时间窗过滤 + 与页面已有条目去重
   3. 调 DeepSeek 判断哪些是"实质变化"，并提炼成严格 JSON
   4. Python 侧严格校验（字段白名单 / URL 合法性 / 长度 / HTML 转义）
@@ -28,7 +30,6 @@
 
 环境变量：
   DEEPSEEK_API_KEY   DeepSeek API 密钥（GitHub Actions 里从 secrets 注入）。
-                    未配置时自动降级为关键词粗筛兜底——仍能产出更新，但质量低于 AI 筛选。
                     未配置时自动降级为关键词粗筛兜底——仍能产出更新，但质量低于 AI 筛选。
 ================================================================================
 """
@@ -57,6 +58,20 @@ CST = timezone(timedelta(hours=8))          # 北京时间
 TODAY = datetime.now(CST).strftime("%Y-%m-%d")
 DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
 DEEPSEEK_MODEL = "deepseek-chat"
+
+# 国内可直连媒体源池（与 update_news.py 同口径；原文链接国内免代理打开）
+CN_FEEDS = [
+    {"url": "https://www.qbitai.com/feed",   "name": "量子位"},
+    {"url": "https://www.ifanr.com/feed",    "name": "爱范儿"},
+    {"url": "https://www.ithome.com/rss/",   "name": "IT之家"},
+    {"url": "https://www.geekpark.net/rss",  "name": "极客公园"},
+]
+FEED_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+           "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+FEED_TIMEOUT = 20
+
+# 抓取缓存：多主题共享一次源池抓取
+_POOL = {"at": None, "hours": 0, "entries": []}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 主题配置：三组，各自抓什么、写到哪、允许的 category 白名单、CSS 映射
@@ -152,26 +167,30 @@ STAMP_PATTERNS = {
 }
 
 
-def gnews_url(query):
-    """把关键词拼成 Google News RSS 检索地址（这就是每天的"搜"）。"""
-    return ("https://news.google.com/rss/search?q=" + urllib.parse.quote(query)
-            + "&hl=zh-CN&gl=CN&ceid=CN:zh-Hans")
+def load_pool(hours):
+    """抓国内源池全部条目（近 hours 小时），5 分钟内复用（多主题共享一次抓取）。
 
+    注：update_news.py 早已全量换国内源；本文件抓的是「候选条目池」，随后由
+    must_kw 初筛 + DeepSeek/关键词兜底挑出真正的实质变化。
+    """
+    now = datetime.now(CST)
+    if (_POOL["entries"] and _POOL["hours"] == hours and _POOL["at"]
+            and (now - _POOL["at"]).total_seconds() < 300):
+        return _POOL["entries"]
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 1. 抓取
-# ─────────────────────────────────────────────────────────────────────────────
-def fetch_entries(topic, hours):
-    """抓该主题下所有 RSS，返回时间窗内的条目。"""
-    cutoff = datetime.now(CST) - timedelta(hours=hours)
-    seen, out = set(), []
-
-    for q in topic["queries"]:
-        url = gnews_url(q)
+    cutoff = now - timedelta(hours=hours)
+    seen, raw = set(), []
+    for fi in CN_FEEDS:
         try:
-            feed = feedparser.parse(url)
+            req = urllib.request.Request(
+                fi["url"],
+                headers={"User-Agent": FEED_UA,
+                         "Accept": "application/rss+xml, application/xml, text/xml, */*"},
+            )
+            with urllib.request.urlopen(req, timeout=FEED_TIMEOUT) as r:
+                feed = feedparser.parse(r.read().decode("utf-8", "ignore"))
         except Exception as e:
-            print(f"    [跳过] RSS 抓取失败 {q[:30]}… → {e}")
+            print(f"    [跳过] 源抓取失败 {fi['name']} → {e}")
             continue
 
         for e in feed.entries:
@@ -180,27 +199,34 @@ def fetch_entries(topic, hours):
             if not title or not link or link in seen:
                 continue
 
-            # 时间过滤：无 published 字段的保守放行（交给后面的关键词/AI 兜底）
+            pub = None
             if getattr(e, "published_parsed", None):
                 pub = datetime(*e.published_parsed[:6], tzinfo=timezone.utc).astimezone(CST)
                 if pub < cutoff:
                     continue
 
             summary = re.sub(r"<[^>]+>", "", e.get("summary") or "")[:300].strip()
-            blob = (title + " " + summary).lower()
-            if not any(k in blob for k in topic["must_kw"]):
-                continue
-
             seen.add(link)
-            out.append({
-                "title": title,
-                "summary": summary,
-                "url": link,
-                "source": (e.get("source", {}) or {}).get("title", "Google 新闻"),
-            })
+            raw.append({"title": title, "summary": summary, "url": link,
+                        "source": fi["name"], "published": pub})
 
-    print(f"    抓到 {len(out)} 条候选（{hours} 小时内，已过关键词初筛）")
-    return out[:40]      # 最多送 40 条给 AI，控制成本
+    _POOL.update(at=now, hours=hours, entries=raw)
+    return raw
+
+
+def fetch_entries(topic, hours):
+    """抓该主题候选：国内源池 + must_kw 初筛，按时间倒序最多返回 50 条。"""
+    pool = load_pool(hours)
+    must = [k.lower() for k in topic["must_kw"]]
+    picked = []
+    for it in pool:
+        blob = (it["title"] + " " + it["summary"]).lower()
+        if not any(k in blob for k in must):
+            continue
+        picked.append(it)
+    picked.sort(key=lambda x: x["published"] or datetime.min.replace(tzinfo=CST), reverse=True)
+    print(f"    抓到 {len(picked)} 条候选（{hours} 小时内，国内源 + must_kw 初筛）")
+    return picked[:50]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
