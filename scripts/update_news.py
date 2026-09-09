@@ -17,18 +17,15 @@ AI 新闻自动更新脚本 —— 抓取 RSS 源并插入 news.html。
 ══════════════════════════════════════════════════════════════
 
 ══════════════════════════════════════════════════════════════
-按主题分模块（v17 起，2026-09-09）
+按国内外分两大模块（v19 起，2026-09-09）
 ══════════════════════════════════════════════════════════════
-动态区（news.html 每日动态）不再是一天一坨混排时间线，而是四个
-主题模块，各自独立归档、每日自动追加（每天 08:23/18:23 两次）：
-  ① __DYN_AGENT_INSERT__  → 🤖 智能体动态（智能体应用/Agent 产品/生态开源）
-  ② __DYN_MODEL_INSERT__  → 🦾 大模型动态（模型发布/升级开源/调价评测）
-  ③ __DYN_TOOLS_INSERT__  → 🧩 技能与 MCP（Agent Skills/MCP/插件生态）
-  ④ __DYN_MISC_INSERT__   → 📰 综合要闻（行业事件/论文/大公司动态，兜底）
-抓取条目先按标题关键词归档（topic_for_title），同一时段内每个模块
-各自生成一个区块（块内仍按 🇨🇳国内/🌍国外 分区），插入对应 marker。
-防重按「模块区」粒度：某模块该 date_label（YYYY-MM-DD 早间/晚间）已存在则跳过。
-首页「今日动态」卡改为四个模块各取最新 1 条。
+动态区（news.html 每日动态）不做主题细分，只按国内外分两个模块，
+各自独立归档、每日自动追加（每天 08:23/18:23 两次）：
+  ① __DOMESTIC_INSERT__ → 🇨🇳 国内动态（国产模型/厂商/产品，is_domestic=True）
+  ② __FOREIGN_INSERT__  → 🌍 国外动态（OpenAI/Anthropic/Google 等海外动态）
+抓取条目直接按 is_domestic 归属两个桶，各自选稿生成区块插入对应 marker。
+防重按「模块区」粒度：该模块该 date_label（YYYY-MM-DD 早间/晚间）已存在则跳过。
+首页「今日动态」卡取国内、国外各 2 条代表。
 ══════════════════════════════════════════════════════════════
 
 ══════════════════════════════════════════════════════════════
@@ -160,6 +157,11 @@ DOMESTIC_KW = [
     "字节跳动", "veGiantModel", "seedrealtime", "welM", "华为昇腾",
     "蚂蚁", "百灵", "科大讯飞", "讯飞", "腾讯云", "阿里云", "百度智能云",
     "杭州", "浙江", "深圳", "北京", "上海", "国产", "国内",
+    # v19 补充：标题导向的国产主体词（避免产业/政策/车企动态被误判为国外）
+    "我国", "鸿蒙", "问界", "麒麟", "小米", "xiaomi", "荣耀", "oppo", "vivo",
+    "大疆", "dji", "中兴", "地平线", "寒武纪", "摩尔线程", "海光", "龙芯", "飞腾",
+    "中芯", "长鑫", "长江存储", "紫光", "新华三", "浪潮", "联想", "中国信通院",
+    "天马", "京东方", "维信诺", "华星", "tcl华星",
 ]
 
 
@@ -168,37 +170,11 @@ def contains_chinese(text: str) -> bool:
     return bool(re.search(r'[\u4e00-\u9fff]', text))
 
 
-# ── 主题模块关键词（v17：动态区按主题分模块归档）──────────────────────
-# 优先级：agent > model > tools，都不中则落 misc（综合要闻兜底）
-AGENT_TOPIC_KW = [
-    "智能体", "助手", "数字员工", "扣子", "coze", "dify", "机器人",
-    "agentic", "ai agent", "agents", "agent", "muse",
-]
-MODEL_TOPIC_KW = MODEL_KW  # 复用原「模型」分类词表
-TOOLS_TOPIC_KW = [
-    "mcp", "model context protocol", "skill", "skills", "插件",
-    "function calling", "工具调用", "workflow",
-]
-
-
-def topic_for_title(title: str) -> str:
-    """把标题归档到主题模块：agent / model / tools / misc。"""
-    t = title.lower()
-    if re.search(r'(?<![a-z])agent(?![a-z])', t) or any(k in t for k in AGENT_TOPIC_KW):
-        return "agent"
-    if any(k in t for k in TOOLS_TOPIC_KW):
-        return "tools"
-    if any(k in t for k in MODEL_TOPIC_KW):
-        return "model"
-    return "misc"
-
-
-# 主题模块注册表：marker → topic → 展示名（顺序即 news.html 模块顺序）
+# ── 动态区模块（v19：不做主题细分，只按国内外分两块）────────────────
+# is_domestic 判定见 DOMESTIC_KW：国产模型/厂商相关 → 国内动态，其余 → 国外动态
 MODULES = [
-    ("__DYN_AGENT_INSERT__", "agent",  "智能体动态"),
-    ("__DYN_MODEL_INSERT__", "model",  "大模型动态"),
-    ("__DYN_TOOLS_INSERT__", "tools",  "技能与 MCP"),
-    ("__DYN_MISC_INSERT__",  "misc",   "综合要闻"),
+    ("__DOMESTIC_INSERT__", "domestic", "国内动态"),
+    ("__FOREIGN_INSERT__",  "foreign",  "国外动态"),
 ]
 
 # ── 归档区（news.html 的另外三个 tab：新模型速报/行业大事记/论文快报）────
@@ -465,8 +441,11 @@ def fetch_news():
 
 
 def select_items(items, cap=6):
-    """对单个主题桶做选稿：源均衡(cap2/源) + 国内优先 + 国内 ≥ 国外 + 总量 cap。
+    """对单个模块桶做选稿：源均衡(cap2/源) + 国内优先 + 国内 ≥ 国外 + 总量 cap。
 
+    注意：v19 起动态区桶已按国内外拆开（domestic 桶全为国内、foreign 桶全为国外），
+    桶内再分国内外时仅单边有内容，此处的均衡约束自动退化为「单边选满 cap」。
+    ARCHIVES 三 tab 仍按混合桶调用（速报/大事记/论文含国内外条目），均衡约束继续生效。
     返回按时间倒序的最终列表（domestic 在前）。
     """
     per_source_cap = 2
@@ -523,22 +502,20 @@ def select_items(items, cap=6):
     return sorted(selected[:cap], key=lambda x: (not x.get("is_domestic"), x["published"]), reverse=True)
 
 
-def generate_block(items, date_str):
+def generate_block(items, date_str, with_region=True):
     """
     生成新闻 HTML 区块。
-    
+
     格式规定：
     1. 日期标题使用 dhead/ddate/dbadge 结构
-    2. 新闻分为"🇨🇳 国内"和"🌍 国外"两个区域，国内在前
+    2. with_region=True：新闻分为"🇨🇳 国内"和"🌍 国外"两个区域，国内在前
+       （ARCHIVES 三 tab 用，块内可能同时含国内外条目）
+       with_region=False：不分 region 直接渲染 items（v19 每日动态两模块用，
+       模块本身已限定单边，块内不再重复区域标签）
     3. 每条新闻使用 cat/body/h4/p/src 结构
     4. 标题必须可点击（<a> 标签）
     5. 来源必须可点击
     """
-    # 按国内外分组
-    domestic = [i for i in items if i.get("is_domestic")]
-    foreign = [i for i in items if not i.get("is_domestic")]
-
-    # 判断时段标签
     period = "早间" if "早间" in date_str else ("晚间" if "晚间" in date_str else "更新")
 
     lines = [
@@ -565,6 +542,17 @@ def generate_block(items, date_str):
             '        </div>',
             '      </div>',
         ]
+
+    if not with_region:
+        # 动态区单边模块：直接平铺所有条目
+        for item in items:
+            lines.extend(render_item(item))
+        lines.append("    </div>")
+        return "\n".join(lines)
+
+    # 按国内外分组（with_region=True，ARCHIVES 用）
+    domestic = [i for i in items if i.get("is_domestic")]
+    foreign = [i for i in items if not i.get("is_domestic")]
 
     # 国内新闻（在前）
     if domestic:
@@ -595,10 +583,11 @@ def generate_block(items, date_str):
 def insert_module(block, marker, label, date_label):
     """把 block 插入 news.html 指定 marker 注释行之后。
 
-    marker 示例：'<!-- __DYN_AGENT_INSERT__'、'<!-- __RELEASE_INSERT__'。
-    防重粒度 = 区段：从本 marker 到下一个 HTML 注释 marker（<!-- __XXX_INSERT__）
-    之间的文本，若已含 date_label（如「2026-09-09 晚间更新」）则跳过——
-    每个模块/归档区可各自拥有同日同段的块，互不干扰。
+    marker 示例：'<!-- __DOMESTIC_INSERT__'、'<!-- __RELEASE_INSERT__'。
+    防重粒度 = 区段：从本 marker 行起，到「下一个注释 marker」与「最近的 </section>」
+    中更近者为止，该区间若已含 date_label（如「2026-09-09 早间更新」）则跳过——
+    每日动态两模块各在一个 <section class="dyn-mod"> 内，区段被各自 </section> 精确
+    截断；ARCHIVES 三 tab 无 section，靠相邻 marker 截断。两类互不污染。
     """
     path = Path("news.html")
     content = path.read_text(encoding="utf-8")
@@ -607,14 +596,14 @@ def insert_module(block, marker, label, date_label):
         return False
 
     idx = content.find(marker)
-    # 区段终点：自 idx 起第一个后续注释 marker（<!-- __…_INSERT__）；无则到 </section> 或文件尾
+    # 区段终点：取 idx 之后的「最近注释 marker」与「最近 </section>」中较近者
     nxt = len(content)
-    for m in re.finditer(r'<!--\s*__[A-Za-z]+_INSERT__', content):
+    for m in re.finditer(r'<!--\s*__[A-Za-z0-9_]+_INSERT__', content):
         if m.start() > idx and m.start() < nxt:
             nxt = m.start()
-    if nxt == len(content):
-        end_sec = content.find("</section>", idx)
-        nxt = end_sec if end_sec != -1 else len(content)
+    end_sec = content.find("</section>", idx)
+    if end_sec != -1 and end_sec < nxt:
+        nxt = end_sec
 
     section_text = content[idx:nxt]
     if f'<span class="ddate">{date_label}</span>' in section_text:
@@ -636,7 +625,7 @@ def update_homepage(items, date_label):
 
     格式规定：
     1. 卡片内容位于 __TODAY_CARD__ / __END_TODAY_CARD__ 标记之间
-    2. 接收四个主题模块的代表列表（≤4 条，各模块最新 1 条）
+    2. 接收国内/国外模块的代表列表（≤4 条，国内在前、国外在后，各最多 2 条）
     3. 每条格式：<li><b>分类</b> · 🇨🇳/🌍：<a>标题</a></li>，标题截断 60 字
     4. 徽标更新为「更新于 {date_label}」
     """
@@ -694,7 +683,7 @@ def _main_inner():
     period = "早间" if now_bj.hour < 14 else "晚间"
     date_label = f"{date_str} {period}更新"
 
-    print(f"正在抓取 {date_label} 的 AI 新闻（国内源，按主题归档）...")
+    print(f"正在抓取 {date_label} 的 AI 新闻（国内源，按国内外归档）...")
     items = fetch_news()
     if not items:
         print("未找到 AI 相关新闻，跳过。")
@@ -704,26 +693,28 @@ def _main_inner():
     domestic_count = sum(1 for i in items if i.get("is_domestic"))
     print(f"抓到 {len(items)} 条 AI 候选（中文 {chinese_count} 条，国内 {domestic_count} 条）")
 
-    # 按主题归档
-    buckets = {"agent": [], "model": [], "tools": [], "misc": []}
-    for it in items:
-        buckets.setdefault(topic_for_title(it["title"]), []).append(it)
-    for topic in ("agent", "model", "tools", "misc"):
-        print(f"  [{topic}] 候选 {len(buckets[topic])} 条")
+    # 按国内外归档：domestic 桶 = 国产模型/厂商相关；foreign 桶 = 海外动态
+    buckets = {
+        "domestic": [it for it in items if it.get("is_domestic")],
+        "foreign":  [it for it in items if not it.get("is_domestic")],
+    }
+    for key in ("domestic", "foreign"):
+        print(f"  [{key}] 候选 {len(buckets[key])} 条")
 
-    # 每个模块独立选稿 + 插入（防重按区段）；首页代表 = 各模块最终入选首条
+    # 每个模块独立选稿 + 插入（防重按区段）；首页代表 = 国内/国外各取前 2
     any_inserted = False
     picks = []
-    for marker, topic, label in MODULES:
-        sel = select_items(buckets.get(topic, []), cap=6)
+    for marker, key, label in MODULES:
+        sel = select_items(buckets.get(key, []), cap=8)
         if not sel:
-            print(f"· {label}（{topic}）今日无合适内容，跳过")
+            print(f"· {label}（{key}）今日无合适内容，跳过")
             continue
-        block = generate_block(sel, date_label)
+        # 动态区模块本身已限定单边（国内桶全为国内、国外桶全为国外），块内不再重复 region 标签
+        block = generate_block(sel, date_label, with_region=False)
         if insert_module(block, f"<!-- {marker}", label, date_label):
             print(f"✓ news.html [{label}] 已追加 {date_label}（{len(sel)} 条）")
             any_inserted = True
-        picks.append(sel[0])  # 代表（模块已写或已存在都取同一条，保证首页与页面一致）
+        picks.extend(sel[:2])  # 各模块最多取 2 条代表（模块已写或已存在都取同一条，保证首页与页面一致）
 
     # 三个归档区（速报/大事记/论文）：有命中才更新，无命中跳过
     archive_fns = {"release": is_release_item, "milestone": is_milestone_item, "paper": is_paper_item}
