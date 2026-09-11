@@ -43,9 +43,17 @@
         v19：每日动态取消四主题模块，只按国内外分两块——
              🇨🇳 国内动态(__DOMESTIC_INSERT__) / 🌍 国外动态(__FOREIGN_INSERT__)，
              历史分模块内容清空重来；块内不再重复国内外标签（模块本身即单边）。
+        v20：模型页定位散点图改按厂商分组分色（原按 cat 分组，过滤后阵营坍缩成
+             单值 → 图例仅 1 项、所有点同色）；图表移动端适配（热力图改横向滚动
+             而非压缩坐标系）与科技风美化；新增 --chart-c1..c12 配色 token。
+        v21：移动端启动页（深空墨绿 + 电弧光环 + 星轨粒子 + 扫描线 + 进度条）——
+             新增 _shared/css/splash.css 与 _shared/js/splash.js，8 个页面各注入
+             一次引用；仅 <=640px 触发、每会话只播一次、可点击跳过、尊重系统
+             「减少动态效果」；manifest 底色由近白 #F4FBF7 改深空 #0A1512，
+             消除系统启动帧的白闪。务必清缓存。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v20';
+var CACHE_VERSION = 'ai-wb-v21';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
@@ -66,7 +74,9 @@ var PRECACHE_URLS = [
   './glossary.html',
   './manifest.json',
   './_shared/css/app.css',
+  './_shared/css/splash.css',
   './_shared/js/app.js',
+  './_shared/js/splash.js',
   './_shared/js/echarts.min.js',
   './assets/charts.js',
   './assets/icon-192.png',
