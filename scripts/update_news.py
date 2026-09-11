@@ -41,6 +41,28 @@ AI 新闻自动更新脚本 —— 抓取 RSS 源并插入 news.html。
 ══════════════════════════════════════════════════════════════
 
 ══════════════════════════════════════════════════════════════
+每日动态改「线上 AI 精编」（v21 起，2026-09-11）
+══════════════════════════════════════════════════════════════
+背景：用户否掉了纯关键词选稿（"效果不好"），要的是「能直接用的模型情报」
+（模型/版本更新、API 定价与倍率、限免与免费额度、订阅政策变动、工具与 Agent
+产品上线、模型跑分），而不是"某公司在某地做了什么"这类产业面新闻；同时明确
+不要在本地跑定时任务（本机关机就断了）。
+
+因此把「精编」搬到 GitHub Actions 的 runner 上：
+  ① 若仓库配置了 DEEPSEEK_API_KEY（daily-update.yml 已注入，与 update_content.py
+     共用同一 secret），则由 DeepSeek 按用户口径做语义选稿，并把英文候选译成
+     中文标题（可收 OpenAI 官方 RSS 等一手源的一手情报）；
+  ② 没有 Key、调用失败或 AI 判定无料时，自动退回 v21 关键词规则选稿
+     （_priority_score 加权 + min_score 门槛），保证「每天线上必有产出」。
+链接永远由脚本按候选编号从 RSS 回填，AI 无权提供 URL，杜绝编造。
+另含跨天防重：把页面上已收录的标题喂给 AI（prompt 内「勿重复」段）并在规则
+侧直接剔除，避免同一条新闻连着两天上版。
+内置硬噪声词 HARD_NOISE_KW（消费电子整机/系统版本，如 AirPods、watchOS、
+更新日志），优先级高于主流公司白名单——否则「苹果发布 AirPods 5」会因 Apple
+在白名单里被救回，再被"发布/更新"误判成模型情报。
+══════════════════════════════════════════════════════════════
+
+══════════════════════════════════════════════════════════════
 每日新闻展示格式规范（严格遵循，不可违反）
 ══════════════════════════════════════════════════════════════
 
@@ -457,13 +479,36 @@ CURATE_PROMPT = """你在为一位中文 AI 从业者做每日情报精编。他
 - 中文候选若原标题已经很好，可原样返回。
 - 不要补充候选里没有的信息。
 
-候选列表：
+{avoid_block}候选列表：
 {listing}"""
 
 
-def ai_curate(items, region_label, cap=6):
+def recent_titles(limit=30):
+    """读 news.html 中已收录的标题（页内新块在前 ⇒ 大致新→旧），用于跨天防重。
+
+    动态区新块插在 marker 行之后，所以标题顺序天然是「新→旧」。返回去重列表。
+    """
+    path = Path("news.html")
+    if not path.exists():
+        return []
+    try:
+        content = path.read_text(encoding="utf-8")
+    except Exception:
+        return []
+    out = []
+    for m in re.finditer(r'<h4><a[^>]*>([^<]+)</a></h4>', content):
+        t = html.unescape(m.group(1)).strip()
+        if t and t not in out:
+            out.append(t)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def ai_curate(items, region_label, cap=6, avoid=None):
     """调 DeepSeek 按用户口径做语义选稿。
 
+    avoid：近两天已收录的标题（跨天防重，写进 prompt 让 AI 主动避开）。
     返回挑中的条目列表（顺序即 AI 给的优先级）；未配置 Key / 调用失败 / 输出不合法
     时返回 None，由调用方退回关键词规则选稿（select_items）。
     """
@@ -491,7 +536,13 @@ def ai_curate(items, region_label, cap=6):
         return f'{n}. [{it.get("source", "?")}] {it["title"]}{s}'
 
     listing = "\n".join(line(n, it) for n, it in enumerate(cand, 1))
-    prompt = CURATE_PROMPT.format(region=region_label, total=len(cand), cap=cap, listing=listing)
+    avoid = [t for t in (avoid or [])][:24]
+    avoid_block = ""
+    if avoid:
+        avoid_block = ("【近两天已收录，请勿重复选择】\n"
+                       + "\n".join(f"- {t[:44]}" for t in avoid) + "\n\n")
+    prompt = CURATE_PROMPT.format(region=region_label, total=len(cand), cap=cap,
+                                  listing=listing, avoid_block=avoid_block)
 
     payload = {
         "model": DEEPSEEK_MODEL,
@@ -1105,19 +1156,24 @@ def _main_inner():
     # 每个模块独立选稿 + 插入（防重按区段）；首页代表 = 国内/国外各取前 2
     curate_mode = "DeepSeek AI 精编" if os.environ.get("DEEPSEEK_API_KEY") else "关键词规则选稿"
     print(f"选稿模式：{curate_mode}")
+    # 跨天防重：页面上已收录过的标题，AI 侧写进 prompt 请其避开，规则侧直接剔除
+    avoid = recent_titles(limit=30)
+    if avoid:
+        print(f"  跨天防重参考：页面已有 {len(avoid)} 条历史标题")
     any_inserted = False
     picks = []
     for marker, key, label in MODULES:
         bucket = buckets.get(key, [])
+        ai_sel = ai_curate(bucket, label, cap=6, avoid=avoid)
         # ① 优先 AI 语义精编（线上 CI 内完成，不依赖本地）；
         #    ② 没 Key / 调用失败 / AI 判定无料 → 退回 v21 关键词门槛选稿（≥3 分，少而准）
-        ai_sel = ai_curate(bucket, label, cap=6)
         if ai_sel:
             sel, mode = ai_sel, "AI 精编"
         else:
             if ai_sel == []:
                 print(f"    [{label}] AI 判定今日无够格情报，退回关键词规则兜底（保持页面不空）")
-            sel, mode = select_items(bucket, cap=6, min_score=3), "规则兜底"
+            pool = [i for i in bucket if (i.get("title") or "").strip() not in avoid]
+            sel, mode = select_items(pool, cap=6, min_score=3), "规则兜底"
         if not sel:
             print(f"· {label}（{key}）今日无合适内容，跳过")
             continue
