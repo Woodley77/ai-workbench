@@ -1175,7 +1175,8 @@ body::before {
 }
 
 @media (max-width: 640px) {
-  /* 图表容器：横向滚动 + 右侧渐隐暗示 */
+  /* 图表容器：横向滚动 + 右侧渐隐暗示
+     （热力图用的是 .heat-scroll，样式在 models.html 内联块里，因为要跟左列联动） */
   .chart-scroll-x {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -1189,7 +1190,8 @@ body::before {
   .chart-figure figcaption { font-size: 12px; }
 
   /* ECharts 生成的 svg 允许横向溢出滚动 */
-  .chart-scroll-x > div { max-width: none; }
+  .chart-scroll-x > div,
+  .heat-scroll > div { max-width: none; }
 
   /* 页签在窄屏可横滑，避免换行挤压 */
   .mtabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
