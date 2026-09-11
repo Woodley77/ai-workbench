@@ -81,9 +81,19 @@
              兜底（gesturestart preventDefault + 多指 touchmove 阻止，passive:false）。
              背景：图表区需要频繁单指横滑，极易误触捏合；页面被放大后下方内容
              全部推出屏幕。站内无任何多指手势需求，阻止无副作用。务必清缓存。
+        v26：修电脑端热力图中央「大竖杠」—— v24 修 visualMap 时把
+             itemWidth/itemHeight 语义又搞反了（注释断言「horizontal 时
+             itemWidth 是长度」是错的）。ECharts 真实语义【不随 orient 交换】：
+             itemWidth=厚度(竖直)、itemHeight=长度(水平)，内部先按此画矩形
+             再旋转 90°（SVG 实测 transform matrix(0,-1,1,0,…)）。
+             132×9 实际渲染成 9宽×132高 的竖杠杵在图中央（强弱文字挤成一团）。
+             修复：itemWidth:9 + itemHeight:132 → 132宽×9高 横条；
+             bottom 4→6、HEAT_BOTTOM 28→38 给横条+文字留位（行高 33.6→32.6，
+             仍高于 32 下限）。SVG 渲染实测：横条后强弱文字间距 152px（坏配置 29px）。
+             改动的资源：assets/charts.js，务必清缓存。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v25';
+var CACHE_VERSION = 'ai-wb-v26';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
