@@ -105,7 +105,16 @@
              改动的资源：wiki-skills.html + wiki-mcp.html，务必清缓存。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v27';
+/* v28（2026-09-11）
+   1. models.html 加两个新区块：📡最新动态（__MODEL_DAILY_INSERT__）+ 🔍数据核对提醒（__MODEL_VERIFY_INSERT__）
+   2. 新增 .feed-scroll / .verify-item 样式（与 wiki 两页风格一致）
+   3. update_content.py 新增数据核对机制：解析价格/规格/套餐快照 + DeepSeek 比对 + 写提醒
+   4. workflow 去掉晚班 if 跳过（update_content.py 早晚班一致，更稳）
+   5. 拨乱反正：之前 model topic 一直在「未找到插入标记」跳过，models.html 根本没动态区
+   改动的资源：models.html + scripts/update_content.py + daily-update.yml，务必清缓存。
+   ============================================================ */
+
+var CACHE_VERSION = 'ai-wb-v28';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
