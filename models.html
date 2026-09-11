@@ -489,6 +489,33 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
 .bang-item .bi-score { font-size:12px; color:var(--faint); white-space:nowrap; }
 @media (max-width:640px){ .bang-wrap{ grid-template-columns:1fr; } }
 
+/* ---- 模型页动态区：固定高度滚动框（v28，仿 wiki 两页风格） ----
+   最新动态 + 数据核对提醒 两个区块都只增不减，不框起来会把下方正文越推越远。
+   max-height 内部滚动；overscroll-behavior 防止框内滚到底后带动整页滚动。
+   注：与 wiki-skills / wiki-mcp 的 .feed-scroll 定义一致（下次重构抽到 app.css）。 */
+.feed-scroll {
+  max-height: 340px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--bg2);
+  padding: 2px 14px;
+  scrollbar-width: thin;
+}
+.feed-scroll::-webkit-scrollbar { width: 6px; }
+.feed-scroll::-webkit-scrollbar-track { background: transparent; }
+.feed-scroll::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+.feed-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+.verify-item { border-left: 3px solid var(--accent); padding-left: 10px; margin: 6px 0; }
+.verify-item .vi-label { font-size: 11px; color: var(--accent); font-weight: 600; }
+.verify-item .vi-title { font-size: 14px; font-weight: 600; margin-top: 2px; }
+.verify-item .vi-evidence { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+@media (max-width:700px) {
+  .feed-scroll { max-height: 280px; padding: 2px 10px; }
+}
+
 </style>
 </head>
 <body>
@@ -828,6 +855,23 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
   </div>
 
 </div>
+
+<!-- ============ v28 模型页动态 + 数据核对（CI 自动维护） ============ -->
+<section class="sec">
+  <div class="sec-head"><h2>📡 模型页最新动态</h2><div class="rule"></div><span class="hint">每天从国内权威源选稿 · 仅国产模型</span></div>
+  <p class="sec-note">从量子位 / 爱范儿 / IT之家 / 极客公园抓取近 72 小时的国产大模型实质变化（发布 / 调价 / 评测），由 DeepSeek 选稿。与下方「数据核对提醒」的区别：本区是已确认的新闻；提醒区是「疑似变化 · 待人工核实」。</p>
+  <div class="feed-scroll" id="model-feed">
+    <!-- __MODEL_DAILY_INSERT__ -->
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head"><h2>🔍 数据核对提醒 · 疑似变化</h2><div class="rule"></div><span class="hint">AI 比对发现 · 待人工核实</span></div>
+  <p class="sec-note">每天 CI 解析本页「API 按量单价 / 订阅套餐 / 旗舰规格」三大数据表的当前快照，与当天 AI 新闻交叉比对，发现「疑似变化」写入此处。<b>AI 不直接修改核心数据</b>——所有数据修改需人工在 commit / PR 中确认。MODEL_SCORES（能力评分）永不自动改。</p>
+  <div class="feed-scroll" id="model-verify">
+    <!-- __MODEL_VERIFY_INSERT__ -->
+  </div>
+</section>
 
 <!-- ============ 详情弹窗 ============ -->
 <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
@@ -1853,7 +1897,7 @@ function renderStatBar() {
     { v: MODELS.length, l: '收录模型' },
     { v: Object.keys(vendors).length, l: '覆盖厂商' },
     { v: Object.keys(cats).length, l: '阵营分类' },
-    { v: '2026-09-11', l: '数据截止' }
+    { v: '2026-09-09', l: '数据截止' }
   ];
   bar.innerHTML = items.map(function (it) {
     return '<div class="stat-item"><div class="sv">' + it.v + '</div><div class="sl">' + it.l + '</div></div>';
