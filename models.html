@@ -15,6 +15,83 @@
 <link rel="stylesheet" href="./_shared/css/app.css">
 <link rel="stylesheet" href="./_shared/css/splash.css">
 <style>
+/* ---- 热力图：左列固定 + 右侧横向滚动（2026-09-11）----
+   原先整张图一起横向滚动，滑动看维度时左边的模型名会跟着跑掉、认不出哪行是哪家。
+   现在把 Y 轴标签搬到独立的左列（自绘 DOM），只有右侧格子区滚动。
+   两列行高由 charts.js 实测后写入内联样式，保证像素级对齐。 */
+.heat-wrap {
+  display: flex;
+  align-items: stretch;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.heat-y-axis {
+  flex: none;
+  /* 宽度下限按真实数据算过：最长的不可断行名是 Qwen3.8-Max（11.5px 字号下约 70px），
+     加左右内边距 16px → 内容区至少要 86px。给到 88px 起步，长名自动换行到第二行。 */
+  width: clamp(88px, 22%, 136px);
+  background: color-mix(in srgb, var(--bg2) 92%, transparent);
+  border-right: 1px solid var(--rule);
+  /* wrap 有圆角，这里接管左侧两角；右侧两个直角紧贴 heat-scroll */
+  border-top-left-radius: var(--radius);
+  border-bottom-left-radius: var(--radius);
+  z-index: 1;
+}
+.heat-y-axis__row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 8px 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.18;
+  text-align: right;
+  cursor: pointer;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.heat-y-axis__row span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;   /* 像 Qwen3.8-Max 这种长串也能断行兜底 */
+  word-break: break-word;
+}
+.heat-y-axis__row:hover { color: var(--accent); }
+
+.heat-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;              /* 桌面端不留滚动条 */
+  /* wrap 外层有圆角，左列继承左侧两角；这里只接管右侧两角 */
+  border-top-right-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+  /* 左侧一道细渐隐：暗示"这里是固定的、右边可滑"。
+     用 inset shadow 朝左延伸贴在接缝处，视觉上像一道软分隔。 */
+  box-shadow: -6px 0 10px -6px rgba(0, 0, 0, .28) inset;
+  position: relative;
+  z-index: 0;
+}
+.heat-scroll::-webkit-scrollbar { height: 6px; }
+.heat-scroll::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+
+/* 窄屏才真正可滚：宽度由 charts.js 钉住，靠滑动看全 5 列 */
+@media (max-width: 640px) {
+  .heat-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overflow-y: hidden;
+    touch-action: pan-x pan-y;
+    overscroll-behavior-x: contain;
+    /* 右侧渐隐：暗示"还有内容" */
+    background:
+      linear-gradient(to left, var(--bg) 0%, transparent 24px) right center / 24px 100% no-repeat;
+  }
+  .heat-scroll > div { max-width: none; }
+}
+
 /* ---- 图表容器：移动端横向滚动（热力图列多，靠滑动看全而不是压缩） ---- */
 .chart-scroll-x {
   overflow-x: auto;
@@ -458,9 +535,14 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
     <section class="sec">
       <div class="sec-head"><h2>🗺️ 能力热力图 · 10 个国产主力模型</h2><div class="rule"></div><span class="hint">点任意格子 → 看该模型解读</span></div>
       <p class="sec-note">纵轴按综合评分从高到低排列，颜色越亮该项越强。想找「某方面最强」的模型，直接扫对应那一列。只收录<b>国产主力通用大模型</b>：多模态生成模型（可灵/即梦等）评的不是同一套能力，小众垂类模型也没进图 —— 它们都在下方「全部模型」表里。</p>
-      <p class="sec-note mobile-only" style="color:var(--accent)">📱 手机上看不全？<b>左右滑动</b>热力图即可查看全部 5 个维度。</p>
+      <p class="sec-note mobile-only" style="color:var(--accent)">📱 手机上看不全？<b>左右滑动</b>格子区即可查看全部 5 个维度，<b>左侧模型名固定不动</b>。</p>
       <figure class="chart-figure">
-        <div id="chart-heatmap" style="width:100%;min-height:330px"></div>
+        <div class="heat-wrap">
+          <div class="heat-y-axis"><div class="heat-y-axis__inner"></div></div>
+          <div class="heat-scroll">
+            <div id="chart-heatmap" style="width:100%;min-height:330px"></div>
+          </div>
+        </div>
       </figure>
     </section>
 
