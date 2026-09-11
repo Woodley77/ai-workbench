@@ -56,9 +56,16 @@
              与 any 拆成独立文件（新增 icon-192/512-maskable.png，徽标缩小以落在
              中心 80% 安全区内）；8 页 <meta theme-color> 由绿改深空、apple-touch-icon
              由 ico 改 icon-192.png；favicon(ico) 同步重做。务必清缓存。
+        v23：能力热力图改造为「左列固定 + 右侧横向滚动」——
+             原图整体横滑时左边模型名会跟着跑掉、认不出哪行是哪家。
+             现在把 Y 轴标签搬到独立的左列（自绘 DOM），只有右侧格子区滚动；
+             两列行高由 ECharts 实测反推后写入内联样式，保证像素级对齐。
+             滚动时左列文字 transform 反向平移，GPU 合成不掉帧。
+             改动的资源：models.html + assets/charts.js（共享） +
+             _shared/css/app.css（窄屏规则共用），务必清缓存。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v22';
+var CACHE_VERSION = 'ai-wb-v23';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
