@@ -14,6 +14,19 @@
 <title>模型总览 · AI 学习工作台</title>
 <link rel="stylesheet" href="./_shared/css/app.css">
 <style>
+/* ---- 图表容器：移动端横向滚动（热力图列多，靠滑动看全而不是压缩） ---- */
+.chart-scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overflow-y: hidden;
+  border-radius: var(--radius);
+  /* 滑动提示：右侧渐隐，暗示"还有内容" */
+  background:
+    linear-gradient(to left, var(--bg) 0%, transparent 24px) right center / 24px 100% no-repeat;
+}
+.chart-scroll-x::-webkit-scrollbar { height: 6px; }
+.chart-scroll-x::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+
 /* ---- 视图切换 ---- */
 .view-tabs { display:flex; gap:0; margin:0 0 20px; border-bottom:2px solid var(--rule); overflow-x:auto; -webkit-overflow-scrolling:touch; }
 .view-tab {
@@ -443,7 +456,8 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
     <!-- ---- 热力图 ---- -->
     <section class="sec">
       <div class="sec-head"><h2>🗺️ 能力热力图 · 10 个国产主力模型</h2><div class="rule"></div><span class="hint">点任意格子 → 看该模型解读</span></div>
-      <p class="sec-note">纵轴按综合评分从高到低排列，颜色越深该项越强。想找「某方面最强」的模型，直接扫对应那一列。只收录<b>国产主力通用大模型</b>：多模态生成模型（可灵/即梦等）评的不是同一套能力，小众垂类模型也没进图 —— 它们都在下方「全部模型」表里。</p>
+      <p class="sec-note">纵轴按综合评分从高到低排列，颜色越亮该项越强。想找「某方面最强」的模型，直接扫对应那一列。只收录<b>国产主力通用大模型</b>：多模态生成模型（可灵/即梦等）评的不是同一套能力，小众垂类模型也没进图 —— 它们都在下方「全部模型」表里。</p>
+      <p class="sec-note mobile-only" style="color:var(--accent)">📱 手机上看不全？<b>左右滑动</b>热力图即可查看全部 5 个维度。</p>
       <figure class="chart-figure">
         <div id="chart-heatmap" style="width:100%;min-height:330px"></div>
       </figure>
@@ -452,7 +466,7 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
     <!-- ---- 定位散点图 ---- -->
     <section class="sec">
       <div class="sec-head"><h2>🎯 能力 vs 价格 · 定位图</h2><div class="rule"></div><span class="hint">点圆点 → 看该模型解读</span></div>
-      <p class="sec-note">横轴越往右性价比越高，纵轴越往上能力越强。<b>右上角</b>是「又强又便宜」的甜点区，<b>左上角</b>是「贵但强」的旗舰区。每个模型名用细引线指向圆点，拥挤处自动避让、<b>全部显示</b>不隐藏；悬停可看具体分数，点圆点看完整解读。</p>
+      <p class="sec-note">横轴越往右性价比越高，纵轴越往上能力越强。<b>右上角</b>是「又强又便宜」的甜点区，<b>左上角</b>是「贵但强」的旗舰区。每个点按<b>厂商</b>着色，下方图例可对照；悬停或点击圆点看具体分数与完整解读。</p>
       <figure class="chart-figure">
         <div id="chart-scatter" style="width:100%;min-height:470px"></div>
       </figure>
@@ -1166,6 +1180,16 @@ window.WB_GROUPS = [
   { key:'multimodal', label:'🎨 多模态生成', color: CAT_COLOR.multimodal }
 ];
 
+// ---- 散点图分组：按「厂商」而不是「阵营」 ----
+// 原因：散点图现在只收国产通用大模型（CHART_MODELS 里 10 个的 cat 全是 domestic），
+// 若仍按 WB_GROUPS 的 4 个阵营分组，会有 3 组无数据 → 图例只剩 1 项、10 个点同色，
+// 视觉上就是"全糊成一片"。改成按厂商分组后，分组数、图例、配色都真实可用。
+// 配色从 --chart-* CSS 变量读（在 charts.js 里），这里只排顺序保证同厂相邻。
+var SCATTER_GROUP_ORDER = [
+  '深度求索', '阿里巴巴', '月之暗面', '智谱 AI', '字节跳动',
+  'MiniMax', '腾讯', '百度', '阶跃星辰', '小米'
+];
+
 // 国产主力模型 × 5 能力矩阵，按综合分从高到低排序（热力图 / 定位散点图共用）
 // 只收 inCharts() 通过的：国外模型 + 多模态生成类 + 小众垂类都不进图表，
 // 它们只在「全部模型」表里列出。
@@ -1183,6 +1207,22 @@ function buildMatrix() {
   rows.sort(function (a, b) { return b.sum - a.sum; });
   return { dims: ['编程', '推理', '多模态', '速度', '性价比'], rows: rows };
 }
+
+// 散点图分组：按厂商（详见 SCATTER_GROUP_ORDER 处注释）。
+// 每家一个色，颜色在 charts.js 里按 --chart-c1..c10 取，两主题各有一套。
+function buildScatterGroups() {
+  var present = {};
+  (window.WB_MATRIX ? window.WB_MATRIX.rows : []).forEach(function (r) { present[r.vendor] = 1; });
+  var ordered = SCATTER_GROUP_ORDER.filter(function (v) { return present[v]; });
+  // 兜底：万一有厂商没登记进 SCATTER_GROUP_ORDER，追加在后面，避免点被静默丢弃
+  Object.keys(present).forEach(function (v) {
+    if (ordered.indexOf(v) === -1) ordered.push(v);
+  });
+  return ordered.map(function (v, i) {
+    return { key: v, label: v, ci: i };
+  });
+}
+window.WB_SCATTER_GROUPS = buildScatterGroups;
 
 // ==================== 全部模型表（搜索 + 阵营筛选 + 点击下钻） ====================
 var modelCat = 'all';
@@ -1730,7 +1770,7 @@ function renderStatBar() {
     { v: MODELS.length, l: '收录模型' },
     { v: Object.keys(vendors).length, l: '覆盖厂商' },
     { v: Object.keys(cats).length, l: '阵营分类' },
-    { v: '2026-09-11', l: '数据截止' }
+    { v: '2026-09-09', l: '数据截止' }
   ];
   bar.innerHTML = items.map(function (it) {
     return '<div class="stat-item"><div class="sv">' + it.v + '</div><div class="sl">' + it.l + '</div></div>';
