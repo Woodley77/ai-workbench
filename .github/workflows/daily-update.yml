@@ -12,9 +12,9 @@ on:
     - cron: '55 21 * * *'
     # 北京时间 07:10 · 补班（早）：主班被 GitHub 延后或失败时兜底
     - cron: '10 23 * * *'
-    # 北京时间 17:55 · 主班（晚）：新闻动态
+    # 北京时间 17:55 · 主班（晚）：新闻动态 + 模型页/百科动态
     - cron: '55 9 * * *'
-    # 北京时间 19:10 · 补班（晚）：主班被 GitHub 延后或失败时兜底
+    # 北京时间 19:10 · 补班（晚）：主班被 GitHub 延后或失败时兜底（含 update_content）
     - cron: '10 11 * * *'
   workflow_dispatch:
 
@@ -45,10 +45,11 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: python scripts/update_news.py
 
-      # 模型页 / 百科（Agent Skills、MCP）动态：一天一更，只在早间两班与手动触发时跑
-      # （晚班 cron 为 55 9 / 10 11，event.schedule 不等于它们即早班或手动触发）
-      - name: 抓取并更新模型与百科（仅早班）
-        if: github.event.schedule != '55 9 * * *' && github.event.schedule != '10 11 * * *'
+      # 模型页 / 百科（Agent Skills、MCP）动态：早/晚班与手动触发都跑
+      # 脚本全幂等（update_news 按标题防重、update_content 按当天日期防重；
+      # v28 verify 流程是读快照独立比对，多跑无副作用），所以晚班也跑一致更稳。
+      # v28 起去掉晚班 if 跳过：晚 18 点刚好覆盖国产大模型当日动态高峰。
+      - name: 抓取并更新模型与百科（早晚班一致）
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: python scripts/update_content.py
