@@ -60,12 +60,24 @@
              原图整体横滑时左边模型名会跟着跑掉、认不出哪行是哪家。
              现在把 Y 轴标签搬到独立的左列（自绘 DOM），只有右侧格子区滚动；
              两列行高由 ECharts 实测反推后写入内联样式，保证像素级对齐。
-             滚动时左列文字 transform 反向平移，GPU 合成不掉帧。
              改动的资源：models.html + assets/charts.js（共享） +
              _shared/css/app.css（窄屏规则共用），务必清缓存。
+        v24：修 v23 的三个线上问题（用户反馈「效果不行而且会卡」）——
+             ① 删掉错误的滚动同步：左列是 .heat-scroll 的**兄弟节点**，
+                本来就不在滚动容器里、天然静止，却给它加了
+                translateX(scrollLeft)，滑动时模型名反而往右跑出左列被裁掉。
+                连带删掉 document 上的捕获阶段 scroll 监听。
+             ② 画布太矮：min-height 330 → 420；HEAT_TOP 74 → 56、
+                HEAT_BOTTOM 16 → 28（给色阶图例留位）。
+                行高从 24px 提到 33.6px（文字两行需 27px，原先放不下）。
+                新增行高下限保护：不够高时自动撑高画布，模型变多也不挤。
+             ③ 卡顿：移除 .heat-scroll 的 inset box-shadow（画在内容之上、
+                滚动每帧重绘），改静态 border；transform 同步已删除。
+                另修 visualMap 配置写反（horizontal 却给 12×110，渲染成竖带）
+                → 改 132×9。务必清缓存。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v23';
+var CACHE_VERSION = 'ai-wb-v24';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
