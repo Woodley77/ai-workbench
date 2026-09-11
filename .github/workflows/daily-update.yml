@@ -1,13 +1,27 @@
-name: AI 新闻更新（每日两次）
+name: AI 内容更新（每日动态 · 早晚双班）
 
 on:
   schedule:
-    # 北京时间 08:23（UTC 00:23）— 早间更新
-    # 注意：必须避开整点（尤其 00:00 UTC），GitHub Actions 整点高峰期会延迟甚至跳过运行
-    - cron: '23 0 * * *'
-    # 北京时间 18:23（UTC 10:23）— 晚间更新
-    - cron: '23 10 * * *'
+    # ⚠️ 背景与对策（2026-09-11 排查）：GitHub 免费版 schedule 是低优先级任务，
+    #    实测系统性延后 4~4.5 小时才执行（近 6 次定时触发全部如此，非偶发排队）。
+    #    对策：目标时刻（北京时间 06:00 / 18:00）前后各布一班，脚本全部幂等
+    #    （update_news 按标题防重、update_content 按当天日期防重），
+    #    补班跑一遍无新内容会自动跳过提交，多布班没有副作用；
+    #    另保留 workflow_dispatch 供 API 即时触发（实测 0 秒排队）。
+    # 北京时间 05:55 · 主班（早）：新闻动态 + 模型页/百科动态
+    - cron: '55 21 * * *'
+    # 北京时间 07:10 · 补班（早）：主班被 GitHub 延后或失败时兜底
+    - cron: '10 23 * * *'
+    # 北京时间 17:55 · 主班（晚）：新闻动态
+    - cron: '55 9 * * *'
+    # 北京时间 19:10 · 补班（晚）：主班被 GitHub 延后或失败时兜底
+    - cron: '10 11 * * *'
   workflow_dispatch:
+
+# 相邻班次重叠时排队执行（不取消），避免两个运行并发 push 互相冲突
+concurrency:
+  group: daily-update
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -25,12 +39,16 @@ jobs:
       - name: 安装依赖
         run: pip install feedparser
 
+      # 新闻动态（news.html / index.html / agents.html）：每班都跑，脚本幂等
       - name: 抓取并更新 AI 新闻
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: python scripts/update_news.py
 
-      - name: 抓取并更新模型与百科
+      # 模型页 / 百科（Agent Skills、MCP）动态：一天一更，只在早间两班与手动触发时跑
+      # （晚班 cron 为 55 9 / 10 11，event.schedule 不等于它们即早班或手动触发）
+      - name: 抓取并更新模型与百科（仅早班）
+        if: github.event.schedule != '55 9 * * *' && github.event.schedule != '10 11 * * *'
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: python scripts/update_content.py
@@ -43,6 +61,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "无变更，跳过提交"
           else
-            git commit -m "AI 新闻 / 模型 / 百科自动更新 $(date -u +%Y-%m-%d_%H:%M) UTC"
+            git commit -m "AI 内容自动更新 $(TZ=Asia/Shanghai date +%Y-%m-%d_%H:%M) 北京时间"
             git push
           fi
