@@ -74,7 +74,7 @@
   // 行高 / 上下留白：与 buildHeatOption 里的 grid 保持一致（见该函数 grid 段）
   var HEAT_ROW_H   = 34;   // 每行格子高度（仅作初始估算，实际以 ECharts 反推为准）
   var HEAT_TOP     = 56;   // 绘图区距画布顶部的距离（够放竖排的维度名）
-  var HEAT_BOTTOM  = 28;   // 绘图区距画布底部的距离（桌面要留出色阶图例的位置）
+  var HEAT_BOTTOM  = 38;   // 绘图区距画布底部的距离（要放得下 x 轴标签 ~12px + 色阶图例 ~22px + 间隙）
   // ⚠️ 移动端与桌面端**必须共用同一个 HEAT_BOTTOM** ——
   //    measureHeat / renderHeatYAxis 是按它反推行高的，两边不一致就会错位。
   //    移动端虽然隐藏了图例，多留这点空白无妨，不要为了省空间拆成两个值。
@@ -388,11 +388,15 @@
         show: !mobile,                    // 移动端空间紧张，隐藏色条（颜色自解释）
         orient: 'horizontal',
         left: 'center',
-        bottom: 4,
-        // ⚠️ horizontal 时 itemWidth 是色带长度、itemHeight 是厚度。
-        //    原值 12×110 会渲染成一条又细又长的竖带，是配置写反了。
-        itemWidth: 132,
-        itemHeight: 9,
+        bottom: 6,
+        // ⚠️ ECharts 的 itemWidth/itemHeight 语义【不随 orient 交换】：
+        //    itemWidth 永远是「厚度」（horizontal 时即竖直方向），
+        //    itemHeight 永远是「长度」（horizontal 时即水平方向）。
+        //    内部先按 itemWidth×itemHeight 画矩形再旋转 90°（SVG 实测 transform
+        //    matrix(0,-1,1,0,…)）。所以 horizontal 想要「长132×厚9的横条」，
+        //    必须写 itemWidth:9, itemHeight:132 —— 写成 132×9 会渲染成竖杠（v24 踩坑）。
+        itemWidth: 9,
+        itemHeight: 132,
         text: ['强', '弱'],
         textStyle: { color: v.muted, fontSize: 11 },
         inRange: { color: RAMP }
