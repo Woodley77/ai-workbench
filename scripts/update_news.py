@@ -478,6 +478,8 @@ CURATE_PROMPT = """你在为一位中文 AI 从业者做每日情报精编。他
 - title 一律用中文（英文候选请翻译成准确的中文），控制在 40 字内，客观陈述，不加"重磅""炸裂"等形容词。
 - 中文候选若原标题已经很好，可原样返回。
 - 不要补充候选里没有的信息。
+- **去重是硬要求**：若候选讲的是「已收录列表」里的同一件事（同一个模型的发布/版本更新、
+  同一个产品的上线、同一次定价调整），即使来源不同、标题措辞不同，也必须跳过。
 
 {avoid_block}候选列表：
 {listing}"""
@@ -539,8 +541,8 @@ def ai_curate(items, region_label, cap=6, avoid=None):
     avoid = [t for t in (avoid or [])][:24]
     avoid_block = ""
     if avoid:
-        avoid_block = ("【近两天已收录，请勿重复选择】\n"
-                       + "\n".join(f"- {t[:44]}" for t in avoid) + "\n\n")
+        avoid_block = ("【近两天已收录，请勿重复选择（同一事件换来源/换标题也算重复）】\n"
+                       + "\n".join(f"- {t[:56]}" for t in avoid) + "\n\n")
     prompt = CURATE_PROMPT.format(region=region_label, total=len(cand), cap=cap,
                                   listing=listing, avoid_block=avoid_block)
 
