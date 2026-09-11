@@ -91,9 +91,21 @@
              bottom 4→6、HEAT_BOTTOM 28→38 给横条+文字留位（行高 33.6→32.6，
              仍高于 32 下限）。SVG 渲染实测：横条后强弱文字间距 152px（坏配置 29px）。
              改动的资源：assets/charts.js，务必清缓存。
+        v27：百科动态区改造 + CI 调度重排——
+             ① wiki-skills / wiki-mcp 的「最新动态」装进固定高度滚动框
+                .feed-scroll（max-height 340px，移动端 280px，overscroll-behavior
+                contain 防滚动穿透）：条目每天追加只增不减，原先把下方正文越推越远；
+                CI 插入标记 __SKILLS_DAILY_INSERT__ / __MCP_DAILY_INSERT__ 移到框内，
+                CI 按 marker 插入新条目自动进框，脚本零改动。
+             ② daily-update.yml：目标时刻改北京时间 06:00 / 18:00，前后各布一班
+                （05:55/07:10/17:55/19:10 四个 cron）+ concurrency 排队防并发 push。
+                背景：GitHub 免费版 schedule 实测系统性延后 4~4.5h（近 6 次全中），
+                多班兜底 + 脚本幂等；百科/模型动态改为一天一更（仅早班跑
+                update_content.py，按 event.schedule 区分班次）。
+             改动的资源：wiki-skills.html + wiki-mcp.html，务必清缓存。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v26';
+var CACHE_VERSION = 'ai-wb-v27';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
