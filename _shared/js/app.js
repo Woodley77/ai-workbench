@@ -312,6 +312,17 @@
     });
   }
 
+  /* ---------- 禁止页面双指缩放（2026-09-11 v25） ----------
+   * viewport meta 的 user-scalable=no 在 iOS Safari 10+ 会被忽略（无障碍策略），
+   * 必须用 JS 阻止捏合手势。背景：热力图等图表区需要频繁单指横滑，
+   * 极易误触双指捏合，页面被放大后布局错乱、下方内容被推出屏幕。
+   * 站内没有任何多指手势需求（图表未实现 pinch-zoom），阻止无副作用。 */
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+  // 兜底：部分安卓 WebView 对 user-scalable=no 支持不完整
+  document.addEventListener('touchmove', function (e) {
+    if (e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+
   document.addEventListener('DOMContentLoaded', function () {
     initTheme();
     initServiceWorker();
