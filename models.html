@@ -68,9 +68,8 @@
   /* wrap 外层有圆角，左列继承左侧两角；这里只接管右侧两角 */
   border-top-right-radius: var(--radius);
   border-bottom-right-radius: var(--radius);
-  /* 左侧一道细渐隐：暗示"这里是固定的、右边可滑"。
-     用 inset shadow 朝左延伸贴在接缝处，视觉上像一道软分隔。 */
-  box-shadow: -6px 0 10px -6px rgba(0, 0, 0, .28) inset;
+  /* 接缝只用静态 border，不用 inset box-shadow ——
+     inset 阴影画在内容之上，横向滚动时每帧都要重绘，是卡顿源之一。 */
   position: relative;
   z-index: 0;
 }
@@ -540,7 +539,7 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
         <div class="heat-wrap">
           <div class="heat-y-axis"><div class="heat-y-axis__inner"></div></div>
           <div class="heat-scroll">
-            <div id="chart-heatmap" style="width:100%;min-height:330px"></div>
+            <div id="chart-heatmap" style="width:100%;min-height:420px"></div>
           </div>
         </div>
       </figure>
