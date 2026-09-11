@@ -47,6 +47,20 @@
   --font-display: 'BricolageGrotesque', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --font-mono: 'JetBrainsMono', ui-monospace, Consolas, monospace;
   --nav-h: 60px;
+  /* ---- 图表配色（厂商色板，散点图等按厂商分组时用）----
+   * 亮色主题：高饱和 + 彼此色相拉开，浅底上互相可辨 */
+  --chart-c1: #059669;
+  --chart-c2: #2563EB;
+  --chart-c3: #D97706;
+  --chart-c4: #7C3AED;
+  --chart-c5: #0891B2;
+  --chart-c6: #DB2777;
+  --chart-c7: #65A30D;
+  --chart-c8: #EA580C;
+  --chart-c9: #4F46E5;
+  --chart-c10: #0D9488;
+  --chart-c11: #C026D3;
+  --chart-c12: #B45309;
   --page-bg: radial-gradient(1100px 420px at 12% -6%, rgba(5, 150, 105, 0.07), transparent 60%),
              radial-gradient(900px 380px at 88% -4%, rgba(16, 185, 129, 0.08), transparent 55%);
 }
@@ -67,6 +81,19 @@
   --danger: #F27062;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 40px rgba(0, 0, 0, 0.45);
+  /* 暗色主题厂商色板：统一提亮 + 降饱和，暗底上不刺眼、互相仍可分 */
+  --chart-c1: #34D399;
+  --chart-c2: #60A5FA;
+  --chart-c3: #FBBF24;
+  --chart-c4: #A78BFA;
+  --chart-c5: #22D3EE;
+  --chart-c6: #F472B6;
+  --chart-c7: #A3E635;
+  --chart-c8: #FB923C;
+  --chart-c9: #818CF8;
+  --chart-c10: #2DD4BF;
+  --chart-c11: #E879F9;
+  --chart-c12: #FCD34D;
   --page-bg: radial-gradient(1100px 420px at 12% -6%, rgba(52, 211, 153, 0.10), transparent 60%),
              radial-gradient(900px 380px at 88% -4%, rgba(110, 231, 183, 0.08), transparent 55%);
 }
@@ -1131,4 +1158,43 @@ body::before {
 @media (max-width: 640px) {
   .dyn-head { flex-wrap: wrap; }
   .dyn-note { display: none; }
+}
+
+/* ============================================================
+   移动端适配 · 图表（2026-09-11）
+   背景：手机上热力图（5 列 × 10 行长标签）与散点图（10 点 + 标签引线）
+   挤在 ~375px 里根本看不清，看起来"只有中间一坨"。
+   策略：热力图改为横向滚动（画布撑到 720px），散点图移动端隐藏标签引线
+   改为纯圆点 + 底部可滚图例；字号、点径、留白整体收紧。
+   ============================================================ */
+
+/* 仅在窄屏显示的元素（如"左右滑动"提示） */
+.mobile-only { display: none; }
+@media (max-width: 640px) {
+  .mobile-only { display: block; }
+}
+
+@media (max-width: 640px) {
+  /* 图表容器：横向滚动 + 右侧渐隐暗示 */
+  .chart-scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overflow-y: hidden;
+    /* 让手指滑动更顺手，且不把纵向滚动吃掉 */
+    touch-action: pan-x pan-y;
+    overscroll-behavior-x: contain;
+  }
+
+  /* 图表外框在移动端减小圆角与内边距，多留出宽度给画布 */
+  .chart-figure figcaption { font-size: 12px; }
+
+  /* ECharts 生成的 svg 允许横向溢出滚动 */
+  .chart-scroll-x > div { max-width: none; }
+
+  /* 页签在窄屏可横滑，避免换行挤压 */
+  .mtabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .mtabs .tab-btn { white-space: nowrap; }
+
+  /* 图表前的说明文字在移动端压缩行距，减少滚动距离 */
+  .sec-note { font-size: 13px; line-height: 1.62; }
 }
