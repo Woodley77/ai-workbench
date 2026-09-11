@@ -75,9 +75,15 @@
                 滚动每帧重绘），改静态 border；transform 同步已删除。
                 另修 visualMap 配置写反（horizontal 却给 12×110，渲染成竖带）
                 → 改 132×9。务必清缓存。
+        v25：禁止页面双指缩放——用户反馈模型页「整个页面可以缩放了，缩放的特别
+             不稳定，把下面几大块内容都埋没了」。8 个页面 viewport meta
+             maximum-scale 5.0 -> 1.0 + user-scalable=no；app.js 注入 iOS Safari
+             兜底（gesturestart preventDefault + 多指 touchmove 阻止，passive:false）。
+             背景：图表区需要频繁单指横滑，极易误触捏合；页面被放大后下方内容
+             全部推出屏幕。站内无任何多指手势需求，阻止无副作用。务必清缓存。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v24';
+var CACHE_VERSION = 'ai-wb-v25';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
