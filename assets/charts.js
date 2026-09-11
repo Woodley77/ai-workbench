@@ -60,35 +60,61 @@
    * 需求：手机上左右滑动看 5 个维度时，最左侧的模型名列表要钉住不动。
    *
    * 实现：把原来"一张图"拆成两段 ——
-   *   左：.heat-y-axis（自绘 DOM 标签列，flex:none，不参与横向滚动）
+   *   左：.heat-y-axis（自绘 DOM 标签列，flex:none）
    *   右：.heat-scroll > #chart-heatmap（ECharts 只画格子 + 顶部维度标签）
-   * 两侧行高由同一组常量算出来，保证严格对齐；
-   * 滚动时用 transform 平移左列文字（GPU 合成，不触发重排）。
+   *
+   * ⚠️ 关键（第一版写错、已修正）：
+   *   这两段是**兄弟节点**，左列根本不在滚动容器里，**本来就静止**。
+   *   所以不需要任何"滚动同步"——第一版画蛇添足加了
+   *   `transform: translateX(scrollLeft)`，结果一滑模型名就往右跑出左列、
+   *   被 .heat-wrap 的 overflow:hidden 裁掉。**别再加回来。**
+   *   唯一要做的是让两列行高对齐（由 measureHeat 实测后写入内联样式）。
    * ======================================================= */
 
   // 行高 / 上下留白：与 buildHeatOption 里的 grid 保持一致（见该函数 grid 段）
-  var HEAT_ROW_H   = 30;   // 每行格子高度（仅作初始估算，实际以 ECharts 反推为准）
-  var HEAT_TOP     = 74;   // 绘图区距画布顶部的距离（含顶部维度标签）
-  var HEAT_BOTTOM  = 16;   // 绘图区距画布底部的距离
+  var HEAT_ROW_H   = 34;   // 每行格子高度（仅作初始估算，实际以 ECharts 反推为准）
+  var HEAT_TOP     = 56;   // 绘图区距画布顶部的距离（够放竖排的维度名）
+  var HEAT_BOTTOM  = 28;   // 绘图区距画布底部的距离（桌面要留出色阶图例的位置）
+  // ⚠️ 移动端与桌面端**必须共用同一个 HEAT_BOTTOM** ——
+  //    measureHeat / renderHeatYAxis 是按它反推行高的，两边不一致就会错位。
+  //    移动端虽然隐藏了图例，多留这点空白无妨，不要为了省空间拆成两个值。
 
-  // ECharts 实测反推出的每行间距（含 itemStyle.borderWidth 撑出的视觉间隙）
-  var heatPitch   = HEAT_ROW_H + 3;
+  // ECharts 实测反推出的每行占用高度
+  var heatPitch   = HEAT_ROW_H;
   var heatOffsetY = HEAT_TOP;   // 绘图区顶边相对画布顶部的像素偏移
 
   function heatRowPitch() { return heatPitch; }
+
+  // 每行的最小高度：文字最多两行 ≈ 11.5×1.18×2 ≈ 27px，留点余量取 32
+  var HEAT_MIN_PITCH = 32;
 
   /**
    * 从 ECharts 实例里读出绘图区真实位置，反推每行占用的高度。
    * 为什么必须这么做：ECharts 的类目行高是「绘图区高度 ÷ 行数」自动算的，
    * 用常量估算必然累积误差 —— 10 行下来能错位十几像素，左列和格子就对不上了。
+   *
+   * 另外做「行高下限保护」：画布不够高时主动撑高容器再 resize。
+   * 这样容器被压缩、或将来模型从 10 个增加到更多时，行都不会挤成一团。
    */
   function measureHeat(chart) {
     if (!chart) return;
     try {
-      var h = chart.getHeight();
       var m = window.WB_MATRIX || { rows: [] };
       var n = (m.rows || []).length;
-      if (!h || !n) return;
+      if (!n) return;
+
+      var el = chart.getDom ? chart.getDom() : null;
+      var h = chart.getHeight();
+
+      // 行高下限保护：不够就把画布撑到刚好够
+      var need = HEAT_MIN_PITCH * n + HEAT_TOP + HEAT_BOTTOM;
+      if (el && h && h < need) {
+        el.style.minHeight = need + 'px';
+        chart.resize();
+        h = chart.getHeight() || need;
+      }
+      if (!h) return;
+
       var plotH = h - HEAT_TOP - HEAT_BOTTOM;   // 绘图区高度
       heatOffsetY = HEAT_TOP;
       heatPitch = plotH / n;
@@ -133,27 +159,6 @@
     });
   }
 
-  /** 让左列文字跟随横向滚动做垂直平移，制造"固定在左侧"的错觉。 */
-  function syncHeatYAxis(scrollLeft) {
-    var inner = document.querySelector('.heat-y-axis__inner');
-    if (!inner) return;
-    // 注意是「反向」平移：画布往左滑，左列内容要往右移回原位
-    inner.style.transform = scrollLeft ? 'translateX(' + scrollLeft + 'px)' : '';
-  }
-
-  // 全局只绑一次滚动监听（事件委托到 document，避免重建时重复绑定）
-  var heatScrollBound = false;
-  function bindHeatScroll() {
-    if (heatScrollBound) return;
-    heatScrollBound = true;
-    document.addEventListener('scroll', function (e) {
-      var el = e.target;
-      if (el && el.classList && el.classList.contains('heat-scroll')) {
-        syncHeatYAxis(el.scrollLeft);
-      }
-    }, true); // 捕获阶段：scroll 事件不冒泡，必须用 true
-  }
-
   /* 绑定统一的下钻点击：数据项可带 idx 字段，或数组第 4 位存 idx */
   function bindDrill(chart) {
     chart.on('click', function (p) {
@@ -173,7 +178,6 @@
     if (typeof echarts === 'undefined') return null;
     // 热力图：先备好左列固定标签 + 确定画布逻辑宽度，再 init
     if (id === 'chart-heatmap') {
-      bindHeatScroll();
       renderHeatYAxis();
       applyMinWidth(id, HEAT_WIDE);
     }
@@ -270,7 +274,6 @@
       el.style.minWidth = '';
       // 回到桌面布局：清掉可能的滚动残值
       if (id === 'chart-heatmap' && wrap) wrap.scrollLeft = 0;
-      if (id === 'chart-heatmap') syncHeatYAxis(0);
     }
     // heat-scroll 始终挂上：桌面端靠它的 overflow:hidden 裁掉溢出，
     // 窄屏再由 media query 切成 overflow-x:auto。两边都需要这个类，别只在窄屏加。
@@ -287,8 +290,7 @@
     resizeVisible: resizeVisible,
     rebuildAll: rebuildAll,
     applyMinWidth: applyMinWidth,
-    renderHeatYAxis: renderHeatYAxis,
-    syncHeatYAxis: syncHeatYAxis
+    renderHeatYAxis: renderHeatYAxis
   };
 
   /* =========================================================
@@ -386,9 +388,11 @@
         show: !mobile,                    // 移动端空间紧张，隐藏色条（颜色自解释）
         orient: 'horizontal',
         left: 'center',
-        bottom: 2,
-        itemWidth: 12,
-        itemHeight: 110,
+        bottom: 4,
+        // ⚠️ horizontal 时 itemWidth 是色带长度、itemHeight 是厚度。
+        //    原值 12×110 会渲染成一条又细又长的竖带，是配置写反了。
+        itemWidth: 132,
+        itemHeight: 9,
         text: ['强', '弱'],
         textStyle: { color: v.muted, fontSize: 11 },
         inRange: { color: RAMP }
