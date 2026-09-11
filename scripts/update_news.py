@@ -1179,6 +1179,9 @@ def _main_inner():
         if not sel:
             print(f"· {label}（{key}）今日无合适内容，跳过")
             continue
+        # 审计日志：打印实际选中的条目（即使后面因防重跳过写入，也能在 CI 日志里看到 AI 的判断）
+        for it in sel:
+            print(f"    · [{mode}] {it['title'][:64]}")
         # 动态区模块本身已限定单边（国内桶全为国内、国外桶全为国外），块内不再重复 region 标签
         block = generate_block(sel, date_label, with_region=False)
         if insert_module(block, f"<!-- {marker}", label, date_label):
