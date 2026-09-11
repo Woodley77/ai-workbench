@@ -51,9 +51,14 @@
              一次引用；仅 <=640px 触发、每会话只播一次、可点击跳过、尊重系统
              「减少动态效果」；manifest 底色由近白 #F4FBF7 改深空 #0A1512，
              消除系统启动帧的白闪。务必清缓存。
+        v22：应用图标整组重做（深色科技风）—— 深空底 + 细网格 + 虚线外环 +
+             亮绿电弧环 + 玻璃徽标 + 发光 AI，与启动页同一视觉语言；maskable
+             与 any 拆成独立文件（新增 icon-192/512-maskable.png，徽标缩小以落在
+             中心 80% 安全区内）；8 页 <meta theme-color> 由绿改深空、apple-touch-icon
+             由 ico 改 icon-192.png；favicon(ico) 同步重做。务必清缓存。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v21';
+var CACHE_VERSION = 'ai-wb-v22';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
@@ -80,7 +85,9 @@ var PRECACHE_URLS = [
   './_shared/js/echarts.min.js',
   './assets/charts.js',
   './assets/icon-192.png',
+  './assets/icon-192-maskable.png',
   './assets/icon-512.png',
+  './assets/icon-512-maskable.png',
   './assets/ai-workbench.ico',
   './_shared/fonts/BricolageGrotesque-Regular.ttf',
   './_shared/fonts/BricolageGrotesque-Bold.ttf',
