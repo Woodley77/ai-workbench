@@ -24,15 +24,31 @@
 
   function readVars() {
     var s = getComputedStyle(document.documentElement);
-    return {
+    var out = {
       accent:  s.getPropertyValue('--accent').trim(),
       accent2: s.getPropertyValue('--accent2').trim(),
       ink:     s.getPropertyValue('--ink').trim(),
       muted:   s.getPropertyValue('--muted').trim(),
+      faint:   s.getPropertyValue('--faint').trim(),
       rule:    s.getPropertyValue('--rule').trim(),
       bg:      s.getPropertyValue('--bg').trim(),
-      bg2:     s.getPropertyValue('--bg2').trim()
+      bg2:     s.getPropertyValue('--bg2').trim(),
+      // 移动端判定：CSS 的 640px 断点与之呼应（见 app.css 的 .is-mobile 相关规则）
+      mobile:  window.matchMedia ? window.matchMedia('(max-width: 640px)').matches
+                                 : (window.innerWidth <= 640)
     };
+    // 厂商配色：--chart-c1..c12，两套主题各有一份（亮色高饱和 / 暗色高亮）
+    out.palette = [];
+    for (var i = 1; i <= 12; i++) {
+      var c = s.getPropertyValue('--chart-c' + i).trim();
+      if (c) out.palette.push(c);
+    }
+    if (!out.palette.length) {
+      out.palette = ['#059669', '#2563EB', '#D97706', '#7C3AED', '#0891B2',
+                     '#DB2777', '#65A30D', '#EA580C', '#4F46E5', '#0D9488',
+                     '#C026D3', '#B45309'];
+    }
+    return out;
   }
 
   function isVisible(el) {
@@ -56,6 +72,8 @@
     var el = document.getElementById(id);
     if (!isVisible(el)) return null;
     if (typeof echarts === 'undefined') return null;
+    // 热力图在窄屏需要横向滚动，宽度必须在 init 之前设好，否则会按 0 宽渲染
+    if (id === 'chart-heatmap') applyMinWidth(id, HEAT_WIDE);
     var chart = echarts.init(el, null, { renderer: 'svg' });
     chart.setOption(builder(readVars()));
     bindDrill(chart);
@@ -91,7 +109,10 @@
       var c = instances[id];
       if (!c) return;
       var el = document.getElementById(id);
-      if (isVisible(el)) c.resize();
+      if (!isVisible(el)) return;
+      // 热力图在两屏宽度之间切换时要重设逻辑宽度，否则会留下上一次的 720px
+      if (id === 'chart-heatmap') applyMinWidth(id, HEAT_WIDE);
+      c.resize();
     });
   }
 
@@ -114,6 +135,25 @@
 
   function def(id, builder) { builders[id] = builder; }
 
+  /* 窄屏下把图表画布撑到指定逻辑宽度，让外层容器横向滚动 ——
+   * 这是"手机上也能看全"的关键：ECharts 会按这个宽度布局，
+   * 用户左右滑动查看，而不是把 5 列 + 长标签硬压进 375px。 */
+  function applyMinWidth(id, minW) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var wrap = el.parentElement;
+    var mobile = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+    if (mobile) {
+      el.style.width = minW + 'px';
+      el.style.minWidth = minW + 'px';
+      if (wrap) wrap.classList.add('chart-scroll-x');
+    } else {
+      el.style.width = '';
+      el.style.minWidth = '';
+      if (wrap) wrap.classList.remove('chart-scroll-x');
+    }
+  }
+
   window.WB_CHARTS = {
     builders: builders,
     instances: instances,
@@ -122,12 +162,21 @@
     rebuild: rebuild,
     ensureVisible: ensureVisible,
     resizeVisible: resizeVisible,
-    rebuildAll: rebuildAll
+    rebuildAll: rebuildAll,
+    applyMinWidth: applyMinWidth
   };
 
   /* =========================================================
-   * 图 1 · 能力热力图（32 个模型 × 5 个维度）
+   * 图 1 · 能力热力图（10 个国产主力 × 5 维）
+   *
+   * 两个关键设计：
+   * ① 移动端不做"压缩"，做"横向滚动"。手机宽 ~375px 塞 5 列 + 10 行长标签，
+   *    字会小到看不清。改为在窄屏把画布宽度撑到 720px，外层容器 overflow-x:auto
+   *    滚动查看 —— 这才是"显示得全"。
+   * ② 配色改为深底霓虹（科技感），且亮度随分值单调递增，方便扫列找最强项。
    * ======================================================= */
+  var HEAT_WIDE = 720;   // 窄屏下的画布逻辑宽度（配合容器横向滚动）
+
   def('chart-heatmap', function (v) {
     var m = window.WB_MATRIX || { dims: [], rows: [] };
     var heat = [];
@@ -136,48 +185,85 @@
         heat.push([x, y, s, r.idx]);   // 第 4 位存 MODELS 下标，供下钻
       });
     });
+
+    var dims = m.dims;
+    var mobile = v.mobile;
+    // 移动端：标签竖排 + 加宽画布；桌面：保持水平标签
+    var xLabels = mobile
+      ? dims.map(function (d) { return d.split('').join('\n'); })
+      : dims;
+    var labelFont = mobile ? 10 : 12;
+    var yFont = mobile ? 11 : 11.5;
+    var gridLeft = mobile ? 104 : 148;
+    var gridRight = mobile ? 16 : 24;
+
+    /* 分值 → 颜色：1..5 映射到 深空蓝 → 青 → 亮绿（越强越亮，暗底上很直观） */
+    var RAMP = ['#12303F', '#175B57', '#1E8F6B', '#2FD08A', '#7BF7C4'];
+    function colorOf(s) {
+      var i = Math.max(0, Math.min(4, Math.round(s) - 1));
+      return RAMP[i];
+    }
+    function inkOf(s) { return s >= 4 ? '#062018' : '#DDF6EC'; }
+
     return {
       animation: false,
+      // 深色图面：与整体浅色页面形成"仪表盘"对比，科技感来源之一
+      backgroundColor: 'transparent',
       tooltip: {
         appendToBody: true,
+        backgroundColor: 'rgba(6, 24, 20, .94)',
+        borderColor: 'rgba(47, 208, 138, .55)',
+        borderWidth: 1,
+        textStyle: { color: '#E4F5EC', fontSize: 13 },
         formatter: function (p) {
           var row = m.rows[p.value[1]];
           if (!row) return '';
-          return '<b>' + row.name + '</b><br/>' +
-            m.dims[p.value[0]] + '：<b>' + p.value[2] + '</b> / 5<br/>' +
-            '<span style="opacity:.7">点击查看完整解读</span>';
+          var d = dims[p.value[0]];
+          var bar = '▮'.repeat(p.value[2]) + '▯'.repeat(5 - p.value[2]);
+          return '<b>' + row.name + '</b>　<span style="opacity:.65">' + row.vendor + '</span><br/>' +
+            d + '：<b>' + p.value[2] + '</b> / 5　<span style="color:#2FD08A;letter-spacing:1px">' + bar + '</span><br/>' +
+            '<span style="opacity:.6">点击查看完整解读</span>';
         }
       },
-      grid: { left: 148, right: 24, top: 34, bottom: 46 },
+      grid: {
+        left: gridLeft, right: gridRight,
+        top: mobile ? 62 : 46,
+        bottom: mobile ? 40 : 46
+      },
       xAxis: {
         type: 'category',
-        data: m.dims,
+        data: xLabels,
         position: 'top',
-        splitArea: { show: true },
-        axisLabel: { color: v.ink, fontSize: 12, fontWeight: 600 },
-        axisLine: { lineStyle: { color: v.rule } },
+        splitArea: { show: false },
+        axisLabel: {
+          color: v.ink, fontSize: labelFont, fontWeight: 700,
+          lineHeight: mobile ? 12 : 16
+        },
+        axisLine: { lineStyle: { color: 'rgba(47, 208, 138, .35)' } },
         axisTick: { show: false }
       },
       yAxis: {
         type: 'category',
         data: m.rows.map(function (r) { return r.name; }),
         inverse: true,                    // 综合分最高的排在最上面
-        splitArea: { show: true },
-        axisLabel: { color: v.muted, fontSize: 11.5 },
-        axisLine: { lineStyle: { color: v.rule } },
+        splitArea: { show: false },
+        axisLabel: { color: v.ink, fontSize: yFont, fontWeight: 600 },
+        axisLine: { lineStyle: { color: 'rgba(47, 208, 138, .35)' } },
         axisTick: { show: false }
       },
       visualMap: {
         min: 1,
         max: 5,
-        calculable: true,
+        calculable: false,
+        show: !mobile,                    // 移动端空间紧张，隐藏色条（颜色自解释）
         orient: 'horizontal',
         left: 'center',
-        bottom: 4,
+        bottom: 2,
         itemWidth: 12,
-        itemHeight: 90,
+        itemHeight: 110,
+        text: ['强', '弱'],
         textStyle: { color: v.muted, fontSize: 11 },
-        inRange: { color: ['#F3F6F4', '#A7DBC6', '#4FBB8C', '#1E8F63', '#0B6B4A'] }
+        inRange: { color: RAMP }
       },
       series: [{
         type: 'heatmap',
@@ -185,23 +271,46 @@
         label: {
           show: true,
           formatter: function (p) { return p.value[2]; },
-          fontSize: 10.5,
-          color: '#fff'
+          fontSize: mobile ? 11 : 11.5,
+          fontWeight: 700,
+          color: function (p) { return inkOf(p.value[2]); }
         },
-        itemStyle: { borderColor: v.bg, borderWidth: 1.5, borderRadius: 3 },
+        itemStyle: {
+          borderColor: 'rgba(244, 251, 247, .16)',
+          borderWidth: 2,
+          borderRadius: 5
+        },
         emphasis: {
-          itemStyle: { borderColor: v.accent, borderWidth: 2.5, shadowBlur: 6, shadowColor: 'rgba(0,0,0,.25)' }
-        }
+          itemStyle: {
+            borderColor: '#7BF7C4',
+            borderWidth: 2.5,
+            shadowBlur: 16,
+            shadowColor: 'rgba(47, 208, 138, .85)'
+          }
+        },
+        // 逐格上色（visualMap 已给统一的 inRange，这里再显式覆盖以保证两主题一致）
+        progressive: 0
       }]
     };
   });
 
   /* =========================================================
    * 图 2 · 能力 vs 性价比 定位散点图
+   *
+   * 重构要点（2026-09-11）：
+   * ① 分组从「阵营」改为「厂商」—— 只收国产通用大模型后 4 个阵营里 3 个没数据，
+   *    原来图例只有 1 项、点全同色，看起来就是"糊在一起"。现在每厂一色 + 图例。
+   * ② 移动端把图例竖排到右侧会挤扁绘图区，改为底部横排 + 缩小点径/字号；
+   *    同时把标签引线关掉、只显示圆点，避免小屏上标签互相压住（点仍可点开）。
+   * ③ 右上"甜点区"用 markArea 打一层淡光，一眼看出该选谁。
    * ======================================================= */
   def('chart-scatter', function (v) {
     var m = window.WB_MATRIX || { rows: [] };
-    var groups = window.WB_GROUPS || [];
+    var groups = (typeof window.WB_SCATTER_GROUPS === 'function')
+      ? window.WB_SCATTER_GROUPS()
+      : (window.WB_GROUPS || []);
+    var pal = v.palette || [];
+    var mobile = v.mobile;
 
     // 能力 = 前四维均值；性价比 = 第五维
     function ability(r) {
@@ -237,24 +346,28 @@
       g.forEach(function (idx, i) { offset[idx] = (i - (g.length - 1) / 2) * jitter; });
     });
 
-    var series = groups.map(function (g) {
-      var pts = m.rows.filter(function (r) { return r.cat === g.key; });
+    var series = groups.map(function (g, gi) {
+      var pts = m.rows.filter(function (r) { return r.vendor === g.key; });
       if (!pts.length) return null;   // 该分组没有点时整组跳过，避免图例出现空项
+      var color = pal[gi % (pal.length || 1)] || v.accent;
       return {
         name: g.label,
         type: 'scatter',
-        symbolSize: 13,
+        symbolSize: mobile ? 14 : 15,
         data: pts.map(function (r) {
           var y = +(ability(r) + (offset[r.idx] || 0)).toFixed(3);
           return { value: [r.scores[4], y], name: r.name, idx: r.idx };
         }),
         itemStyle: {
-          color: g.color,
-          opacity: 0.82,
-          borderColor: v.bg,
-          borderWidth: 1
+          color: color,
+          opacity: 0.9,
+          borderColor: '#FFFFFF',
+          borderWidth: 1.4,
+          shadowBlur: 10,
+          shadowColor: 'rgba(0, 0, 0, .16)'
         },
-        label: {
+        // 桌面端显示引线标签；移动端空间不够，只在悬停/点击时给提示
+        label: mobile ? { show: false } : {
           show: true,
           // 按归一化高度朝外发散：上半区标签落点下方、下半区落上方，减少同向堆叠
           position: function (p) {
@@ -264,64 +377,109 @@
           },
           formatter: '{b}',
           fontSize: 10.5,
-          color: v.muted,
+          color: v.ink,
           backgroundColor: v.bg2,
-          padding: [2, 4],
-          borderRadius: 3,
+          borderColor: color,
+          borderWidth: 1,
+          padding: [2, 5],
+          borderRadius: 4,
           distance: 6
         },
-        labelLine: {
+        labelLine: mobile ? { show: false } : {
           show: true, length: 8, length2: 10,
           lineStyle: { color: v.muted, width: 1, opacity: 0.5 }
         },
         // 全部显示（hideOverlap:false），拥挤处由 moveOverlap 竖向避让；标签带引线指向圆点
         labelLayout: { hideOverlap: false, moveOverlap: 'shiftY' },
-        emphasis: { itemStyle: { opacity: 1, borderColor: v.accent, borderWidth: 2 }, scale: 1.35 }
+        emphasis: {
+          itemStyle: { opacity: 1, borderColor: v.accent, borderWidth: 2.5, shadowBlur: 18, shadowColor: v.accent },
+          scale: 1.4
+        },
+        markArea: gi === 0 ? {
+          silent: true,
+          itemStyle: { color: 'rgba(47, 208, 138, .10)' },
+          label: {
+            show: true,
+            position: 'insideTopRight',
+            formatter: '★ 甜点区\n又强又便宜',
+            color: '#0B6B4A',
+            fontSize: mobile ? 10 : 11.5,
+            fontWeight: 700,
+            lineHeight: 14
+          },
+          // 右上角 1/4 区域
+          data: [[{ xAxis: rx.max - (rx.max - rx.min) / 2, yAxis: ry.max - (ry.max - ry.min) / 2 },
+                  { xAxis: rx.max, yAxis: ry.max }]]
+        } : null
       };
     }).filter(Boolean);
+
+    var legendData = series.map(function (s) { return s.name; });
 
     return {
       animation: false,
       tooltip: {
         appendToBody: true,
+        backgroundColor: 'rgba(6, 24, 20, .94)',
+        borderColor: 'rgba(47, 208, 138, .55)',
+        borderWidth: 1,
+        textStyle: { color: '#E4F5EC', fontSize: 13 },
         formatter: function (p) {
           var r = null;
           for (var i = 0; i < m.rows.length; i++) if (m.rows[i].idx === p.data.idx) { r = m.rows[i]; break; }
           if (!r) return p.name;
           // 注意用 ability(r) / r.scores[4] 取原始分，不用 p.value —— 后者可能带过重合错位量
-          return '<b>' + r.name + '</b>（' + r.vendor + '）<br/>' +
-            '能力 ' + ability(r) + ' / 5　性价比 ' + r.scores[4] + ' / 5<br/>' +
-            '<span style="opacity:.7">点击查看完整解读</span>';
+          return '<b>' + r.name + '</b>　<span style="opacity:.65">' + r.vendor + '</span><br/>' +
+            '能力 <b>' + ability(r) + '</b> / 5<br/>性价比 <b>' + r.scores[4] + '</b> / 5<br/>' +
+            '<span style="opacity:.6">点击查看完整解读</span>';
         }
       },
-      legend: {
+      legend: mobile ? {
+        type: 'scroll',
         bottom: 0,
+        left: 'center',
+        itemWidth: 10,
+        itemHeight: 10,
+        itemGap: 10,
+        textStyle: { color: v.muted, fontSize: 10.5 },
+        data: legendData
+      } : {
+        bottom: 0,
+        left: 'center',
+        itemWidth: 11,
+        itemHeight: 11,
+        itemGap: 16,
         textStyle: { color: v.muted, fontSize: 12 },
-        itemWidth: 12,
-        itemHeight: 12
+        data: legendData
       },
-      grid: { left: 52, right: 96, top: 30, bottom: 56 },
+      grid: mobile
+        ? { left: 46, right: 16, top: 44, bottom: 78 }
+        : { left: 58, right: 40, top: 34, bottom: 62 },
       xAxis: {
-        name: '性价比 →（越右越便宜）',
+        name: mobile ? '性价比 →' : '性价比 →（越右越便宜）',
         nameLocation: 'middle',
-        nameGap: 28,
-        nameTextStyle: { color: v.muted, fontSize: 11.5 },
+        nameGap: mobile ? 22 : 28,
+        nameTextStyle: { color: v.muted, fontSize: mobile ? 10.5 : 11.5, fontWeight: 600 },
         type: 'value',
         min: rx.min,
         max: rx.max,
         interval: 0.5,
-        axisLabel: { color: v.muted, fontSize: 11 },
+        axisLabel: { color: v.muted, fontSize: mobile ? 10 : 11 },
         splitLine: { lineStyle: { color: v.rule, type: 'dashed' } },
         axisLine: { show: false }
       },
       yAxis: {
-        name: '能力 →（越上越强）',
-        nameTextStyle: { color: v.muted, fontSize: 11.5 },
+        name: mobile ? '能力 →' : '能力 →（越上越强）',
+        nameGap: mobile ? 8 : 12,
+        nameTextStyle: { color: v.muted, fontSize: mobile ? 10.5 : 11.5, fontWeight: 600 },
         type: 'value',
         min: ry.min,
         max: ry.max,
         interval: 0.25,
-        axisLabel: { color: v.muted, fontSize: 11, formatter: function (n) { return n.toFixed(2); } },
+        axisLabel: {
+          color: v.muted, fontSize: mobile ? 10 : 11,
+          formatter: function (n) { return mobile ? n.toFixed(1) : n.toFixed(2); }
+        },
         splitLine: { lineStyle: { color: v.rule, type: 'dashed' } },
         axisLine: { show: false }
       },
@@ -366,36 +524,47 @@
   });
 
   function radarBase(v, extra) {
+    var mobile = v.mobile;
     return {
       animation: false,
-      tooltip: { appendToBody: true },
+      tooltip: { appendToBody: true,
+        backgroundColor: 'rgba(6, 24, 20, .94)',
+        borderColor: 'rgba(47, 208, 138, .55)',
+        borderWidth: 1,
+        textStyle: { color: '#E4F5EC', fontSize: 13 } },
       legend: {
         bottom: 0,
-        textStyle: { color: v.muted, fontSize: 12 },
-        itemWidth: 14,
-        itemHeight: 8
+        left: 'center',
+        itemWidth: mobile ? 10 : 14,
+        itemHeight: mobile ? 10 : 8,
+        itemGap: mobile ? 10 : 20,
+        textStyle: { color: v.muted, fontSize: mobile ? 10.5 : 12 }
       },
       radar: {
         indicator: [
-          { name: '编程 Coding', max: 5 },
-          { name: '推理 Reasoning', max: 5 },
+          { name: mobile ? '编程' : '编程 Coding', max: 5 },
+          { name: mobile ? '推理' : '推理 Reasoning', max: 5 },
           { name: '多模态', max: 5 },
-          { name: '长上下文', max: 5 },
+          { name: mobile ? '长上下文' : '长上下文', max: 5 },
           { name: '性价比', max: 5 },
-          { name: 'Agent 能力', max: 5 }
+          { name: mobile ? 'Agent' : 'Agent 能力', max: 5 }
         ],
-        radius: '62%',
-        center: ['50%', '45%'],
+        // 窄屏收紧半径并上移中心，给底部图例留空间
+        radius: mobile ? '58%' : '62%',
+        center: mobile ? ['50%', '42%'] : ['50%', '45%'],
         splitNumber: 4,
-        axisName: { color: v.muted, fontSize: 12 },
-        splitArea: { show: false },
-        splitLine: { lineStyle: { color: v.rule } },
-        axisLine: { lineStyle: { color: v.rule } }
+        axisName: { color: v.ink, fontSize: mobile ? 10 : 12, fontWeight: 600 },
+        splitArea: {
+          show: true,
+          areaStyle: { color: ['rgba(47, 208, 138, .04)', 'rgba(47, 208, 138, .09)'] }
+        },
+        splitLine: { lineStyle: { color: 'rgba(47, 208, 138, .22)' } },
+        axisLine: { lineStyle: { color: 'rgba(47, 208, 138, .22)' } }
       },
       series: [{
         type: 'radar',
-        symbolSize: 6,
-        areaStyle: { opacity: 0.08 },
+        symbolSize: mobile ? 4 : 6,
+        areaStyle: { opacity: 0.18 },
         lineStyle: { width: 2 },
         data: extra.data
       }],
