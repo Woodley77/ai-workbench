@@ -45,7 +45,7 @@
              历史分模块内容清空重来；块内不再重复国内外标签（模块本身即单边）。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v19';
+var CACHE_VERSION = 'ai-wb-v20';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
