@@ -55,6 +55,105 @@
     return !!(el && el.offsetParent !== null && el.clientWidth > 0);
   }
 
+  /* =========================================================
+   * 热力图专用：固定 Y 轴列（2026-09-11）
+   * 需求：手机上左右滑动看 5 个维度时，最左侧的模型名列表要钉住不动。
+   *
+   * 实现：把原来"一张图"拆成两段 ——
+   *   左：.heat-y-axis（自绘 DOM 标签列，flex:none，不参与横向滚动）
+   *   右：.heat-scroll > #chart-heatmap（ECharts 只画格子 + 顶部维度标签）
+   * 两侧行高由同一组常量算出来，保证严格对齐；
+   * 滚动时用 transform 平移左列文字（GPU 合成，不触发重排）。
+   * ======================================================= */
+
+  // 行高 / 上下留白：与 buildHeatOption 里的 grid 保持一致（见该函数 grid 段）
+  var HEAT_ROW_H   = 30;   // 每行格子高度（仅作初始估算，实际以 ECharts 反推为准）
+  var HEAT_TOP     = 74;   // 绘图区距画布顶部的距离（含顶部维度标签）
+  var HEAT_BOTTOM  = 16;   // 绘图区距画布底部的距离
+
+  // ECharts 实测反推出的每行间距（含 itemStyle.borderWidth 撑出的视觉间隙）
+  var heatPitch   = HEAT_ROW_H + 3;
+  var heatOffsetY = HEAT_TOP;   // 绘图区顶边相对画布顶部的像素偏移
+
+  function heatRowPitch() { return heatPitch; }
+
+  /**
+   * 从 ECharts 实例里读出绘图区真实位置，反推每行占用的高度。
+   * 为什么必须这么做：ECharts 的类目行高是「绘图区高度 ÷ 行数」自动算的，
+   * 用常量估算必然累积误差 —— 10 行下来能错位十几像素，左列和格子就对不上了。
+   */
+  function measureHeat(chart) {
+    if (!chart) return;
+    try {
+      var h = chart.getHeight();
+      var m = window.WB_MATRIX || { rows: [] };
+      var n = (m.rows || []).length;
+      if (!h || !n) return;
+      var plotH = h - HEAT_TOP - HEAT_BOTTOM;   // 绘图区高度
+      heatOffsetY = HEAT_TOP;
+      heatPitch = plotH / n;
+    } catch (e) {}
+    renderHeatYAxis();
+  }
+
+  /** 渲染／刷新左侧固定列。幂等，可反复调用。 */
+  function renderHeatYAxis() {
+    var host = document.querySelector('.heat-y-axis');
+    if (!host) return;
+    var m = window.WB_MATRIX || { rows: [] };
+    var pitch = heatRowPitch();
+
+    host.style.paddingTop = heatOffsetY + 'px';
+    host.style.paddingBottom = HEAT_BOTTOM + 'px';
+
+    var inner = host.querySelector('.heat-y-axis__inner');
+    if (!inner) {
+      inner = document.createElement('div');
+      inner.className = 'heat-y-axis__inner';
+      host.appendChild(inner);
+    }
+
+    // 内容 + 行高都没变则不重建，避免滚动中被打断
+    var want = m.rows.map(function (r) { return r.idx + '|' + r.name; }).join('~') + '@' + pitch;
+    if (inner.getAttribute('data-sig') === want) return;
+    inner.setAttribute('data-sig', want);
+
+    inner.innerHTML = m.rows.map(function (r) {
+      return '<div class="heat-y-axis__row" data-idx="' + r.idx + '"' +
+        ' style="height:' + pitch + 'px" title="' + r.name + '">' +
+        '<span>' + r.name + '</span></div>';
+    }).join('');
+
+    // 点模型名也能下钻，与点格子一致
+    inner.querySelectorAll('.heat-y-axis__row').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var idx = +el.getAttribute('data-idx');
+        if (typeof window.WB_DRILL === 'function') window.WB_DRILL(idx);
+      });
+    });
+  }
+
+  /** 让左列文字跟随横向滚动做垂直平移，制造"固定在左侧"的错觉。 */
+  function syncHeatYAxis(scrollLeft) {
+    var inner = document.querySelector('.heat-y-axis__inner');
+    if (!inner) return;
+    // 注意是「反向」平移：画布往左滑，左列内容要往右移回原位
+    inner.style.transform = scrollLeft ? 'translateX(' + scrollLeft + 'px)' : '';
+  }
+
+  // 全局只绑一次滚动监听（事件委托到 document，避免重建时重复绑定）
+  var heatScrollBound = false;
+  function bindHeatScroll() {
+    if (heatScrollBound) return;
+    heatScrollBound = true;
+    document.addEventListener('scroll', function (e) {
+      var el = e.target;
+      if (el && el.classList && el.classList.contains('heat-scroll')) {
+        syncHeatYAxis(el.scrollLeft);
+      }
+    }, true); // 捕获阶段：scroll 事件不冒泡，必须用 true
+  }
+
   /* 绑定统一的下钻点击：数据项可带 idx 字段，或数组第 4 位存 idx */
   function bindDrill(chart) {
     chart.on('click', function (p) {
@@ -72,12 +171,18 @@
     var el = document.getElementById(id);
     if (!isVisible(el)) return null;
     if (typeof echarts === 'undefined') return null;
-    // 热力图在窄屏需要横向滚动，宽度必须在 init 之前设好，否则会按 0 宽渲染
-    if (id === 'chart-heatmap') applyMinWidth(id, HEAT_WIDE);
+    // 热力图：先备好左列固定标签 + 确定画布逻辑宽度，再 init
+    if (id === 'chart-heatmap') {
+      bindHeatScroll();
+      renderHeatYAxis();
+      applyMinWidth(id, HEAT_WIDE);
+    }
     var chart = echarts.init(el, null, { renderer: 'svg' });
     chart.setOption(builder(readVars()));
     bindDrill(chart);
     instances[id] = chart;
+    // 热力图：渲染完成后按实测绘图区反推行高，再对齐左侧固定列
+    if (id === 'chart-heatmap') measureHeat(chart);
     return chart;
   }
 
@@ -110,9 +215,11 @@
       if (!c) return;
       var el = document.getElementById(id);
       if (!isVisible(el)) return;
-      // 热力图在两屏宽度之间切换时要重设逻辑宽度，否则会留下上一次的 720px
+      // 热力图在两屏宽度之间切换时要重设逻辑宽度，否则会留下上一次的固定宽度
       if (id === 'chart-heatmap') applyMinWidth(id, HEAT_WIDE);
       c.resize();
+      // resize 后行高会变，需要重新测量并对齐左列
+      if (id === 'chart-heatmap') measureHeat(c);
     });
   }
 
@@ -137,21 +244,37 @@
 
   /* 窄屏下把图表画布撑到指定逻辑宽度，让外层容器横向滚动 ——
    * 这是"手机上也能看全"的关键：ECharts 会按这个宽度布局，
-   * 用户左右滑动查看，而不是把 5 列 + 长标签硬压进 375px。 */
+   * 用户左右滑动查看，而不是把 5 列 + 长标签硬压进 375px。
+   *
+   * 2026-09-11 起热力图改用「左列固定 + 右侧滚动」：
+   * 画布宽度只算「格子区 + 两侧留白」，**不含 Y 轴标签宽度**
+   * （标签已经搬到左列 DOM 里去了），否则会白留一大块空白。 */
   function applyMinWidth(id, minW) {
     var el = document.getElementById(id);
     if (!el) return;
     var wrap = el.parentElement;
     var mobile = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+    var w = minW;
+    if (id === 'chart-heatmap') {
+      // 桌面端左列与画布同宽，无需滚动；窄屏才钉住宽度
+      var fixed = 0;
+      var axis = document.querySelector('.heat-y-axis');
+      if (axis) fixed = axis.offsetWidth || 0;
+      if (mobile && fixed) w = minW - fixed;
+    }
     if (mobile) {
-      el.style.width = minW + 'px';
-      el.style.minWidth = minW + 'px';
-      if (wrap) wrap.classList.add('chart-scroll-x');
+      el.style.width = w + 'px';
+      el.style.minWidth = w + 'px';
     } else {
       el.style.width = '';
       el.style.minWidth = '';
-      if (wrap) wrap.classList.remove('chart-scroll-x');
+      // 回到桌面布局：清掉可能的滚动残值
+      if (id === 'chart-heatmap' && wrap) wrap.scrollLeft = 0;
+      if (id === 'chart-heatmap') syncHeatYAxis(0);
     }
+    // heat-scroll 始终挂上：桌面端靠它的 overflow:hidden 裁掉溢出，
+    // 窄屏再由 media query 切成 overflow-x:auto。两边都需要这个类，别只在窄屏加。
+    if (wrap && id === 'chart-heatmap') wrap.classList.add('heat-scroll');
   }
 
   window.WB_CHARTS = {
@@ -163,19 +286,23 @@
     ensureVisible: ensureVisible,
     resizeVisible: resizeVisible,
     rebuildAll: rebuildAll,
-    applyMinWidth: applyMinWidth
+    applyMinWidth: applyMinWidth,
+    renderHeatYAxis: renderHeatYAxis,
+    syncHeatYAxis: syncHeatYAxis
   };
 
   /* =========================================================
    * 图 1 · 能力热力图（10 个国产主力 × 5 维）
    *
-   * 两个关键设计：
+   * 三个关键设计：
    * ① 移动端不做"压缩"，做"横向滚动"。手机宽 ~375px 塞 5 列 + 10 行长标签，
-   *    字会小到看不清。改为在窄屏把画布宽度撑到 720px，外层容器 overflow-x:auto
-   *    滚动查看 —— 这才是"显示得全"。
-   * ② 配色改为深底霓虹（科技感），且亮度随分值单调递增，方便扫列找最强项。
+   *    字会小到看不清。改为在窄屏把画布宽度撑到 HEAT_WIDE，外层容器滚动查看。
+   * ② **Y 轴标签搬到左边的固定列**（.heat-y-axis），不参与横向滚动 ——
+   *    左右滑动看维度时，模型名始终可见（用户 2026-09-11 提的需求）。
+   *    因此本图的 grid.left/right 只留一点点内边距，不再为标签预留宽度。
+   * ③ 配色改为深底霓虹（科技感），且亮度随分值单调递增，方便扫列找最强项。
    * ======================================================= */
-  var HEAT_WIDE = 720;   // 窄屏下的画布逻辑宽度（配合容器横向滚动）
+  var HEAT_WIDE = 760;   // 窄屏下「左列 + 格子区」的总宽（左列宽度由 applyMinWidth 扣除）
 
   def('chart-heatmap', function (v) {
     var m = window.WB_MATRIX || { dims: [], rows: [] };
@@ -188,14 +315,14 @@
 
     var dims = m.dims;
     var mobile = v.mobile;
-    // 移动端：标签竖排 + 加宽画布；桌面：保持水平标签
+    // 移动端：标签竖排；桌面：保持水平标签
     var xLabels = mobile
       ? dims.map(function (d) { return d.split('').join('\n'); })
       : dims;
-    var labelFont = mobile ? 10 : 12;
-    var yFont = mobile ? 11 : 11.5;
-    var gridLeft = mobile ? 104 : 148;
-    var gridRight = mobile ? 16 : 24;
+    var labelFont = mobile ? 11 : 12;
+    // Y 轴标签已在左侧固定列，画布两侧只留少量内边距
+    var gridLeft = 8;
+    var gridRight = 10;
 
     /* 分值 → 颜色：1..5 映射到 深空蓝 → 青 → 亮绿（越强越亮，暗底上很直观） */
     var RAMP = ['#12303F', '#175B57', '#1E8F6B', '#2FD08A', '#7BF7C4'];
@@ -227,8 +354,8 @@
       },
       grid: {
         left: gridLeft, right: gridRight,
-        top: mobile ? 62 : 46,
-        bottom: mobile ? 40 : 46
+        top: HEAT_TOP,
+        bottom: HEAT_BOTTOM
       },
       xAxis: {
         type: 'category',
@@ -237,7 +364,7 @@
         splitArea: { show: false },
         axisLabel: {
           color: v.ink, fontSize: labelFont, fontWeight: 700,
-          lineHeight: mobile ? 12 : 16
+          lineHeight: mobile ? 13 : 16
         },
         axisLine: { lineStyle: { color: 'rgba(47, 208, 138, .35)' } },
         axisTick: { show: false }
@@ -247,8 +374,9 @@
         data: m.rows.map(function (r) { return r.name; }),
         inverse: true,                    // 综合分最高的排在最上面
         splitArea: { show: false },
-        axisLabel: { color: v.ink, fontSize: yFont, fontWeight: 600 },
-        axisLine: { lineStyle: { color: 'rgba(47, 208, 138, .35)' } },
+        // 标签由左侧固定列渲染（见 renderHeatYAxis），这里彻底关掉
+        axisLabel: { show: false },
+        axisLine: { show: false },
         axisTick: { show: false }
       },
       visualMap: {
