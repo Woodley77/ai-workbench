@@ -100,10 +100,29 @@
 .dir-item .di-link { font-size:12px; color:var(--accent); text-decoration:none; word-break:break-all; }
 .dir-item .di-link:hover { text-decoration:underline; }
 
+/* ---- 最新动态：固定高度滚动框（v27） ----
+   动态条目每天追加、只增不减，不框起来会把下方正文越推越远。
+   max-height 内部滚动；overscroll-behavior 防止框内滚到底后带动整页滚动。 */
+.feed-scroll {
+  max-height: 340px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--bg2);
+  padding: 2px 14px;
+  scrollbar-width: thin;
+}
+.feed-scroll::-webkit-scrollbar { width: 6px; }
+.feed-scroll::-webkit-scrollbar-track { background: transparent; }
+.feed-scroll::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+.feed-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
 @media (max-width:700px) {
   .dir-list { grid-template-columns:1fr; }
   .arch-box { flex-direction:column; }
   .arch-arrow { transform:rotate(90deg); }
+  .feed-scroll { max-height: 280px; padding: 2px 10px; }
 }
 </style>
 <style>
@@ -159,6 +178,9 @@
   <section class="sec" id="mcp-daily-feed">
     <div class="sec-head"><h2>🆕 最新动态</h2><div class="rule"></div><span class="hint">每日自动更新 · 协议版本 / 生态目录 / 客户端支持</span></div>
     <p class="sec-note">每天自动检索 MCP 生态的<b>实质变化</b>（协议新版本、服务器生态上新、客户端新增支持、安全规范更新），按日期倒序追加。这里的条目是动态快讯，<b>不代表</b>下方概念长文已同步改写 —— 长文仍以人工维护为准。</p>
+    <!-- v27：动态条目装进固定高度滚动框（条目只增不减，不再把下方内容越推越远）；
+         CI 脚本按 marker 定位插入，marker 在框内则新条目自动进框，逻辑无需改动 -->
+    <div class="feed-scroll">
     <!-- __MCP_DAILY_INSERT__ -->
       <div class="news-day">
         <div class="dhead">
@@ -284,6 +306,7 @@
           </div>
         </div>
       </div>
+    </div>
   </section>
 
 <section class="sec tab-pane active" data-tab-pane="concept">
