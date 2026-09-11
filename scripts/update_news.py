@@ -110,6 +110,8 @@ AI 新闻自动更新脚本 —— 抓取 RSS 源并插入 news.html。
 
 import feedparser
 import html
+import json
+import os
 import re
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -124,6 +126,11 @@ FEEDS = [
     {"url": "https://www.ifanr.com/feed",      "name": "爱范儿",   "lang": "zh"},
     {"url": "https://www.ithome.com/rss/",     "name": "IT之家",   "lang": "zh"},
     {"url": "https://www.geekpark.net/rss",    "name": "极客公园", "lang": "zh"},
+    # v21 扩充（均为国内可直连 + 海外 runner 实测可达；V2EX/Reddit 超时、
+    # Anthropic 无 RSS、机器之心 feed 失效 → 不加）
+    {"url": "https://sspai.com/feed",           "name": "少数派",   "lang": "zh"},
+    {"url": "https://www.infoq.cn/feed",        "name": "InfoQ",   "lang": "zh"},
+    {"url": "https://www.oschina.net/news/rss", "name": "开源中国", "lang": "zh"},
 ]
 
 FEED_UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
@@ -256,10 +263,33 @@ NOISE_KW = [
     "手机", "iphone", "智能手机", "旗舰", "平板", "笔记本", "笔电", "耳机",
     "智能手表", "智能眼镜", "ar眼镜", "vr", "头显", "电视", "显示器", "屏幕",
     "折叠屏", "投影",
+    # v21：消费电子品牌/系统（避免「AirPods 升级」「watchOS 更新日志」这类
+    # 被 MODEL_INTEL_KW 的"更新/升级"误当成模型情报）
+    "airpods", "watchos", "ios 27", "ios 26", "ipados", "macos", "macbook",
+    "imac", "ipad", "airtag", "homepod", "apple watch", "surface", "pixel",
+    "galaxy", "鸿蒙 os", "系统更新", "固件", "更新日志", "rc 版", "rc 候选",
     # 家电 / 泛消费
     "家电", "空调", "冰箱", "洗衣机", "扫地机", "电动牙刷",
     # 泛娱乐 / 金融边缘
     "游戏", "电竞", "比特币", "区块链", "web3", "nft", "数字货币",
+]
+
+# 硬噪声词（v21）：消费电子整机/系统版本类。命中即判噪声，**优先级高于白名单**
+# ——否则「苹果 AirPods 5 发布」「watchOS 更新日志」会因为 Apple 在白名单里被救回，
+# 再被 MODEL_INTEL_KW 的"发布/更新"误当成模型情报。仅当标题同时含硬保护词
+# （真·模型/Agent/API 词）时才放行，如「Apple Intelligence 接入 GPT-5」。
+HARD_NOISE_KW = [
+    "airpods", "watchos", "ipados", "macos", "macbook", "imac", "airtag",
+    "homepod", "apple watch", "iphone", "surface", "pixel", "galaxy",
+    "鸿蒙 os", "harmonyos", "系统更新", "固件", "更新日志", "rc 版", "rc 候选",
+    "返校季", "以旧换新", "国补", "销量", "出货量",
+]
+
+# 硬保护词：与 HARD_NOISE_KW 同时命中则放行（消费电子新闻里夹带真模型情报）
+HARD_SAFE_KW = [
+    "模型", "大模型", "智能体", "agent", "gpt", "chatgpt", "claude", "gemini",
+    "deepseek", "qwen", "kimi", "glm", "llama", "api", "推理", "多模态",
+    "开源权重", "微调", "sota", "跑分",
 ]
 
 # 核心保护词（标题命中其一则绝不判噪声）：真实模型名/强主题词，避免误伤
@@ -268,6 +298,33 @@ NOISE_SAFE_KW = [
     "deepseek", "qwen", "kimi", "glm", "llama", "openai", "anthropic", "mistral",
     "多模态", "生成式", "sora", "veo", "seedance", "推理", "算力", "芯片",
     "aigc", "open source", "开源模型",
+]
+
+
+# ── v21 收录口径（用户口径 v2）：只收「能直接用的模型/产品情报」────────────
+# 加分项：模型发布与版本更新、API 定价/倍率/限免/免费额度、订阅政策变动、
+# 工具与 Agent 产品上线更新、开源权重与规格、模型实测跑分。
+MODEL_INTEL_KW = [
+    # 模型与版本
+    "模型", "大模型", "语言模型", "多模态", "权重", "开源", "上下文", "参数",
+    "版本", "升级", "更新", "发布", "推出", "上线", "公测", "内测", "灰度",
+    "正式版", "preview", "beta", "release", "changelog",
+    # 定价与订阅（用户最关心）
+    "api", "接口", "定价", "价格", "倍率", "免费", "限免", "免费额度", "额度",
+    "订阅", "套餐", "会员", "收费", "涨价", "降价", "下调", "优惠", "折扣",
+    "计费", "token 价格", "token", "充值", "额度赠送",
+    # 产品与能力
+    "客户端", "app", "插件", "agent", "智能体", "助手", "助手功能",
+    "跑分", "评测", "基准", "榜单", "sota", "benchmark",
+]
+
+# 减分项：产业面新闻（用户明确"不是重点"：某公司在某地做了什么）
+INDUSTRY_NOISE_KW = [
+    "融资", "ipo", "上市", "科创板", "收购", "并购", "领投", "估值", "股价",
+    "财报", "市值", "合作", "战略合作", "达成合作", "签约", "协议",
+    "数据中心", "算力集群", "智算中心", "机房", "电力", "核电站", "光伏",
+    "调查", "反垄断", "法案", "立法", "监管", "制裁", "禁令", "诉讼", "起诉",
+    "演讲", "表示", "认为", "警告", "访谈", "对话", "观点", "大会", "峰会", "论坛",
 ]
 
 
@@ -287,11 +344,14 @@ def _release_form(title: str) -> bool:
 def is_noise_weak_ai(title: str, summary: str = "") -> bool:
     """边缘弱关联 AI 滤除。返回 True 表示判为噪声、应跳过。
 
-    判定链：① 未命中 NOISE_KW → 放行；② 标题含核心保护词 → 放行；
-    ③ 属白名单主流公司 → 放行；④ 构成模型发布/重磅形态 → 放行；
+    判定链：① 命中 HARD_NOISE_KW 且不含 HARD_SAFE_KW → 噪声（消费电子整机/
+    系统版本，白名单也救不回）；② 未命中 NOISE_KW → 放行；③ 标题含核心保护词
+    → 放行；④ 属白名单主流公司 → 放行；⑤ 构成模型发布/重磅形态 → 放行；
     否则（仅 'AI' 字样的贴牌新闻）→ 噪声。
     """
     t = title.lower()
+    if any(k in t for k in HARD_NOISE_KW) and not any(k in t for k in HARD_SAFE_KW):
+        return True
     if not any(k in t for k in NOISE_KW):
         return False
     if any(k in t for k in NOISE_SAFE_KW):
@@ -302,10 +362,197 @@ def is_noise_weak_ai(title: str, summary: str = "") -> bool:
 
 
 def _priority_score(item) -> int:
-    """侧重分：主流公司 +2、模型发布/重磅形态 +1。越高越优先入选。
-    防御旧缓存条目缺字段：用 .get 兜底为 False。"""
-    return (2 if item.get("is_key_company") else 0) \
-        + (1 if item.get("is_priority_form") else 0)
+    """v21 侧重分（用户口径 v2：只要「能直接用的模型/产品情报」）。
+
+    加分（能动手的）：
+      +3 命中模型情报信号（模型发布/版本/定价/倍率/限免/免费额度/订阅变更/API/工具上线/开源权重）
+      +2 模型发布·重磅形态（_release_form）
+      +1 主流 AI 公司白名单
+    减分（能围观的）：
+      -3 命中产业面信号（融资/IPO/并购/合作/数据中心/算力集群/监管调查/法案/高管观点/大会）
+    越高越优先入选；同分内按时间倒序。缺字段用 .get 兜底。
+    """
+    s = 0
+    if item.get("is_model_intel"):
+        s += 3
+    if item.get("is_priority_form"):
+        s += 2
+    if item.get("is_key_company"):
+        s += 1
+    if item.get("is_industry"):
+        s -= 3
+    return s
+
+
+def is_model_intel(title: str, summary: str = "") -> bool:
+    """是否属于「模型/产品/定价」类可操作情报（v21 主体收录对象）。"""
+    text = (title + " " + (summary or "")).lower()
+    return any(k in text for k in MODEL_INTEL_KW)
+
+
+def is_industry_topic(title: str, summary: str = "") -> bool:
+    """是否属于产业面新闻（融资/并购/基建/监管/观点——用户明确不关注）。"""
+    text = (title + " " + (summary or "")).lower()
+    return any(k in text for k in INDUSTRY_NOISE_KW)
+
+
+def is_roundup(title: str) -> bool:
+    """早报/晚报/速览/盘点类**多主题合集**（信息拼盘，不作为每日要闻收录）。
+
+    合集特征：标题含栏目词（早报/晚报/早知道/早参/速览/盘点/一周要闻…）且
+    ① 出现在标题开头，或 ② 标题较长（≥15 字），或 ③ 标题含 ｜/| 分隔符。
+    单条新闻几乎不会同时满足这些条件（例：「IT早报 0911：雷军…；DeepSeek…」
+    「…特斯拉再降价｜极客早知道」都能被拦下）。
+    """
+    t = title.strip()
+    kws = ("早报", "晚报", "午报", "快讯", "日报", "周报", "早知道", "早参",
+           "速览", "盘点", "一周要闻", "要闻回顾", "汇总")
+    if not any(k in t for k in kws):
+        return False
+    if re.match(r'^(IT)?\s*(早报|晚报|午报|快讯|日报|周报|早知道|早参)', t):
+        return True
+    if len(t) >= 15:
+        return True
+    return bool(re.search(r'[｜|]', t))
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# v21 线上 AI 精编（CI 侧语义判断）
+# ───────────────────────────────────────────────────────────────────────────
+# 背景：用户否掉了纯关键词选稿（"效果不好"），要的是「能直接用的模型情报」，
+# 且明确不要在本地跑定时任务（本机关机就断了）。因此把「精编」这一步搬到
+# GitHub Actions 里：runner 上跑本脚本时，若仓库配置了 DEEPSEEK_API_KEY
+# （daily-update.yml 已注入，update_content.py 也在用同一个 secret），
+# 就调 DeepSeek 按用户口径做语义选稿 + 中文标题；没有 Key 或调用失败时，
+# 自动退回上面的关键词加权选稿（select_items），保证「每天线上必有产出」。
+# 链接永远由脚本从 RSS 按编号回填，AI 无权提供 URL，杜绝编造。
+# ═══════════════════════════════════════════════════════════════════════════
+DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
+DEEPSEEK_MODEL = "deepseek-chat"
+
+CURATE_PROMPT = """你在为一位中文 AI 从业者做每日情报精编。他每天只想知道**能直接用的模型情报**。
+
+【收录口径】只收读了能立刻动手做决定的信息：
+1. 模型发布 / 版本更新（新模型、新版本、能力升级、权重新开源、上下文或参数变化）
+2. API 定价 / 倍率 / 限免 / 免费额度 / 订阅政策变动（涨价降价、倍率调整、暂停某档订阅、免费开放）
+3. 工具与 Agent 产品上线或更新（新客户端、新功能、新插件、新 API 能力、接入某模型）
+4. 模型实测跑分 / 基准对比（能据此判断该选哪个模型）
+
+【明确不收】用户说过这些是次要面：
+- 产业面：融资 / IPO / 并购 / 财报 / 市值 / 战略合作 / 签约
+- 基建面：数据中心 / 算力集群 / 电力 / 机房
+- 监管面：调查 / 反垄断 / 法案 / 制裁 / 诉讼
+- 观点面：高管发言 / 演讲 / 访谈 / 行业大会峰会论坛
+- 泛论面："AI 将如何改变世界"式的评论、与模型使用无关的社会趣闻
+判据：**能动手的 > 能围观的**。拿不准时，问自己"读完这条我能改代码 / 改订阅 / 换模型吗"。
+另外：早报晚报类多主题合集、消费电子整机（AirPods / watchOS 更新日志 / 手机发布）都不要。
+
+现在是「{region}」候选，请从下面 {total} 条里挑出最值得看的，最多 {cap} 条。
+宁缺毋滥——只挑得出 2 条就给 2 条，一条都不够格就给空数组。
+
+【输出格式】只输出 JSON，不要任何解释：
+{{"items":[{{"i":候选编号,"title":"中文标题"}}]}}
+- 编号 i 必须是上面候选列表里的数字，不许自造。
+- title 一律用中文（英文候选请翻译成准确的中文），控制在 40 字内，客观陈述，不加"重磅""炸裂"等形容词。
+- 中文候选若原标题已经很好，可原样返回。
+- 不要补充候选里没有的信息。
+
+候选列表：
+{listing}"""
+
+
+def ai_curate(items, region_label, cap=6):
+    """调 DeepSeek 按用户口径做语义选稿。
+
+    返回挑中的条目列表（顺序即 AI 给的优先级）；未配置 Key / 调用失败 / 输出不合法
+    时返回 None，由调用方退回关键词规则选稿（select_items）。
+    """
+    key = os.environ.get("DEEPSEEK_API_KEY")
+    if not key:
+        print(f"    [{region_label}] 未配置 DEEPSEEK_API_KEY → 退回关键词规则选稿")
+        return None
+    if not items:
+        return None
+
+    # 去重（同标题只留一条），保持原始顺序；顺序即候选编号顺序
+    cand, seen = [], set()
+    for it in items:
+        t = (it.get("title") or "").strip()
+        if not t or t in seen:
+            continue
+        seen.add(t)
+        cand.append(it)
+    if not cand:
+        return None
+
+    def line(n, it):
+        s = (it.get("summary") or "").strip().replace("\n", " ")
+        s = f" — {s[:70]}" if s else ""
+        return f'{n}. [{it.get("source", "?")}] {it["title"]}{s}'
+
+    listing = "\n".join(line(n, it) for n, it in enumerate(cand, 1))
+    prompt = CURATE_PROMPT.format(region=region_label, total=len(cand), cap=cap, listing=listing)
+
+    payload = {
+        "model": DEEPSEEK_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.2,
+        "max_tokens": 1200,
+        "response_format": {"type": "json_object"},
+    }
+    req = urllib.request.Request(
+        DEEPSEEK_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=90) as r:
+            body = json.loads(r.read().decode("utf-8"))
+        content = body["choices"][0]["message"]["content"]
+    except Exception as e:
+        print(f"    [{region_label}] DeepSeek 调用失败：{e} → 退回关键词规则选稿")
+        return None
+
+    try:
+        data = json.loads(content)
+    except Exception:
+        m = re.search(r"\{[\s\S]*\}", content or "")
+        if not m:
+            print(f"    [{region_label}] AI 返回非 JSON → 退回关键词规则选稿")
+            return None
+        try:
+            data = json.loads(m.group(0))
+        except Exception:
+            print(f"    [{region_label}] AI 返回 JSON 解析失败 → 退回关键词规则选稿")
+            return None
+
+    raw_items = data.get("items")
+    if not isinstance(raw_items, list):
+        print(f"    [{region_label}] AI 输出缺 items 列表 → 退回关键词规则选稿")
+        return None
+
+    out, used = [], set()
+    for ent in raw_items:
+        if not isinstance(ent, dict):
+            continue
+        try:
+            idx = int(ent.get("i"))
+        except (TypeError, ValueError):
+            continue
+        if not (1 <= idx <= len(cand)) or idx in used:
+            continue
+        title = re.sub(r"\s+", " ", str(ent.get("title") or "")).strip()
+        if not title or len(title) > 60:      # 过长视为不合规，丢弃（防 AI 塞长段落）
+            continue
+        used.add(idx)
+        out.append(dict(cand[idx - 1], title=title, ai_curated=True))
+        if len(out) >= cap:
+            break
+
+    if not out:
+        print(f"    [{region_label}] AI 未挑出合适条目（可能就是今天没料）→ 不写入")
+        return []
+    return out
 
 
 def is_release_item(item) -> bool:
@@ -405,9 +652,13 @@ def clean_summary(text: str, limit: int = 180) -> str:
 
 
 def clean_title(title: str) -> str:
-    """清理标题，移除 Google News 等来源前缀。"""
-    # 移除 " - 来源名" 后缀
-    title = re.sub(r'\s*-\s*[^-]+$', '', title)
+    """清理标题，移除来源前缀与「 - 来源名」后缀。
+
+    ⚠️ 后缀正则必须要求「-」两侧有空白（\\s+-\\s+）——否则会误伤正文里的
+    连字符：如「…集成 GPT-6 Astra 推理能力」曾被截成「…集成 GPT」。
+    """
+    # 移除 " - 来源名" 后缀（要求两侧空白，避免误伤 GPT-6 / Claude-3 之类）
+    title = re.sub(r'\s+-\s+[^-]+$', '', title)
     # 移除开头的来源标记
     title = re.sub(r'^\[.*?\]\s*', '', title)
     return title.strip()
@@ -472,14 +723,21 @@ def translate_to_chinese(title: str, summary: str = "") -> tuple[str, str]:
     return clean_title(zh_title), clean_summary(zh_summary)
 
 
-def fetch_news():
-    """抓取并筛选所有 RSS 源的新闻，中文优先。"""
+def fetch_news(feeds=None, keep_english=False):
+    """抓取并筛选所有 RSS 源的新闻，中文优先。
+
+    feeds：源列表，默认 FEEDS（CI 规则版用 4 个国内媒体源）。
+    keep_english：True 时英文源条目若无法翻译成中文则**保留英文原文**并标记
+        lang="en"（精编流程用：OpenAI 官方 RSS 等一手源是英文，仅供判断者阅读，
+        精编时由判断者译成中文标题录入；CI 规则版保持 False 以便页面全中文）。
+    """
+    feeds = feeds if feeds is not None else FEEDS
     items = []
     noise_cnt = 0
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=24)
 
-    for feed_info in FEEDS:
+    for feed_info in feeds:
         try:
             req = urllib.request.Request(
                 feed_info["url"],
@@ -515,15 +773,22 @@ def fetch_news():
                     continue
                 if not is_ai_related(title, summary):
                     continue
+                if is_roundup(title):
+                    continue
 
                 # 英文新闻翻译处理
-                if feed_info["lang"] == "en" or not contains_chinese(title):
+                is_en = feed_info["lang"] == "en" or not contains_chinese(title)
+                if is_en:
                     zh_title, zh_summary = translate_to_chinese(title, summary)
-                    if not zh_title:
-                        # 无法翻译，跳过该条
+                    if zh_title:
+                        title, summary = zh_title, zh_summary
+                    elif keep_english:
+                        # 精编流程：保留英文原文（供判断者阅读，精编时译成中文录入）
+                        title = clean_title(title)
+                        summary = clean_summary(summary)
+                    else:
+                        # 规则版：无法翻译则跳过，页面保持全中文
                         continue
-                    title = zh_title
-                    summary = zh_summary
                 else:
                     title = clean_title(title)
                     summary = clean_summary(summary)
@@ -542,9 +807,12 @@ def fetch_news():
                     "published": published,
                     "category": classify(title),
                     "is_chinese": contains_chinese(title),
+                    "lang": "zh" if contains_chinese(title) else "en",
                     "is_domestic": is_domestic(title, summary),
                     "is_key_company": is_key_company(title, summary),
                     "is_priority_form": _release_form(title),
+                    "is_model_intel": is_model_intel(title, summary),
+                    "is_industry": is_industry_topic(title, summary),
                 })
         except Exception as e:
             print(f"  [错误] {feed_info['name']}: {e}")
@@ -555,8 +823,11 @@ def fetch_news():
     return items
 
 
-def select_items(items, cap=6):
+def select_items(items, cap=6, min_score=None):
     """对单个模块桶做选稿：侧重加权 + 源均衡(cap2/源) + 国内优先 + 国内 ≥ 国外 + 总量 cap。
+
+    min_score：v21 新增门槛。只保留侧重分 ≥ min_score 的条目（None = 不设门槛）。
+    每日动态用它做「少而准」——够不上「可操作情报」的条目宁可不收，也不凑数。
 
     v20 侧重：先按「主流公司(+2) / 模型发布·重磅形态(+1)」降序排序（同权内新者在前），
     后续各轮均衡对已排序列表先到先得 ⇒ 高权重条目优先占满 cap、普通条目垫底。
@@ -568,6 +839,9 @@ def select_items(items, cap=6):
     返回按时间倒序的最终列表（domestic 在前）。
     """
     per_source_cap = 2
+
+    if min_score is not None:
+        items = [i for i in items if _priority_score(i) >= min_score]
 
     # v20 加权排序：先按时间倒序（新者在前），再按侧重分稳定排序 ⇒
     # 高权重条目优先入选、同权重内仍保持「新者优先」（sorted 稳定）。
@@ -829,17 +1103,28 @@ def _main_inner():
         print(f"  [{key}] 候选 {len(buckets[key])} 条")
 
     # 每个模块独立选稿 + 插入（防重按区段）；首页代表 = 国内/国外各取前 2
+    curate_mode = "DeepSeek AI 精编" if os.environ.get("DEEPSEEK_API_KEY") else "关键词规则选稿"
+    print(f"选稿模式：{curate_mode}")
     any_inserted = False
     picks = []
     for marker, key, label in MODULES:
-        sel = select_items(buckets.get(key, []), cap=8)
+        bucket = buckets.get(key, [])
+        # ① 优先 AI 语义精编（线上 CI 内完成，不依赖本地）；
+        #    ② 没 Key / 调用失败 / AI 判定无料 → 退回 v21 关键词门槛选稿（≥3 分，少而准）
+        ai_sel = ai_curate(bucket, label, cap=6)
+        if ai_sel:
+            sel, mode = ai_sel, "AI 精编"
+        else:
+            if ai_sel == []:
+                print(f"    [{label}] AI 判定今日无够格情报，退回关键词规则兜底（保持页面不空）")
+            sel, mode = select_items(bucket, cap=6, min_score=3), "规则兜底"
         if not sel:
             print(f"· {label}（{key}）今日无合适内容，跳过")
             continue
         # 动态区模块本身已限定单边（国内桶全为国内、国外桶全为国外），块内不再重复 region 标签
         block = generate_block(sel, date_label, with_region=False)
         if insert_module(block, f"<!-- {marker}", label, date_label):
-            print(f"✓ news.html [{label}] 已追加 {date_label}（{len(sel)} 条）")
+            print(f"✓ news.html [{label}] 已追加 {date_label}（{len(sel)} 条 · {mode}）")
             any_inserted = True
         picks.extend(sel[:2])  # 各模块最多取 2 条代表（模块已写或已存在都取同一条，保证首页与页面一致）
 
