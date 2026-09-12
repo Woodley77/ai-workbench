@@ -277,6 +277,33 @@
   .note-box { padding: 12px 14px; font-size: 12.3px; }
   .path-table { font-size: 12.3px; }
 }
+
+/* ---- 数据核对提醒：固定高度滚动框（v29，与 models.html 同源） ----
+   核对提醒只增不减，不框起来会把下方正文越推越远。
+   max-height 内部滚动；overscroll-behavior 防止框内滚到底后带动整页滚动。
+   注：与 wiki-skills / wiki-mcp / models 的 .feed-scroll 定义一致（下次重构抽到 app.css）。 */
+.feed-scroll {
+  max-height: 340px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--bg2);
+  padding: 2px 14px;
+  scrollbar-width: thin;
+}
+.feed-scroll::-webkit-scrollbar { width: 6px; }
+.feed-scroll::-webkit-scrollbar-track { background: transparent; }
+.feed-scroll::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+.feed-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+.verify-item { border-left: 3px solid var(--accent); padding-left: 10px; margin: 6px 0; }
+.verify-item .vi-label { font-size: 11px; color: var(--accent); font-weight: 600; }
+.verify-item .vi-title { font-size: 14px; font-weight: 600; margin-top: 2px; }
+.verify-item .vi-evidence { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+@media (max-width:700px) {
+  .feed-scroll { max-height: 280px; padding: 2px 10px; }
+}
 </style>
 </head>
 <body>
@@ -475,13 +502,22 @@
       </div>
     </section>
 
+    <!-- ---- ⑫ 数据核对提醒（CI 自动维护，v29） ---- -->
+    <section class="sec">
+      <div class="sec-head"><h2>🔍 数据核对提醒 · 疑似变化</h2><div class="rule"></div><span class="hint">AI 比对发现 · 待人工核实</span></div>
+      <p class="sec-note">每天 CI 解析本页「应用图鉴（应用清单 / 热度 / 综合指数）」的当前快照，与当天 AI 新闻交叉比对，发现「疑似变化」写入此处。<b>AI 不直接修改核心数据</b>——应用清单与热度数据均需人工核实后在 commit / PR 中确认。热度榜为第三方快照，波动大，提醒仅供排查线索。</p>
+      <div class="feed-scroll" id="agents-verify">
+        <!-- __AGENTS_VERIFY_INSERT__ -->
+      </div>
+    </section>
+
   </div>
 
 </div>
 
 <footer>
   <div class="sources">
-    <div>AI 学习工作台 · 智能体应用 · 数据截至 2026-09-12，动态区每日自动更新。热度数据均为第三方机构的公开快照，卡片上的综合热度指数是排序用的示意值（非任何机构官方指标），主要信息来源：</div>
+    <div>AI 学习工作台 · 智能体应用 · 核心数据核实于 2026-08-29（人工核对）· 动态区每日自动更新。热度数据均为第三方机构的公开快照，卡片上的综合热度指数是排序用的示意值（非任何机构官方指标），主要信息来源：</div>
     <ol>
       <li><span class="src-title">QuestMobile《AI 应用走到哪里了》（2026-06 / 2026-07）</span><a class="src-url" href="https://www.questmobile.com.cn/" target="_blank" rel="noopener">https://www.questmobile.com.cn/</a></li>
       <li><span class="src-title">AI 产品榜（2026-07 桌面端月活）</span><a class="src-url" href="https://ai-bot.cn/" target="_blank" rel="noopener">https://ai-bot.cn/</a></li>
