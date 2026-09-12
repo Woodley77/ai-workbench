@@ -145,7 +145,7 @@ TOPICS = [
 # 页脚「数据截至」的正则（硬事实：只改日期，风险最低）
 STAMP_PATTERNS = {
     "models.html": [
-        (re.compile(r"(\{\s*v:\s*')[\d-]+(',\s*l:\s*'数据截止')"), r"\g<1>" + TODAY + r"\g<2>"),
+        (re.compile(r"(\{\s*v:\s*')[\d-]+(',\s*l:\s*'快照日期')"), r"\g<1>" + TODAY + r"\g<2>"),
     ],
     "wiki-skills.html": [
         (re.compile(r"(数据截至\s*)\d{4}-\d{2}-\d{2}"), r"\g<1>" + TODAY),
@@ -153,9 +153,9 @@ STAMP_PATTERNS = {
     "wiki-mcp.html": [
         (re.compile(r"(数据截至\s*)\d{4}-\d{2}-\d{2}"), r"\g<1>" + TODAY),
     ],
-    "agents.html": [
-        (re.compile(r"(数据截至\s*)\d{4}-\d{2}-\d{2}"), r"\g<1>" + TODAY),
-    ],
+    # 注：agents.html 于 v29 移除自动日期戳 —— 该页数据是「人工核实快照」，
+    # 每天刷日期会造成「日期在动、数据没动」的假新鲜。
+    # 改为：verify 每天核对 → 发现疑点写提醒 → 人工确认后更新日期与数据。
 }
 
 
@@ -165,20 +165,56 @@ STAMP_PATTERNS = {
 # 目标：把「价格 / 规格 / 套餐」三大数据表的当前快照喂给 AI，与当天 AI 新闻比对，
 # 找出「疑似变化」写入提醒区。AI 不直接改核心数据 —— 所有数据修改仍走人工。
 # 与 model topic 的区别：本区块查的是「疑点」，model topic 查的是「已确认新闻」。
-VERIFY_TOPIC = {
-    "key": "model-verify",
-    "label": "模型页数据核对",
-    "page": "models.html",
-    "marker": "<!-- __MODEL_VERIFY_INSERT__ -->",
-    "max_items": 6,
-    "categories": ["价格", "规格", "套餐", "模型阵容"],
-    "cat_css": {
-        "价格": "c-event",
-        "规格": "c-model",
-        "套餐": "c-news",
-        "模型阵容": "c-paper",
+VERIFY_TOPICS = [
+    {
+        "key": "model-verify",
+        "label": "模型页数据核对",
+        "page": "models.html",
+        "marker": "<!-- __MODEL_VERIFY_INSERT__ -->",
+        "kind": "model",       # 用哪套快照解析
+        "feed_key": "model",   # 复用哪个 TOPICS 的新闻抓取口径
+        "max_items": 6,
+        "categories": ["价格", "规格", "套餐", "模型阵容"],
+        "cat_css": {
+            "价格": "c-event",
+            "规格": "c-model",
+            "套餐": "c-news",
+            "模型阵容": "c-paper",
+        },
+        "scope": "models.html 模型页当前的 **三大数据表快照**（API 价格 / 旗舰规格 / 订阅套餐）",
+        "cat_hint": (
+            "  - 价格：API 单价调整（输入价/输出价/缓存价/峰谷）\n"
+            "  - 规格：上下文长度、模态、发布日期等规格字段变化\n"
+            "  - 套餐：订阅制月费/年费/额度调整\n"
+            "  - 模型阵容：新增/下线/厂商调整（如「某厂商推出新模型」）"
+        ),
+        "entity_hint": '必须用快照中已有的模型全名（如 "DeepSeek V4.1 Flash"、"Kimi K3"、"GLM-5.3"、"Qwen3.8-Max" 等）。找不到对应的不要硬猜。',
     },
-}
+    {
+        "key": "agents-verify",
+        "label": "智能体页数据核对",
+        "page": "agents.html",
+        "marker": "<!-- __AGENTS_VERIFY_INSERT__ -->",
+        "kind": "agents",
+        "feed_key": "model",
+        "max_items": 5,
+        "categories": ["榜单", "应用", "规模", "品牌"],
+        "cat_css": {
+            "榜单": "c-event",
+            "应用": "c-model",
+            "规模": "c-news",
+            "品牌": "c-paper",
+        },
+        "scope": "agents.html 智能体页当前的 **应用清单快照**（各应用所属厂商、地区、类型与热度标签中的规模数字）",
+        "cat_hint": (
+            "  - 榜单：排行榜 / 热度名次数据更新\n"
+            "  - 应用：新应用发布、功能重大更新、停止服务\n"
+            "  - 规模：用户量 / 月活 / Token 消耗等数字更新\n"
+            "  - 品牌：厂商品牌整合、改名、并入"
+        ),
+        "entity_hint": '必须用快照中已有的应用名（如 ChatGPT、Gemini、Claude Code、OpenClaw、豆包、千问办公、Manus 等）。找不到对应的不要硬猜。',
+    },
+]
 
 
 def _strip_html(s):
@@ -252,15 +288,44 @@ def parse_plan_table(html_text):
     return out
 
 
-def load_snapshot():
-    """读取 models.html 三大数据表的当前快照。失败返回空 dict。"""
-    path = os.path.join(ROOT, VERIFY_TOPIC["page"])
+def parse_agents_snapshot(text):
+    """解析 agents.html 的 AGENTS 应用清单（快照）。"""
+    m = re.search(r"var AGENTS\s*=\s*\[(.*?)\n\];", text, re.S)
+    body = m.group(1) if m else ""
+    pat = re.compile(
+        r"id:\s*'([^']+)'\s*,\s*name:\s*'([^']+)'\s*,\s*en:\s*'([^']*)'\s*,"
+        r"\s*vendor:\s*'([^']*)'\s*,\s*region:\s*'([^']*)'\s*,\s*type:\s*'([^']*)'\s*,"
+        r"\s*heat:\s*(\d+)\s*,\s*heatLabel:\s*'([^']*)'",
+        re.S,
+    )
+    out = []
+    for b in pat.finditer(body):
+        out.append({
+            "name": b.group(2),
+            "vendor": b.group(4),
+            "region": b.group(5),
+            "type": b.group(6),
+            "heat": int(b.group(7)),
+            "heatLabel": b.group(8),
+        })
+    return out
+
+
+def load_snapshot(topic):
+    """读取该 topic 对应页面的数据快照。失败返回空 dict。"""
+    path = os.path.join(ROOT, topic["page"])
     try:
         with open(path, encoding="utf-8") as f:
             text = f.read()
     except Exception as e:
         print(f"    [跳过] 读取 {path} 失败：{e}")
         return {}
+
+    if topic.get("kind") == "agents":
+        apps = parse_agents_snapshot(text)
+        print(f"    快照：应用清单 {len(apps)} 条")
+        return {"apps": apps}
+
     snap = {
         "prices": parse_price_table(text),
         "specs": parse_spec_table(text),
@@ -273,8 +338,12 @@ def load_snapshot():
 def _fmt_snapshot_for_prompt(snap):
     """把结构化快照拍平成 AI 可读的纯文本（喂 DeepSeek 用）。"""
     lines = []
+    if snap.get("apps"):
+        lines.append("【智能体应用清单（厂商 / 地区 / 类型 / 热度标签）】")
+        for r in snap["apps"]:
+            lines.append(f"  - {r['name']} | 厂商={r['vendor']} | 地区={r['region']} | 类型={r['type']} | 热度={r['heat']} | 标签={r['heatLabel']}")
     if snap.get("prices"):
-        lines.append("【API 按量单价（每百万 token）】")
+        lines.append("\n【API 按量单价（每百万 token）】")
         for r in snap["prices"]:
             lines.append(f"  - {r['model']} | ctx={r['ctx']} | in={r['in']} | out={r['out']} | 开源={r['open']} | 备注={r['note']}")
     if snap.get("specs"):
@@ -288,32 +357,30 @@ def _fmt_snapshot_for_prompt(snap):
     return "\n".join(lines)
 
 
-def build_verify_prompt(snap, entries):
+def build_verify_prompt(topic, snap, entries):
     """构造 DeepSeek prompt：让 AI 比对快照 vs 当天新闻，找出疑似变化。"""
     snap_text = _fmt_snapshot_for_prompt(snap)
     listing = "\n".join(
         f"[{i}] 标题：{e['title']}\n    摘要：{e['summary']}\n    链接：{e['url']}\n    来源：{e['source']}"
         for i, e in enumerate(entries)
     )
-    return f"""你是「数据核对助手」。下面给出 models.html 模型页当前**三大数据表的快照**（API 价格 / 旗舰规格 / 订阅套餐），以及**当天 AI 新闻候选**。
+    cats = " | ".join(topic["categories"])
+    return f"""你是「数据核对助手」。下面给出 {topic['scope']}，以及**当天 AI 新闻候选**。
 
-任务：从候选新闻中找出**与快照中某行直接相关、且可能反映「数据已变」的实质事件**。注意「实质」——只在新闻明确说"X 模型价格改为 Y"、"X 推出新版本"、"X 套餐档位调整"等才算；观点评论、营销、传闻不算。
+任务：从候选新闻中找出**与快照中某条直接相关、且可能反映「数据已变」的实质事件**。注意「实质」——只在新闻明确说"X 价格改为 Y"、"X 推出新版本"、"X 榜单数据更新"等才算；观点评论、营销、传闻不算。
 
 匹配规则：
-- model 字段：必须用快照中已有的模型全名（如"DeepSeek V4-Pro"、"Kimi K3"、"GLM-5.3"、"Qwen3.8-Max"等）。找不到对应的不要硬猜。
-- category 必须严格从这四个里选一个：价格 / 规格 / 套餐 / 模型阵容
-  - 价格：API 单价调整（输入价/输出价/缓存价/峰谷）
-  - 规格：上下文长度、模态、发布日期等规格字段变化
-  - 套餐：订阅制月费/年费/额度调整
-  - 模型阵容：新增/下线/厂商调整（如「某厂商推出新模型」）
+- model 字段：{topic['entity_hint']}
+- category 必须严格从这几个里选一个：{" / ".join(topic['categories'])}
+{topic['cat_hint']}
 - evidence_i：用候选新闻的编号引用（i 值）
 - confidence：high（新闻明确说改了什么）/ medium（暗示/间接证据）/ low（仅有迹象）
 
 只输出严格 JSON，不要任何解释文字，不要 markdown 代码块：
-{{"items":[{{"model":"快照中已有模型全名","field":"被影响的字段名（如 input_price/output_price/ctx/date/monthly_fee/plan_name）","current":"快照中当前值","suspect":"疑似已变成什么（不超过40字）","category":"价格|规格|套餐|模型阵容","evidence_i":0,"confidence":"high|medium|low","source":"来源媒体名"}}]}}
+{{"items":[{{"model":"快照中已有条目名","field":"被影响的字段名（如 input_price/output_price/ctx/date/monthly_fee/heat/scale）","current":"快照中当前值","suspect":"疑似已变成什么（不超过40字）","category":"{cats}","evidence_i":0,"confidence":"high|medium|low","source":"来源媒体名"}}]}}
 
 规则：
-- 最多 {VERIFY_TOPIC['max_items']} 条，按 confidence 排序（high > medium > low）。
+- 最多 {topic['max_items']} 条，按 confidence 排序（high > medium > low）。
 - 没有任何疑似变化就输出 {{"items":[]}}。
 - 不要编造、不要夸大、不要「宁滥勿缺」——只输出有真实新闻支撑的疑似变化。
 
@@ -324,7 +391,7 @@ def build_verify_prompt(snap, entries):
 {listing}"""
 
 
-def ai_verify(snap, entries):
+def ai_verify(topic, snap, entries):
     """调 DeepSeek 比对快照 vs 新闻，返回校验后的 items；失败返回空列表。"""
     if not snap or not any(snap.values()):
         print("    快照为空，跳过 verify")
@@ -336,11 +403,11 @@ def ai_verify(snap, entries):
     key = os.environ.get("DEEPSEEK_API_KEY")
     if not key:
         print("    未配置 DEEPSEEK_API_KEY → 用关键词兜底（质量低于 AI）")
-        return keyword_fallback_verify(snap, entries)
+        return keyword_fallback_verify(snap, entries, topic)
 
     payload = {
         "model": DEEPSEEK_MODEL,
-        "messages": [{"role": "user", "content": build_verify_prompt(snap, entries)}],
+        "messages": [{"role": "user", "content": build_verify_prompt(topic, snap, entries)}],
         "temperature": 0.2,
         "max_tokens": 1500,
         "response_format": {"type": "json_object"},
@@ -372,16 +439,16 @@ def ai_verify(snap, entries):
             print("    verify AI 返回 JSON 解析失败，放弃")
             return []
 
-    return normalize_verify(data, snap, entries)
+    return normalize_verify(data, snap, entries, topic)
 
 
-def normalize_verify(data, snap, entries):
+def normalize_verify(data, snap, entries, topic):
     """校验 AI 输出：model 必须在快照中存在；category 白名单；confidence 白名单；URL 由 evidence_i 反查。"""
     if not isinstance(data, dict) or not isinstance(data.get("items"), list):
         print("    verify AI 输出结构不合法")
         return []
 
-    # 构建快照白名单（价格 + 规格 用 model；套餐用 service）
+    # 构建快照白名单（价格/规格用 model；套餐用 service；智能体用 name）
     allowed = set()
     for r in snap.get("prices", []):
         allowed.add(r["model"])
@@ -389,9 +456,11 @@ def normalize_verify(data, snap, entries):
         allowed.add(r["model"])
     for r in snap.get("plans", []):
         allowed.add(r["service"])
+    for r in snap.get("apps", []):
+        allowed.add(r["name"])
 
     out = []
-    for it in data["items"][: VERIFY_TOPIC["max_items"]]:
+    for it in data["items"][: topic["max_items"]]:
         if not isinstance(it, dict):
             continue
 
@@ -400,7 +469,7 @@ def normalize_verify(data, snap, entries):
             continue
 
         cat = str(it.get("category", "")).strip()
-        if cat not in VERIFY_TOPIC["categories"]:
+        if cat not in topic["categories"]:
             continue
 
         conf = str(it.get("confidence", "")).strip()
@@ -434,8 +503,8 @@ def normalize_verify(data, snap, entries):
     return out
 
 
-def keyword_fallback_verify(snap, entries):
-    """无 Key 时的兜底：用关键词扫候选新闻，匹配快照模型名 → 粗筛疑似变化。"""
+def keyword_fallback_verify(snap, entries, topic):
+    """无 Key 时的兜底：用关键词扫候选新闻，匹配快照条目名 → 粗筛疑似变化。"""
     if not snap or not entries:
         return []
     allowed = set()
@@ -443,16 +512,25 @@ def keyword_fallback_verify(snap, entries):
         allowed.add(r["model"])
     for r in snap.get("specs", []):
         allowed.add(r["model"])
+    for r in snap.get("apps", []):
+        allowed.add(r["name"])
 
+    is_agents = topic.get("kind") == "agents"
     out = []
     for e in entries:
         blob = (e["title"] + " " + e["summary"]).lower()
         for m in allowed:
             if m.lower() in blob:
-                cat = "价格" if any(k in blob for k in ("降价", "涨价", "调价", "价格")) else \
-                      "规格" if any(k in blob for k in ("上下文", "发布", "升级", "上线")) else \
-                      "套餐" if any(k in blob for k in ("订阅", "套餐", "月费")) else \
-                      "模型阵容"
+                if is_agents:
+                    cat = "榜单" if any(k in blob for k in ("榜", "排名", "热度")) else \
+                          "规模" if any(k in blob for k in ("月活", "用户", "规模", "token")) else \
+                          "品牌" if any(k in blob for k in ("改名", "整合", "并入", "品牌")) else \
+                          "应用"
+                else:
+                    cat = "价格" if any(k in blob for k in ("降价", "涨价", "调价", "价格")) else \
+                          "规格" if any(k in blob for k in ("上下文", "发布", "升级", "上线")) else \
+                          "套餐" if any(k in blob for k in ("订阅", "套餐", "月费")) else \
+                          "模型阵容"
                 out.append({
                     "model": m,
                     "field": "未指定",
@@ -464,7 +542,7 @@ def keyword_fallback_verify(snap, entries):
                     "source": e["source"][:40],
                 })
                 break
-        if len(out) >= VERIFY_TOPIC["max_items"]:
+        if len(out) >= topic["max_items"]:
             break
     print(f"    verify 关键词兜底选出 {len(out)} 条")
     return out
@@ -521,28 +599,28 @@ def insert_verify_block(topic, block):
     return True
 
 
-def run_verify(args):
-    """完整跑一次数据核对：读快照 + 抓新闻 + AI 比对 + 渲染 + 写入。"""
-    print(f"[{VERIFY_TOPIC['label']}]")
-    snap = load_snapshot()
+def _run_one_verify(topic, args):
+    """跑单个页面的数据核对：读快照 + 抓新闻 + AI 比对 + 渲染 + 写入。"""
+    print(f"[{topic['label']}]")
+    snap = load_snapshot(topic)
     if not snap or not any(snap.values()):
         print("    快照为空，跳过\n")
         return False
 
-    model_topic = next((t for t in TOPICS if t["key"] == "model"), None)
-    if not model_topic:
-        print("    未找到 model topic 配置，跳过\n")
+    feed_topic = next((t for t in TOPICS if t["key"] == topic.get("feed_key")), None)
+    if not feed_topic:
+        print("    未找到 feed topic 配置，跳过\n")
         return False
 
-    entries = fetch_entries(model_topic, args.hours)
+    entries = fetch_entries(feed_topic, args.hours)
     if not entries:
         print("    无候选新闻，跳过\n")
         return False
 
     if args.no_ai:
-        items = keyword_fallback_verify(snap, entries)
+        items = keyword_fallback_verify(snap, entries, topic)
     else:
-        items = ai_verify(snap, entries)
+        items = ai_verify(topic, snap, entries)
         if not items:
             print("    verify 未发现疑似变化，本次不写入\n")
             return False
@@ -551,16 +629,26 @@ def run_verify(args):
         print("    无合适内容\n")
         return False
 
-    block = render_verify_block(VERIFY_TOPIC, items)
+    block = render_verify_block(topic, items)
     if args.dry_run:
         print("    --- verify 预览 ---")
         print(block)
         print("    -------------------\n")
         return False
 
-    if insert_verify_block(VERIFY_TOPIC, block):
-        return True
-    return False
+    return insert_verify_block(topic, block)
+
+
+def run_verify(args):
+    """遍历所有核对主题。返回被改动的页面列表。"""
+    changed = []
+    for topic in VERIFY_TOPICS:
+        try:
+            if _run_one_verify(topic, args):
+                changed.append(topic["page"])
+        except Exception as e:
+            print(f"    [错误] {topic['key']} 数据核对失败：{e}\n")
+    return changed
 
 
 def load_pool(hours):
@@ -901,15 +989,16 @@ def main():
 
     # 无论有没有新条目，日期戳都刷一遍（证明今天跑过）
     if not args.dry_run:
-        for page in ("models.html", "agents.html", "wiki-skills.html", "wiki-mcp.html"):
+        for page in ("models.html", "wiki-skills.html", "wiki-mcp.html"):
             if update_stamp(page) and page not in changed:
                 changed.append(page)
 
     # ---- v28 数据核对（独立流程：读快照 + AI 比对 + 写提醒）----
     # 与 model topic 不同：model 找的是「已确认新闻」，verify 找的是「快照 vs 新闻」的疑点。
     if not args.dry_run:
-        if run_verify(args) and VERIFY_TOPIC["page"] not in changed:
-            changed.append(VERIFY_TOPIC["page"])
+        for page in run_verify(args):
+            if page not in changed:
+                changed.append(page)
     else:
         run_verify(args)  # dry-run 也跑，输出预览
 
