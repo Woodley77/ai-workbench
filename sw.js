@@ -114,7 +114,7 @@
    改动的资源：models.html + scripts/update_content.py + daily-update.yml，务必清缓存。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v28';
+var CACHE_VERSION = 'ai-wb-v29';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
