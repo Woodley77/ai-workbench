@@ -516,6 +516,40 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
   .feed-scroll { max-height: 280px; padding: 2px 10px; }
 }
 
+/* ---- Codex 模型选择指南 ---- */
+.codex-start {
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-lg);
+  background: var(--accent-soft);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+.codex-start strong { display: block; color: var(--accent); font-size: 19px; margin-bottom: 7px; }
+.codex-start p { margin: 0; color: var(--ink); line-height: 1.7; }
+.codex-model-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.codex-model-card {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--bg2);
+  padding: 18px;
+}
+.codex-model-card h3 { color: var(--ink); font-size: 18px; margin: 0 0 8px; }
+.codex-model-card p { color: var(--muted); font-size: 13.5px; line-height: 1.65; margin: 0; }
+.codex-model-card .codex-role { color: var(--accent); font-weight: 700; margin-bottom: 8px; }
+.codex-guide-table { min-width: 610px; }
+.codex-guide-table td:first-child { font-weight: 600; color: var(--ink); }
+.codex-guide-table td:last-child { color: var(--accent); font-weight: 700; white-space: nowrap; }
+.codex-effort-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.codex-effort-item { border: 1px solid var(--rule); border-radius: 10px; background: var(--bg2); padding: 13px 14px; }
+.codex-effort-item b { display: block; color: var(--ink); margin-bottom: 4px; }
+.codex-effort-item span { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+@media (max-width: 700px) {
+  .codex-model-grid { grid-template-columns: 1fr; }
+  .codex-effort-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .codex-start { padding: 17px; }
+}
+
+
 </style>
 </head>
 <body>
@@ -544,13 +578,14 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
   <section class="page-head">
     <span class="kicker">Models &amp; Comparison</span>
     <h1>模型总览</h1>
-    <p class="sub">用三张图先看懂全局，再往下钻到具体模型：<b>热力图</b>横看每个模型强在哪、<b>定位图</b>看谁又强又便宜、<b>雷达图</b>看旗舰之间的取舍。图上任意一点都能点开，里面有该模型的完整解读。价格与规格单独收在第二个页签。</p>
+    <p class="sub">用三张图先看懂全局，再往下钻到具体模型：<b>热力图</b>横看每个模型强在哪、<b>定位图</b>看谁又强又便宜、<b>雷达图</b>看旗舰之间的取舍。图上任意一点都能点开，里面有该模型的完整解读。第二个页签看规格与价格，第三个页签教你在 Codex 中选模型和推理强度。</p>
     <div class="stat-bar" id="stat-bar"></div>
   </section>
 
   <div class="tabs mtabs" role="tablist">
     <button class="tab-btn active" data-mtab="library" role="tab">🗺️ 模型全景</button>
     <button class="tab-btn" data-mtab="price" role="tab">💰 规格与价格</button>
+    <button class="tab-btn" data-mtab="codex" role="tab">🧭 Codex 模型选择</button>
   </div>
 
   <!-- ==================== ① 模型全景 ==================== -->
@@ -854,6 +889,60 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
       </div>
     </section>
   </div>
+
+  <!-- ==================== ③ Codex 模型选择 ==================== -->
+  <div class="tab-pane" data-mpane="codex">
+    <p class="pane-lead">刚开始使用 Codex，可以把<b>模型</b>理解为处理任务的能力档位，把<b>推理强度</b>理解为这次愿意花多少时间思考。下面是选择起点；具体可选模型、档位和用量以你当前的 Codex 界面为准。</p>
+
+    <div class="codex-start">
+      <strong>先用 GPT-6 Sol ＋ 中等（Medium）</strong>
+      <p>写代码、改页面、读文件、排查一般问题，先用这一组。若结果不理想，先补充目标和限制；任务确实复杂时，再提高强度或换模型。</p>
+    </div>
+
+    <section class="sec">
+      <div class="sec-head"><h2>三种模型怎么分工</h2><div class="rule"></div><span class="hint">从任务范围和难度出发</span></div>
+      <div class="codex-model-grid">
+        <div class="codex-model-card"><h3>GPT-6 Luna</h3><p class="codex-role">快速处理明确的小任务</p><p>改短文案、提取信息、整理清单、按明确要求做局部修改。适合频繁重复的工作。</p></div>
+        <div class="codex-model-card"><h3>GPT-6 Sol</h3><p class="codex-role">日常默认</p><p>实现功能、修改多个文件、一般调试与资料研究。需要判断和完整交付时，从这里开始。</p></div>
+        <div class="codex-model-card"><h3>GPT-6 Astra</h3><p class="codex-role">复杂任务与重要取舍</p><p>需求含糊、牵涉整个项目、需要多步骤分析或严格审查时使用。</p></div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-head"><h2>按任务直接选</h2><div class="rule"></div><span class="hint">先选一组，再按结果调整</span></div>
+      <div class="table-wrap">
+        <table class="codex-guide-table">
+          <thead><tr><th>你要做什么</th><th>例子</th><th>建议起点</th></tr></thead>
+          <tbody>
+            <tr><td>简单且范围清楚</td><td>修改一句提示文案、从文件中摘出要点</td><td>Luna · 低</td></tr>
+            <tr><td>日常开发</td><td>新增一个功能、修改几处页面、修普通 Bug</td><td>Sol · 中</td></tr>
+            <tr><td>需要仔细排查</td><td>难复现的问题、跨文件检查、重要代码审查</td><td>Sol · 高</td></tr>
+            <tr><td>任务复杂或目标不清</td><td>设计整套方案、处理多项相互影响的要求</td><td>Astra · 中或高</td></tr>
+            <tr><td>极难且要求严格</td><td>大型系统分析、要求充分核对的复杂交付</td><td>Astra · 超高</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-head"><h2>推理强度怎么调</h2><div class="rule"></div><span class="hint">强度越高通常越慢、用量越多</span></div>
+      <div class="codex-effort-list">
+        <div class="codex-effort-item"><b>低（Low）</b><span>目标明确的小任务，优先要速度。</span></div>
+        <div class="codex-effort-item"><b>中（Medium）</b><span>日常默认，兼顾速度与完整性。</span></div>
+        <div class="codex-effort-item"><b>高（High）</b><span>需要推敲取舍、排查或认真复核。</span></div>
+        <div class="codex-effort-item"><b>超高及以上</b><span>留给特别复杂、允许花更多时间的任务。</span></div>
+      </div>
+      <p class="sec-note" style="margin-top:14px">强度不能补足缺失的背景信息，也不能保证事实正确。结果偏题时，先说清楚目标、现状和限制；结果不够深入时，再提高强度。</p>
+    </section>
+
+    <section class="sec">
+      <div class="sec-head"><h2>用起来的顺序</h2><div class="rule"></div></div>
+      <p class="sec-note"><b>① 先用 Sol＋中等</b>完成日常任务。<b>② 小而清楚的工作</b>改用 Luna＋低。<b>③ 涉及大量上下文或复杂判断</b>升到 Sol＋高或 Astra。只在确有需要时使用更高强度。</p>
+      <p class="sec-note">本指南整理于 2026-09-23。模型可用性和强度档位可能随产品及账号变化；这里不把 API 单价等同于 Codex 的实际用量或费用。旧款 GPT-5.6 若仍出现在菜单中，可以按任务比较结果，不必为入门逐一试遍。</p>
+      <p class="sec-note">官方说明：<a href="https://developers.openai.com/api/docs/guides/model-selection" target="_blank" rel="noopener noreferrer">OpenAI 模型选择指南 ↗</a> · <a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank" rel="noopener noreferrer">推理强度说明 ↗</a> · <a href="https://developers.openai.com/api/docs/guides/code-generation" target="_blank" rel="noopener noreferrer">Codex 编码指南 ↗</a></p>
+    </section>
+  </div>
+
 
 </div>
 
@@ -2596,9 +2685,9 @@ renderReplacements();
 renderBang();
 
 (function initFirstPane() {
-  // 支持用 #library / #price 这样的锚点直达某个知识块
+  // 支持用 #library / #price / #codex 这样的锚点直达某个知识块
   var hash = (location.hash || '').replace('#', '');
-  var known = ['library', 'price'];
+  var known = ['library', 'price', 'codex'];
   var pane = known.indexOf(hash) !== -1 ? hash : 'library';
   switchPane(pane);
   if (hash && known.indexOf(hash) === -1) {
