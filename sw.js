@@ -114,7 +114,8 @@
    改动的资源：models.html + scripts/update_content.py + daily-update.yml，务必清缓存。
    ============================================================ */
 
-var CACHE_VERSION = 'ai-wb-v29';
+/* v30（2026-09-23）：模型页新增 Codex 模型与推理强度选择指南。 */
+var CACHE_VERSION = 'ai-wb-v30';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
