@@ -115,7 +115,7 @@
    ============================================================ */
 
 /* v30（2026-09-23）：模型页新增 Codex 模型与推理强度选择指南。 */
-var CACHE_VERSION = 'ai-wb-v30';
+var CACHE_VERSION = 'ai-wb-v31';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
