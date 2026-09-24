@@ -738,11 +738,11 @@ category 必须严格从这几个里选一个：{cats}
 
 
 def ai_pick(topic, entries):
-    """调 DeepSeek 筛选并提炼。返回校验后的 items，失败返回空列表。"""
+    """调 DeepSeek 筛选并提炼。失败返回 None；有效空列表表示没有值得收录的条目。"""
     key = os.environ.get("DEEPSEEK_API_KEY")
     if not key:
         print("    未配置 DEEPSEEK_API_KEY，跳过 AI 判断")
-        return []
+        return None
 
     payload = {
         "model": DEEPSEEK_MODEL,
@@ -764,7 +764,7 @@ def ai_pick(topic, entries):
         content = body["choices"][0]["message"]["content"]
     except Exception as e:
         print(f"    DeepSeek 调用失败：{e}")
-        return []
+        return None
 
     try:
         data = json.loads(content)
@@ -773,12 +773,12 @@ def ai_pick(topic, entries):
         m = re.search(r"\{[\s\S]*\}", content)
         if not m:
             print("    AI 返回的不是合法 JSON，放弃")
-            return []
+            return None
         try:
             data = json.loads(m.group(0))
         except Exception:
             print("    AI 返回 JSON 解析失败，放弃")
-            return []
+            return None
 
     return normalize(data, topic, entries)
 
@@ -790,7 +790,7 @@ def normalize(data, topic, entries):
     """把 AI 输出收敛成安全、规范的结构。任何不合规的条目直接丢弃。"""
     if not isinstance(data, dict) or not isinstance(data.get("items"), list):
         print("    AI 输出结构不合法（缺 items 列表）")
-        return []
+        return None
 
     out = []
     for it in data["items"][: topic["max_items"]]:
@@ -824,6 +824,9 @@ def normalize(data, topic, entries):
             "source": str(it.get("source", "")).strip()[:40] or "网络",
         })
 
+    if data['items'] and not out:
+        print("    AI 返回的条目均未通过校验，保留候选供下次重试")
+        return None
     print(f"    AI 选出 {len(out)} 条（校验后）")
     return out
 
@@ -1015,8 +1018,6 @@ def main():
         existing = set(re.findall(r'<h4><a href="([^"]+)"', page_text))
         old_seen = set(seen_by_topic.get(topic['key'], []))
         fresh = [e for e in entries if e['url'] not in old_seen and e['url'] not in existing]
-        if not args.dry_run:
-            seen_by_topic[topic['key']] = sorted(old_seen | {e['url'] for e in entries})[-2000:]
         entries = fresh
         if not entries:
             print("    无新候选，跳过 AI 调用\n")
@@ -1033,11 +1034,18 @@ def main():
                 items = keyword_fallback(topic, entries)
             else:
                 items = ai_pick(topic, entries)
+                if items is None:
+                    print("    AI 调用失败，保留候选供下次重试\n")
+                    continue
                 if not items:
+                    if not args.dry_run:
+                        seen_by_topic[topic['key']] = sorted(old_seen | {e['url'] for e in entries})[-2000:]
                     print("    AI 未选出实质变化，本次不写入\n")
                     continue
 
         if not items:
+            if not args.dry_run:
+                seen_by_topic[topic['key']] = sorted(old_seen | {e['url'] for e in entries})[-2000:]
             print("    无合适内容\n")
             continue
 
@@ -1051,6 +1059,7 @@ def main():
         if insert_block(topic, block):
             changed.append(topic["page"])
             update_stamp(topic['page'])
+            seen_by_topic[topic['key']] = sorted(old_seen | {e['url'] for e in entries})[-2000:]
         print()
 
     if not args.dry_run:
