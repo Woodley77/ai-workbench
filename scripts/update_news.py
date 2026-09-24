@@ -485,7 +485,7 @@ CURATE_PROMPT = """你在为一位中文 AI 从业者做每日情报精编。他
 {listing}"""
 
 
-def recent_titles(limit=30):
+def recent_titles(limit=80):
     """读 news.html 中已收录的标题（页内新块在前 ⇒ 大致新→旧），用于跨天防重。
 
     动态区新块插在 marker 行之后，所以标题顺序天然是「新→旧」。返回去重列表。
@@ -661,8 +661,8 @@ CAT_CSS = {
 
 def is_domestic(title: str, summary: str = "") -> bool:
     """判断新闻是否为国内新闻（中国企业和产品相关）。"""
-    text = (title + " " + summary).lower()
-    return any(kw in text for kw in DOMESTIC_KW)
+    # 摘要常会顺带提到竞品，归属应以标题里的事件主体为准。
+    return any(kw in title.lower() for kw in DOMESTIC_KW)
 
 
 # 摘要侧的「强信号」词：标题没命中时，仅当摘要含这些才放行（避免泛 AI 词误放）
@@ -699,6 +699,7 @@ def clean_summary(text: str, limit: int = 180) -> str:
     text = html.unescape(text).strip()
     # 移除 Google News 前缀
     text = re.sub(r'^[^-]+-\s*', '', text)
+    text = re.sub(r'(?:点击查看原文|阅读原文|点击进入原文|查看更多)[>＞…\s]*$', '', text).strip()
     if len(text) > limit:
         text = text[:limit].rsplit(" ", 1)[0] + "…"
     return text
@@ -1186,30 +1187,29 @@ def _main_inner():
     curate_mode = "DeepSeek AI 精编" if os.environ.get("DEEPSEEK_API_KEY") else "关键词规则选稿"
     print(f"选稿模式：{curate_mode}")
     # 跨天防重：页面上已收录过的标题，AI 侧写进 prompt 请其避开，规则侧直接剔除
-    avoid = recent_titles(limit=30)
+    avoid = recent_titles(limit=80)
+    state_path = Path('data/news-seen.json')
+    try:
+        seen_urls = set(json.loads(state_path.read_text(encoding='utf-8')))
+    except (OSError, ValueError, TypeError):
+        seen_urls = set()
+    # 页面历史链接也算已处理；状态文件记录曾被筛掉的候选，避免补班重复调用 AI。
+    existing_urls = set(re.findall(r'<h4><a href="([^"]+)"', Path('news.html').read_text(encoding='utf-8')))
     if avoid:
         print(f"  跨天防重参考：页面已有 {len(avoid)} 条历史标题")
     any_inserted = False
     picks = []
     for marker, key, label in MODULES:
-        # ★ 省 AI（2026-09-24）：当天该时段的块已存在 → 直接跳过本模块，不再调 ai_curate。
-        #   老实现「先调 AI → 再在 insert_module 里防重」使补班白调；CI 每天 4 班
-        #   （每时段 = 主班 + 补班），等于一半的调用被防重丢弃。判重口径与 insert_module
-        #   完全一致（同一个 module_has_date），不会漏写。
-        #   注：跳过时不再附带 picks → 首页卡片保持本时段首班写入的内容，
-        #   避免同一时段内被补班用滚动的新候选反复改写。
-        if module_has_date(f"<!-- {marker}", date_label):
-            print(f"· {label} {date_label} 已存在，跳过（防重 · 已省一次 AI 调用）")
+        bucket = [it for it in buckets.get(key, [])
+                  if it.get('link') not in seen_urls and it.get('link') not in existing_urls]
+        if not bucket:
+            print(f"· {label} 无新候选，跳过 AI 调用")
             continue
-        bucket = buckets.get(key, [])
         ai_sel = ai_curate(bucket, label, cap=6, avoid=avoid)
-        # ① 优先 AI 语义精编（线上 CI 内完成，不依赖本地）；
-        #    ② 没 Key / 调用失败 / AI 判定无料 → 退回 v21 关键词门槛选稿（≥3 分，少而准）
-        if ai_sel:
+        # AI 明确给空数组代表无值得收录的新闻；只有调用失败或未配置时才规则兜底。
+        if ai_sel is not None:
             sel, mode = ai_sel, "AI 精编"
         else:
-            if ai_sel == []:
-                print(f"    [{label}] AI 判定今日无够格情报，退回关键词规则兜底（保持页面不空）")
             pool = [i for i in bucket if (i.get("title") or "").strip() not in avoid]
             sel, mode = select_items(pool, cap=6, min_score=3), "规则兜底"
         if not sel:
@@ -1219,11 +1219,19 @@ def _main_inner():
         for it in sel:
             print(f"    · [{mode}] {it['title'][:64]}")
         # 动态区模块本身已限定单边（国内桶全为国内、国外桶全为国外），块内不再重复 region 标签
-        block = generate_block(sel, date_label, with_region=False)
-        if insert_module(block, f"<!-- {marker}", label, date_label):
-            print(f"✓ news.html [{label}] 已追加 {date_label}（{len(sel)} 条 · {mode}）")
+        label_for_block = date_label
+        if module_has_date(f"<!-- {marker}", date_label):
+            label_for_block = f"{date_str} {period}补充 {now_bj:%H:%M}"
+        block = generate_block(sel, label_for_block, with_region=False)
+        if insert_module(block, f"<!-- {marker}", label, label_for_block):
+            print(f"✓ news.html [{label}] 已追加 {label_for_block}（{len(sel)} 条 · {mode}）")
             any_inserted = True
+            existing_urls.update(it['link'] for it in sel)
         picks.extend(sel[:2])  # 各模块最多取 2 条代表（模块已写或已存在都取同一条，保证首页与页面一致）
+
+    state_path.parent.mkdir(exist_ok=True)
+    seen_urls.update(it['link'] for it in items if it.get('link'))
+    state_path.write_text(json.dumps(sorted(seen_urls), ensure_ascii=False) + '\n', encoding='utf-8')
 
     # 三个归档区（速报/大事记/论文）：有命中才更新，无命中跳过
     archive_fns = {"release": is_release_item, "milestone": is_milestone_item, "paper": is_paper_item}
