@@ -1031,22 +1031,11 @@ def generate_block(items, date_str, with_region=True):
     return "\n".join(lines)
 
 
-def insert_module(block, marker, label, date_label):
-    """把 block 插入 news.html 指定 marker 注释行之后。
-
-    marker 示例：'<!-- __DOMESTIC_INSERT__'、'<!-- __RELEASE_INSERT__'。
-    防重粒度 = 区段：从本 marker 行起，到「下一个注释 marker」与「最近的 </section>」
-    中更近者为止，该区间若已含 date_label（如「2026-09-09 早间更新」）则跳过——
-    每日动态两模块各在一个 <section class="dyn-mod"> 内，区段被各自 </section> 精确
-    截断；ARCHIVES 三 tab 无 section，靠相邻 marker 截断。两类互不污染。
-    """
-    path = Path("news.html")
-    content = path.read_text(encoding="utf-8")
-    if marker not in content:
-        print(f"错误：未找到标记 {marker}，跳过 {label}")
-        return False
-
+def _find_section(content, marker):
+    """从 marker 起圈出它的「区段」[idx, nxt)。找不到 marker 返回 None。"""
     idx = content.find(marker)
+    if idx == -1:
+        return None
     # 区段终点：取 idx 之后的「最近注释 marker」与「最近 </section>」中较近者
     nxt = len(content)
     for m in re.finditer(r'<!--\s*__[A-Za-z0-9_]+_INSERT__', content):
@@ -1055,13 +1044,51 @@ def insert_module(block, marker, label, date_label):
     end_sec = content.find("</section>", idx)
     if end_sec != -1 and end_sec < nxt:
         nxt = end_sec
+    return idx, nxt
 
-    section_text = content[idx:nxt]
-    if f'<span class="ddate">{date_label}</span>' in section_text:
+
+def module_has_date(marker, date_label, content=None):
+    """只读判断：marker 区段内是否已含 date_label。找不到 marker / 文件 → False。
+
+    ★ 用途：在调用 ai_curate **之前**先判重 —— 当天该时段的块已存在时直接跳过，
+      省掉一次 AI 调用。
+      ⚠️ 老实现是「先调 ai_curate → 再在 insert_module 里防重」，而 CI 每天 4 班
+      （同一时段有主班 + 补班），补班每次都白调一次 AI，结果全被防重丢弃。
+      2026-09-24 改为前置判重：调用量降到约 1/4，兜底能力不变（主班没跑时，
+      补班本身就是当天第一次，仍会正常调 AI）。
+    """
+    if content is None:
+        content = Path("news.html").read_text(encoding="utf-8")
+    span = _find_section(content, marker)
+    if span is None:
+        return False
+    idx, nxt = span
+    return f'<span class="ddate">{date_label}</span>' in content[idx:nxt]
+
+
+def insert_module(block, marker, label, date_label):
+    """把 block 插入 news.html 指定 marker 注释行之后。
+
+    marker 示例：'<!-- __DOMESTIC_INSERT__'、'<!-- __RELEASE_INSERT__'。
+    防重粒度 = 区段：从本 marker 行起，到「下一个注释 marker」与「最近的 </section>」
+    中更近者为止，该区间若已含 date_label（如「2026-09-09 早间更新」）则跳过——
+    每日动态两模块各在一个 <section class="dyn-mod"> 内，区段被各自 </section> 精确
+    截断；ARCHIVES 三 tab 无 section，靠相邻 marker 截断。两类互不污染。
+
+    判重与 module_has_date 共用同一口径，避免两处漂移。
+    """
+    path = Path("news.html")
+    content = path.read_text(encoding="utf-8")
+    if marker not in content:
+        print(f"错误：未找到标记 {marker}，跳过 {label}")
+        return False
+
+    if module_has_date(marker, date_label, content):
         print(f"· {label} {date_label} 已存在，跳过（防重）")
         return False
 
     # 在 marker 所在行的行尾之后插入 block
+    idx = content.find(marker)
     line_end = content.find("\n", idx)
     if line_end == -1:
         line_end = idx
@@ -1165,6 +1192,15 @@ def _main_inner():
     any_inserted = False
     picks = []
     for marker, key, label in MODULES:
+        # ★ 省 AI（2026-09-24）：当天该时段的块已存在 → 直接跳过本模块，不再调 ai_curate。
+        #   老实现「先调 AI → 再在 insert_module 里防重」使补班白调；CI 每天 4 班
+        #   （每时段 = 主班 + 补班），等于一半的调用被防重丢弃。判重口径与 insert_module
+        #   完全一致（同一个 module_has_date），不会漏写。
+        #   注：跳过时不再附带 picks → 首页卡片保持本时段首班写入的内容，
+        #   避免同一时段内被补班用滚动的新候选反复改写。
+        if module_has_date(f"<!-- {marker}", date_label):
+            print(f"· {label} {date_label} 已存在，跳过（防重 · 已省一次 AI 调用）")
+            continue
         bucket = buckets.get(key, [])
         ai_sel = ai_curate(bucket, label, cap=6, avoid=avoid)
         # ① 优先 AI 语义精编（线上 CI 内完成，不依赖本地）；
