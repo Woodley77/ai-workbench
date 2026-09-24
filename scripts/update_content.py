@@ -588,7 +588,7 @@ def insert_verify_block(topic, block):
         print(f"    ✗ {topic['page']} 未找到 verify marker，跳过")
         return False
 
-    if f'class="ddate">{TODAY}</span>' in text:
+    if verify_written_today(topic, text):
         print(f"    · {topic['page']} verify 今天已更新过，跳过（幂等）")
         return False
 
@@ -602,6 +602,12 @@ def insert_verify_block(topic, block):
 def _run_one_verify(topic, args):
     """跑单个页面的数据核对：读快照 + 抓新闻 + AI 比对 + 渲染 + 写入。"""
     print(f"[{topic['label']}]")
+    # ★ 省 AI（2026-09-24）：本页今天已写过核对条目 → 直接跳过，不再调 ai_verify。
+    #   verify 的语义本来就是「每天核对一次」，而 CI 每天 4 班 → 一天白调 3 次。
+    #   （dry-run 不跳过，保证预览链路随时可测。）
+    if not args.dry_run and verify_written_today(topic):
+        print(f"    · {topic['page']} 今天已写过核对条目，跳过（幂等 · 已省一次 AI 调用）\n")
+        return False
     snap = load_snapshot(topic)
     if not snap or not any(snap.values()):
         print("    快照为空，跳过\n")
@@ -895,6 +901,54 @@ def render_block(topic, items):
     )
 
 
+def _read_page(page):
+    """读页面文本；失败返回 None。"""
+    try:
+        with open(os.path.join(ROOT, page), encoding="utf-8") as f:
+            return f.read()
+    except Exception:
+        return None
+
+
+def page_written_today(topic, text=None):
+    """只读判断：该 topic 的页面今天是否已写过块（与 insert_block 的幂等口径一致）。
+
+    ★ 用途：在调用 ai_pick **之前**判重 —— 已写过就直接跳过，省掉一次 AI 调用。
+      ⚠️ 老实现是「先调 ai_pick → 再在 insert_block 里判重」，而本脚本的判重粒度是
+      「整天」（不像 update_news 按早晚时段分），CI 每天 4 班 → 每个主题一天白调 3 次，
+      结果全被幂等丢弃。2026-09-24 改为前置判重，兜底能力不变（当天首班仍正常调 AI）。
+    """
+    if text is None:
+        text = _read_page(topic["page"])
+    if text is None:
+        return False
+    return f'class="ddate">{TODAY}</span>' in text
+
+
+def verify_written_today(topic, text=None):
+    """只读判断：该页的 **verify 区段**今天是否已写过核对条目。
+
+    ⚠️ verify 绝不能用整页 `class="ddate">{TODAY}` 判重：同页的「最新动态」块也用同一个
+    ddate 渲染，而 main() 里 TOPICS 循环**先于** run_verify 执行 → 动态块一写进去，
+    verify 就被误判成「今天已更新过」，此后永远写不进去。
+    这正是 v28~v29 期间 model-verify **一次都没成功写入过** 的原因（agents.html 不在
+    TOPICS 里、没有动态块，所以只有 agents-verify 能正常写入）。
+    现在把判重范围限定为 marker 之后的那个滚动框（到最近的 </div> 为止）。
+    """
+    if text is None:
+        text = _read_page(topic["page"])
+    if text is None:
+        return False
+    idx = text.find(topic["marker"])
+    if idx == -1:
+        return False
+    tail = text[idx:]
+    end = tail.find("</div>")
+    if end != -1:
+        tail = tail[:end]
+    return f'class="ddate">{TODAY}</span>' in tail
+
+
 def insert_block(topic, block):
     """把区块写到标记之后（新的在最上面）。已写过今天则跳过，保证幂等。"""
     path = os.path.join(ROOT, topic["page"])
@@ -905,7 +959,7 @@ def insert_block(topic, block):
         print(f"    ✗ {topic['page']} 未找到插入标记，跳过")
         return False
 
-    if f'class="ddate">{TODAY}</span>' in text:
+    if page_written_today(topic, text):
         print(f"    · {topic['page']} 今天已更新过，跳过（幂等）")
         return False
 
@@ -952,6 +1006,14 @@ def main():
     changed = []
     for topic in TOPICS:
         print(f"[{topic['label']}]")
+        # ★ 省 AI（2026-09-24）：本页今天已写过该主题的块 → 跳过选稿，不调 ai_pick。
+        #   老实现「先调 AI → 再在 insert_block 里判重」，本脚本按「整天」判重，
+        #   CI 每天 4 班 → 每个主题白调 3 次。判重口径与 insert_block 一致
+        #   （同一个 page_written_today），不会漏写。
+        #   页脚戳不在这里刷 —— 由下方「无论有没有新条目都刷一遍」统一处理，行为不变。
+        if not args.dry_run and page_written_today(topic):
+            print(f"    · {topic['page']} 今天已更新过，跳过选稿（幂等 · 已省一次 AI 调用）\n")
+            continue
         entries = fetch_entries(topic, args.hours)
         if not entries:
             print("    无候选条目\n")
