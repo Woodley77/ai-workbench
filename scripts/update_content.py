@@ -4,7 +4,7 @@
 模型页 + 智能体应用页 + 百科（Agent Skills / MCP）每日内容更新脚本
 ================================================================================
 用途：为 models.html / wiki-skills.html / wiki-mcp.html 页面的「最新动态」区块追加
-      当天检索到的实质变化，并同步更新各页（含 agents.html）页脚的「数据截止」日期。
+      当天检索到的实质变化；只有新增条目时才更新动态区的最近收录日期。
 
       （v17 起：agents.html 的「Agent 赛道每日更新」已并入 news.html 动态区
        「智能体动态」模块，由 update_news.py 统一维护；本脚本仅继续为 agents.html
@@ -12,7 +12,7 @@
 
 流程：
   1. 从国内可直连媒体源池（量子位 / 爱范儿 / IT之家 / 极客公园）抓取近 N 小时条目，
-     按主题 must_kw 初筛（2026-09-09 起弃用 Google News 检索：其链接为
+     按标题中的明确主题词初筛（2026-09-09 起弃用 Google News 检索：其链接为
      news.google.com 跳转壳，国内用户无法打开）
   2. 按时间窗过滤 + 与页面已有条目去重
   3. 调 DeepSeek 判断哪些是"实质变化"，并提炼成严格 JSON
@@ -23,7 +23,7 @@
   - AI 只输出 JSON，绝不生成任何 HTML 标签。所有 HTML 由本脚本渲染。
   - 所有写入页面的文本必须经 html.escape() 转义，杜绝注入。
   - category 必须是白名单内的取值，URL 必须是 http(s) 开头。
-  - 本脚本只往「最新动态」标记处追加，以及改页脚日期；
+  - 本脚本只往「最新动态」标记处追加，并在有新条目时改动态区日期；
     绝不改动 MODEL_SCORES、AGENTS、价格表、概念长文等主体内容（那些需人工核实）。
 
 用法：
@@ -46,6 +46,7 @@ import html
 import argparse
 import urllib.request
 import urllib.error
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
 try:
@@ -91,20 +92,6 @@ TOPICS = [
         "categories": ["发布", "调价", "评测"],
         "cat_css": {"发布": "c-model", "调价": "c-event", "评测": "c-paper"},
         # 只关注国产：与模型页"只覆盖国产模型"的口径保持一致
-        "queries": [
-            "DeepSeek OR 通义千问 OR 智谱GLM OR 豆包 OR 混元 OR Kimi OR MiniMax 发布",
-            "国产大模型 发布 OR 开源 OR 升级",
-            "大模型 API 降价 OR 调价 OR 涨价",
-            "大模型 评测 OR 榜单 OR 跑分",
-            # ---- v28 增强：让 AI 更易抓出规格/上下文/开源动态 ----
-            "国产大模型 上下文 升级 OR 翻倍 OR 扩展 OR 增强",
-            "大模型 上线 OR 接入 OR 降价 限时 OR 活动 OR 促销",
-            "国产模型 MIT OR Apache OR 开源协议 OR 开源",
-            "国产大模型 新版本 OR X.0 OR 重大更新 OR 升级",
-        ],
-        "must_kw": ["大模型", "模型", "LLM", "AI", "deepseek", "qwen", "glm",
-                    "豆包", "混元", "kimi", "minimax", "文心", "step", "api",
-                    "发布", "开源", "降价", "调价", "评测", "榜单"],
     },
     {
         "key": "skills",
@@ -114,13 +101,6 @@ TOPICS = [
         "max_items": 4,
         "categories": ["新技能", "市场", "平台"],
         "cat_css": {"新技能": "c-model", "市场": "c-event", "平台": "c-news"},
-        "queries": [
-            "Agent Skills OR AI Skill 智能体技能",
-            "Claude Skills OR Skill 市场 OR 技能市场",
-            "AI Agent 技能 平台 支持 OR 标准",
-        ],
-        "must_kw": ["skill", "skills", "技能", "agent", "智能体", "claude",
-                    "anthropic", "市场", "mcp", "插件", "工具"],
     },
     {
         "key": "mcp",
@@ -130,13 +110,6 @@ TOPICS = [
         "max_items": 4,
         "categories": ["协议", "生态", "客户端"],
         "cat_css": {"协议": "c-model", "生态": "c-event", "客户端": "c-news"},
-        "queries": [
-            "MCP Model Context Protocol 更新 OR 版本",
-            "MCP server OR MCP 服务器 生态 OR 目录",
-            "MCP 客户端 支持 OR 集成",
-        ],
-        "must_kw": ["mcp", "model context protocol", "协议", "server", "服务器",
-                    "客户端", "client", "生态", "集成", "anthropic"],
     },
     # 注：agent 主题于 v17（2026-09-09）移除——agents.html 的「Agent 赛道每日更新」
     # 已整体并入 news.html 动态区「智能体动态」模块（由 update_news.py 统一维护）。
@@ -145,13 +118,13 @@ TOPICS = [
 # 页脚「数据截至」的正则（硬事实：只改日期，风险最低）
 STAMP_PATTERNS = {
     "models.html": [
-        (re.compile(r"(\{\s*v:\s*')[\d-]+(',\s*l:\s*'快照日期')"), r"\g<1>" + TODAY + r"\g<2>"),
+        (re.compile(r"(\{\s*v:\s*')[\d-]+(',\s*l:\s*'动态更新日期')"), r"\g<1>" + TODAY + r"\g<2>"),
     ],
     "wiki-skills.html": [
-        (re.compile(r"(数据截至\s*)\d{4}-\d{2}-\d{2}"), r"\g<1>" + TODAY),
+        (re.compile(r"(动态区最近收录\s*)\d{4}-\d{2}-\d{2}"), r"\g<1>" + TODAY),
     ],
     "wiki-mcp.html": [
-        (re.compile(r"(数据截至\s*)\d{4}-\d{2}-\d{2}"), r"\g<1>" + TODAY),
+        (re.compile(r"(动态区最近收录\s*)\d{4}-\d{2}-\d{2}"), r"\g<1>" + TODAY),
     ],
     # 注：agents.html 于 v29 移除自动日期戳 —— 该页数据是「人工核实快照」，
     # 每天刷日期会造成「日期在动、数据没动」的假新鲜。
@@ -705,18 +678,34 @@ def load_pool(hours):
 
 
 def fetch_entries(topic, hours):
-    """抓该主题候选：国内源池 + must_kw 初筛，按时间倒序最多返回 50 条。"""
+    """抓该主题候选：按标题里的主题主体筛选，按时间倒序最多返回 50 条。"""
     pool = load_pool(hours)
-    must = [k.lower() for k in topic["must_kw"]]
     picked = []
     for it in pool:
-        blob = (it["title"] + " " + it["summary"]).lower()
-        if not any(k in blob for k in must):
+        if not topic_relevant(topic, it):
             continue
         picked.append(it)
     picked.sort(key=lambda x: x["published"] or datetime.min.replace(tzinfo=CST), reverse=True)
-    print(f"    抓到 {len(picked)} 条候选（{hours} 小时内，国内源 + must_kw 初筛）")
+    print(f"    抓到 {len(picked)} 条候选（{hours} 小时内，标题主题筛选）")
     return picked[:50]
+
+
+def topic_relevant(topic, entry):
+    """在 AI 前后都使用的保守主题门槛，避免摘要里的泛词造成串区。"""
+    title = entry['title'].lower()
+    key = topic['key']
+    if key == 'mcp':
+        return bool(re.search(r'(?<![a-z])mcp(?![a-z])|model context protocol', title))
+    if key == 'skills':
+        return bool(re.search(r'(?<![a-z])skills?(?![a-z])|技能', title)) and bool(
+            re.search(r'agent|智能体|claude|anthropic|codex|openai|插件|技能市场|skills?', title))
+    if key == 'model':
+        if re.search(r'负责人|离职|接棒|人事|高管|管理层|编程语言|汽车模型|车模', title):
+            return False
+        vendor = re.search(r'deepseek|qwen|通义|千问|智谱|glm|豆包|混元|kimi|minimax|文心|百川|阶跃|stepfun|mimo|小米|国产大模型', title)
+        change = re.search(r'模型|发布|推出|上线|升级|更新|开源|价格|调价|降价|涨价|评测|跑分|榜单|api|上下文|推理', title)
+        return bool(vendor and change)
+    return False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -814,6 +803,8 @@ def normalize(data, topic, entries):
         if isinstance(idx, int) and 0 <= idx < len(entries):
             url = entries[idx]["url"]
         if not url:
+            continue
+        if not topic_relevant(topic, entries[idx]):
             continue
 
         cat = str(it.get("category", "")).strip()
@@ -922,7 +913,14 @@ def page_written_today(topic, text=None):
         text = _read_page(topic["page"])
     if text is None:
         return False
-    return f'class="ddate">{TODAY}</span>' in text
+    idx = text.find(topic['marker'])
+    if idx < 0:
+        return False
+    section = text[idx:]
+    end = section.find('</section>')
+    if end >= 0:
+        section = section[:end]
+    return f'class="ddate">{TODAY}</span>' in section
 
 
 def verify_written_today(topic, text=None):
@@ -950,7 +948,7 @@ def verify_written_today(topic, text=None):
 
 
 def insert_block(topic, block):
-    """把区块写到标记之后（新的在最上面）。已写过今天则跳过，保证幂等。"""
+    """把已筛出的新链接写到标记之后，补班用独立的时间标签。"""
     path = os.path.join(ROOT, topic["page"])
     with open(path, encoding="utf-8") as f:
         text = f.read()
@@ -960,8 +958,9 @@ def insert_block(topic, block):
         return False
 
     if page_written_today(topic, text):
-        print(f"    · {topic['page']} 今天已更新过，跳过（幂等）")
-        return False
+        supplemental = f"{TODAY} 补充 {datetime.now(CST):%H:%M}"
+        block = block.replace(f'class="ddate">{TODAY}</span>',
+                              f'class="ddate">{supplemental}</span>', 1)
 
     text = text.replace(topic["marker"], topic["marker"] + "\n" + block, 1)
     with open(path, "w", encoding="utf-8") as f:
@@ -1004,19 +1003,23 @@ def main():
           f"AI：{'关（关键词兜底）' if args.no_ai else '开（DeepSeek）'}\n")
 
     changed = []
+    state_path = Path(ROOT) / 'data' / 'content-seen.json'
+    try:
+        seen_by_topic = json.loads(state_path.read_text(encoding='utf-8'))
+    except (OSError, ValueError, TypeError):
+        seen_by_topic = {}
     for topic in TOPICS:
         print(f"[{topic['label']}]")
-        # ★ 省 AI（2026-09-24）：本页今天已写过该主题的块 → 跳过选稿，不调 ai_pick。
-        #   老实现「先调 AI → 再在 insert_block 里判重」，本脚本按「整天」判重，
-        #   CI 每天 4 班 → 每个主题白调 3 次。判重口径与 insert_block 一致
-        #   （同一个 page_written_today），不会漏写。
-        #   页脚戳不在这里刷 —— 由下方「无论有没有新条目都刷一遍」统一处理，行为不变。
-        if not args.dry_run and page_written_today(topic):
-            print(f"    · {topic['page']} 今天已更新过，跳过选稿（幂等 · 已省一次 AI 调用）\n")
-            continue
         entries = fetch_entries(topic, args.hours)
+        page_text = _read_page(topic['page']) or ''
+        existing = set(re.findall(r'<h4><a href="([^"]+)"', page_text))
+        old_seen = set(seen_by_topic.get(topic['key'], []))
+        fresh = [e for e in entries if e['url'] not in old_seen and e['url'] not in existing]
+        if not args.dry_run:
+            seen_by_topic[topic['key']] = sorted(old_seen | {e['url'] for e in entries})[-2000:]
+        entries = fresh
         if not entries:
-            print("    无候选条目\n")
+            print("    无新候选，跳过 AI 调用\n")
             continue
 
         if args.no_ai:
@@ -1045,15 +1048,14 @@ def main():
             print("    ------------\n")
             continue
 
-        if insert_block(topic, block) or update_stamp(topic["page"]):
+        if insert_block(topic, block):
             changed.append(topic["page"])
+            update_stamp(topic['page'])
         print()
 
-    # 无论有没有新条目，日期戳都刷一遍（证明今天跑过）
     if not args.dry_run:
-        for page in ("models.html", "wiki-skills.html", "wiki-mcp.html"):
-            if update_stamp(page) and page not in changed:
-                changed.append(page)
+        state_path.parent.mkdir(exist_ok=True)
+        state_path.write_text(json.dumps(seen_by_topic, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
     # ---- v28 数据核对（独立流程：读快照 + AI 比对 + 写提醒）----
     # 与 model topic 不同：model 找的是「已确认新闻」，verify 找的是「快照 vs 新闻」的疑点。
