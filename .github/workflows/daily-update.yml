@@ -5,7 +5,7 @@ on:
     # ⚠️ 背景与对策（2026-09-11 排查）：GitHub 免费版 schedule 是低优先级任务，
     #    实测系统性延后 4~4.5 小时才执行（近 6 次定时触发全部如此，非偶发排队）。
     #    对策：目标时刻（北京时间 06:00 / 18:00）前后各布一班，脚本全部幂等
-    #    （update_news 按标题防重、update_content 按当天日期防重），
+    #    （两个脚本按已处理链接防重，同日有新候选可补充），
     #    补班跑一遍无新内容会自动跳过提交，多布班没有副作用；
     #    另保留 workflow_dispatch 供 API 即时触发（实测 0 秒排队）。
     # 北京时间 05:55 · 主班（早）：新闻动态 + 模型页/百科动态
@@ -46,7 +46,7 @@ jobs:
         run: python scripts/update_news.py
 
       # 模型页 / 百科（Agent Skills、MCP）动态：早/晚班与手动触发都跑
-      # 脚本全幂等（update_news 按标题防重、update_content 按当天日期防重；
+      # 脚本按已处理链接防重；
       # v28 verify 流程是读快照独立比对，多跑无副作用），所以晚班也跑一致更稳。
       # v28 起去掉晚班 if 跳过：晚 18 点刚好覆盖国产大模型当日动态高峰。
       - name: 抓取并更新模型与百科（早晚班一致）
@@ -58,7 +58,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add news.html index.html agents.html models.html wiki-skills.html wiki-mcp.html
+          git add news.html index.html agents.html models.html wiki-skills.html wiki-mcp.html data/news-seen.json data/content-seen.json
           if git diff --staged --quiet; then
             echo "无变更，跳过提交"
           else
