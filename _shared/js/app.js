@@ -118,17 +118,20 @@
   }
 
   /* ---------- 自动更新保险：切回前台 / 定时 检查更新 ---------- */
-  // v16：内容新鲜度探针从仅 news 页推广到全部「动态类」页面（见 PROBE_PAGES），
-  // 每 15 分钟 / 切回前台时静默拉取当前页最新版本，比对最大日期，有新内容弹刷新条。
+  // 对比动态区本身，避免同日新增内容漏报，或正文中的未来日期误报。
   var PROBE_PAGES = {
-    'index.html': 1, 'news.html': 1, 'agents.html': 1,
-    'wiki-skills.html': 1, 'wiki-mcp.html': 1
+    'index.html': ['#today'],
+    'news.html': ['#dyn-domestic', '#dyn-foreign'],
+    'models.html': ['#model-feed', '#model-verify'],
+    'agents.html': ['#agents-verify'],
+    'wiki-skills.html': ['.feed-scroll'],
+    'wiki-mcp.html': ['.feed-scroll']
   };
-  function maxDateInText(text) {
-    var m = String(text).match(/20\d\d-\d\d-\d\d/g);
-    if (!m) return '';
-    m.sort();
-    return m[m.length - 1];
+  function dynamicContent(doc, selectors) {
+    return selectors.map(function (selector) {
+      var node = doc.querySelector(selector);
+      return node ? node.innerHTML : '';
+    }).join('\n');
   }
   function initAutoUpdate() {
     if (!('serviceWorker' in navigator)) return;
@@ -174,18 +177,18 @@
         }).catch(function () {});
       }
 
-      // 2) 内容新鲜度探针（v16 全站通用）：拉当前页最新版，对比「最大日期」。
-      //    页面含动态区的才探测（无动态的静态页跳过）；两端口径一致
-      //    （当前页取 outerHTML，与拉取的远端 HTML 同为含 script 的完整文本），
-      //    静态部分两边日期相同，差只会来自 CI 每日追加/刷新的部分。
+      // 2) 拉当前页最新版，只比较页面的动态区。
       var page = location.pathname.split('/').pop() || 'index.html';
-      if (!PROBE_PAGES[page]) return;
+      var selectors = PROBE_PAGES[page];
+      if (!selectors) return;
       fetch(page, { cache: 'no-store' }).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.text();
       }).then(function (html) {
-        var curMax = maxDateInText(document.documentElement.outerHTML);
-        var remoteMax = maxDateInText(html);
-        if (curMax && remoteMax && remoteMax > curMax) showUpdateBanner();
+        var remote = new DOMParser().parseFromString(html, 'text/html');
+        var currentContent = dynamicContent(document, selectors);
+        var remoteContent = dynamicContent(remote, selectors);
+        if (currentContent && remoteContent && currentContent !== remoteContent) showUpdateBanner();
       }).catch(function () {});
     }
 
