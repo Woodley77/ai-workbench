@@ -1199,6 +1199,7 @@ def _main_inner():
         print(f"  跨天防重参考：页面已有 {len(avoid)} 条历史标题")
     any_inserted = False
     picks = []
+    processed_urls = set()
     for marker, key, label in MODULES:
         bucket = [it for it in buckets.get(key, [])
                   if it.get('link') not in seen_urls and it.get('link') not in existing_urls]
@@ -1213,6 +1214,8 @@ def _main_inner():
             pool = [i for i in bucket if (i.get("title") or "").strip() not in avoid]
             sel, mode = select_items(pool, cap=6, min_score=3), "规则兜底"
         if not sel:
+            if ai_sel is not None:
+                processed_urls.update(it['link'] for it in bucket)
             print(f"· {label}（{key}）今日无合适内容，跳过")
             continue
         # 审计日志：打印实际选中的条目（即使后面因防重跳过写入，也能在 CI 日志里看到 AI 的判断）
@@ -1227,10 +1230,11 @@ def _main_inner():
             print(f"✓ news.html [{label}] 已追加 {label_for_block}（{len(sel)} 条 · {mode}）")
             any_inserted = True
             existing_urls.update(it['link'] for it in sel)
+            processed_urls.update(it['link'] for it in bucket)
         picks.extend(sel[:2])  # 各模块最多取 2 条代表（模块已写或已存在都取同一条，保证首页与页面一致）
 
     state_path.parent.mkdir(exist_ok=True)
-    seen_urls.update(it['link'] for it in items if it.get('link'))
+    seen_urls.update(processed_urls)
     state_path.write_text(json.dumps(sorted(seen_urls), ensure_ascii=False) + '\n', encoding='utf-8')
 
     # 三个归档区（速报/大事记/论文）：有命中才更新，无命中跳过
