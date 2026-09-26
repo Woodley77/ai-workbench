@@ -954,6 +954,20 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
     <!-- __MODEL_DAILY_INSERT__ -->
       <div class="news-day">
         <div class="dhead">
+          <span class="ddate">2026-09-26</span>
+          <span class="dbadge">1 条更新</span>
+        </div>
+        <div class="news-item">
+          <span class="cat c-paper">评测</span>
+          <div class="body">
+            <h4><a href="https://www.qbitai.com/2026/09/497425.html" target="_blank" rel="noopener">谷歌TPU跑Kimi比英伟达GPU快57%</a></h4>
+            <p>vLLM团队创业公司实测显示，谷歌TPU运行Kimi的推理速度比英伟达GPU快57%，且使用DeepSeek推理框架。</p>
+            <span class="src">来源：<a href="https://www.qbitai.com/2026/09/497425.html" target="_blank" rel="noopener">量子位</a></span>
+          </div>
+        </div>
+      </div>
+      <div class="news-day">
+        <div class="dhead">
           <span class="ddate">2026-09-24</span>
           <span class="dbadge">2 条更新</span>
         </div>
@@ -2618,7 +2632,7 @@ function renderStatBar() {
     { v: MODELS.length, l: '收录模型' },
     { v: Object.keys(vendors).length, l: '覆盖厂商' },
     { v: Object.keys(cats).length, l: '阵营分类' },
-    { v: '2026-09-24', l: '动态更新日期' }
+    { v: '2026-09-26', l: '动态更新日期' }
   ];
   bar.innerHTML = items.map(function (it) {
     return '<div class="stat-item"><div class="sv">' + it.v + '</div><div class="sl">' + it.l + '</div></div>';
