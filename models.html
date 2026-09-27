@@ -954,6 +954,20 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
     <!-- __MODEL_DAILY_INSERT__ -->
       <div class="news-day">
         <div class="dhead">
+          <span class="ddate">2026-09-27</span>
+          <span class="dbadge">1 条更新</span>
+        </div>
+        <div class="news-item">
+          <span class="cat c-model">发布</span>
+          <div class="body">
+            <h4><a href="https://www.ithome.com/1/007/530.htm" target="_blank" rel="noopener">MiniMax 文本模型 M3.1-Flash-Preview 上线</a></h4>
+            <p>MiniMax 最新文本模型 M3.1-Flash-Preview 上线 MiniMax Code 平台，并同步重置用户 Token 额度。</p>
+            <span class="src">来源：<a href="https://www.ithome.com/1/007/530.htm" target="_blank" rel="noopener">IT之家</a></span>
+          </div>
+        </div>
+      </div>
+      <div class="news-day">
+        <div class="dhead">
           <span class="ddate">2026-09-26</span>
           <span class="dbadge">1 条更新</span>
         </div>
@@ -1594,6 +1608,17 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
   <p class="sec-note">每天 CI 解析本页「API 按量单价 / 订阅套餐 / 旗舰规格」三大数据表的当前快照，与当天 AI 新闻交叉比对，发现「疑似变化」写入此处。<b>AI 不直接修改核心数据</b>——所有数据修改需人工在 commit / PR 中确认。MODEL_SCORES（能力评分）永不自动改。</p>
   <div class="feed-scroll" id="model-verify">
     <!-- __MODEL_VERIFY_INSERT__ -->
+      <div class="verify-day">
+        <div class="dhead">
+          <span class="ddate">2026-09-27</span>
+          <span class="dbadge">1 条疑似变化</span>
+        </div>
+        <div class="verify-item">
+          <div class="vi-label">模型阵容 · 置信度 🟡 中</div>
+          <div class="vi-title">MiniMax M2.7 · model_lineup</div>
+          <div class="vi-evidence">当前：MiniMax M2.7 | ctx=200K | in=主流 1/10-1/20 | out=— | 开源=否M2.5　→　疑似：MiniMax 推出新文本模型 M3.1-Flash-Preview，或为 M2.7 后继/新增<br><span class="src">来源：<a href="https://www.ithome.com/1/007/530.htm" target="_blank" rel="noopener">IT之家</a></span></div>
+        </div>
+      </div>
       <div class="verify-day">
         <div class="dhead">
           <span class="ddate">2026-09-24</span>
@@ -2632,7 +2657,7 @@ function renderStatBar() {
     { v: MODELS.length, l: '收录模型' },
     { v: Object.keys(vendors).length, l: '覆盖厂商' },
     { v: Object.keys(cats).length, l: '阵营分类' },
-    { v: '2026-09-26', l: '动态更新日期' }
+    { v: '2026-09-27', l: '动态更新日期' }
   ];
   bar.innerHTML = items.map(function (it) {
     return '<div class="stat-item"><div class="sv">' + it.v + '</div><div class="sl">' + it.l + '</div></div>';
