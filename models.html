@@ -954,6 +954,20 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
     <!-- __MODEL_DAILY_INSERT__ -->
       <div class="news-day">
         <div class="dhead">
+          <span class="ddate">2026-09-29</span>
+          <span class="dbadge">1 条更新</span>
+        </div>
+        <div class="news-item">
+          <span class="cat c-model">发布</span>
+          <div class="body">
+            <h4><a href="https://www.ithome.com/1/008/033.htm" target="_blank" rel="noopener">月之暗面Kimi K3.1模型标识泄露，预计近期发布</a></h4>
+            <p>Kimi开放平台后台出现kimi-k3-1模型标识并可调用，预告支持100万Token上下文与三档推理强度。</p>
+            <span class="src">来源：<a href="https://www.ithome.com/1/008/033.htm" target="_blank" rel="noopener">IT之家</a></span>
+          </div>
+        </div>
+      </div>
+      <div class="news-day">
+        <div class="dhead">
           <span class="ddate">2026-09-27</span>
           <span class="dbadge">1 条更新</span>
         </div>
@@ -1608,6 +1622,17 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
   <p class="sec-note">每天 CI 解析本页「API 按量单价 / 订阅套餐 / 旗舰规格」三大数据表的当前快照，与当天 AI 新闻交叉比对，发现「疑似变化」写入此处。<b>AI 不直接修改核心数据</b>——所有数据修改需人工在 commit / PR 中确认。MODEL_SCORES（能力评分）永不自动改。</p>
   <div class="feed-scroll" id="model-verify">
     <!-- __MODEL_VERIFY_INSERT__ -->
+      <div class="verify-day">
+        <div class="dhead">
+          <span class="ddate">2026-09-29</span>
+          <span class="dbadge">1 条疑似变化</span>
+        </div>
+        <div class="verify-item">
+          <div class="vi-label">模型阵容 · 置信度 🟡 中</div>
+          <div class="vi-title">Kimi K3 · date</div>
+          <div class="vi-evidence">当前：2026-07　→　疑似：K3.1 新版本泄露，1M 上下文、三档推理强度，近期发布<br><span class="src">来源：<a href="https://www.ithome.com/1/008/033.htm" target="_blank" rel="noopener">IT之家</a></span></div>
+        </div>
+      </div>
       <div class="verify-day">
         <div class="dhead">
           <span class="ddate">2026-09-27</span>
@@ -2657,7 +2682,7 @@ function renderStatBar() {
     { v: MODELS.length, l: '收录模型' },
     { v: Object.keys(vendors).length, l: '覆盖厂商' },
     { v: Object.keys(cats).length, l: '阵营分类' },
-    { v: '2026-09-27', l: '动态更新日期' }
+    { v: '2026-09-29', l: '动态更新日期' }
   ];
   bar.innerHTML = items.map(function (it) {
     return '<div class="stat-item"><div class="sv">' + it.v + '</div><div class="sl">' + it.l + '</div></div>';
