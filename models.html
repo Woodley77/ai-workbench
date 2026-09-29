@@ -954,6 +954,20 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
     <!-- __MODEL_DAILY_INSERT__ -->
       <div class="news-day">
         <div class="dhead">
+          <span class="ddate">2026-09-30</span>
+          <span class="dbadge">1 条更新</span>
+        </div>
+        <div class="news-item">
+          <span class="cat c-model">发布</span>
+          <div class="body">
+            <h4><a href="https://www.ithome.com/1/008/469.htm" target="_blank" rel="noopener">DeepSeek Harness 桌面端预览版 v0.2 发布</a></h4>
+            <p>DeepSeek 发布 Harness v0.2 预览版，提供 macOS/Windows 桌面安装包，新增插件安装管理与自动化任务功能。</p>
+            <span class="src">来源：<a href="https://www.ithome.com/1/008/469.htm" target="_blank" rel="noopener">IT之家</a></span>
+          </div>
+        </div>
+      </div>
+      <div class="news-day">
+        <div class="dhead">
           <span class="ddate">2026-09-29</span>
           <span class="dbadge">1 条更新</span>
         </div>
@@ -2682,7 +2696,7 @@ function renderStatBar() {
     { v: MODELS.length, l: '收录模型' },
     { v: Object.keys(vendors).length, l: '覆盖厂商' },
     { v: Object.keys(cats).length, l: '阵营分类' },
-    { v: '2026-09-29', l: '动态更新日期' }
+    { v: '2026-09-30', l: '动态更新日期' }
   ];
   bar.innerHTML = items.map(function (it) {
     return '<div class="stat-item"><div class="sv">' + it.v + '</div><div class="sl">' + it.l + '</div></div>';
