@@ -3,6 +3,7 @@
     "http://www.geekpark.net/news/370829",
     "http://www.geekpark.net/news/371033",
     "http://www.geekpark.net/news/371038",
+    "http://www.geekpark.net/news/372005",
     "https://www.ifanr.com/1681605?utm_source=rss&utm_medium=rss&utm_campaign=",
     "https://www.ifanr.com/1681778?utm_source=rss&utm_medium=rss&utm_campaign=",
     "https://www.ifanr.com/1681909?utm_source=rss&utm_medium=rss&utm_campaign=",
@@ -24,5 +25,8 @@
   ],
   "skills": [
     "https://www.qbitai.com/2026/09/497075.html"
+  ],
+  "mcp": [
+    "https://www.ithome.com/1/008/528.htm"
   ]
 }
