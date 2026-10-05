@@ -954,6 +954,20 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
     <!-- __MODEL_DAILY_INSERT__ -->
       <div class="news-day">
         <div class="dhead">
+          <span class="ddate">2026-10-05</span>
+          <span class="dbadge">1 条更新</span>
+        </div>
+        <div class="news-item">
+          <span class="cat c-model">发布</span>
+          <div class="body">
+            <h4><a href="https://www.ithome.com/1/009/751.htm" target="_blank" rel="noopener">DeepSeek V4.1 Flash发布，中美顶尖模型跑分差距缩至3%</a></h4>
+            <p>彭博行业研究称DeepSeek 9月发布V4.1 Flash后，中国顶尖模型基准测试得分仅落后美国3%，差距较5月的9%明显收窄。</p>
+            <span class="src">来源：<a href="https://www.ithome.com/1/009/751.htm" target="_blank" rel="noopener">IT之家</a></span>
+          </div>
+        </div>
+      </div>
+      <div class="news-day">
+        <div class="dhead">
           <span class="ddate">2026-10-01</span>
           <span class="dbadge">2 条更新</span>
         </div>
@@ -2734,7 +2748,7 @@ function renderStatBar() {
     { v: MODELS.length, l: '收录模型' },
     { v: Object.keys(vendors).length, l: '覆盖厂商' },
     { v: Object.keys(cats).length, l: '阵营分类' },
-    { v: '2026-10-01', l: '动态更新日期' }
+    { v: '2026-10-05', l: '动态更新日期' }
   ];
   bar.innerHTML = items.map(function (it) {
     return '<div class="stat-item"><div class="sv">' + it.v + '</div><div class="sl">' + it.l + '</div></div>';
