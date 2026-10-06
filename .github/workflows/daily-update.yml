@@ -1,5 +1,13 @@
 name: AI 内容免费更新（早晚双班）
 on:
+  # 更新维护代码时自动验证一次；自动生成的新闻 HTML 不触发，避免循环。
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/daily-update.yml'
+      - 'scripts/update_news.py'
+      - 'scripts/update_content.py'
+      - 'scripts/news_rules.py'
   schedule:
     # 北京时间 05:55 / 17:55；GitHub 定时任务可能延迟。
     - cron: '55 21 * * *'
