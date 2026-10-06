@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      # 不注入付费密钥，同时显式关闭 AI，防止误用账户余额。
+      # 脚本已移除付费 API 调用；兼容开关继续保留，不注入密钥。
       WB_DISABLE_AI: '1'
     steps:
       - uses: actions/checkout@v4

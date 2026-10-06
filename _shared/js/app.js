@@ -351,7 +351,6 @@
     var EP = '/chat/completions';
 
     var PRESETS = [
-      { id: 'deepseek', name: 'DeepSeek',      base: 'https://api.deepseek.com/v1',                        model: 'deepseek-chat' },
       { id: 'kimi',     name: 'Kimi (Moonshot)', base: 'https://api.moonshot.cn/v1',                       model: 'moonshot-v1-8k' },
       { id: 'zhipu',    name: '智谱 GLM',       base: 'https://open.bigmodel.cn/api/paas/v4',               model: 'glm-4-flash' },
       { id: 'qwen',     name: '通义千问',       base: 'https://dashscope.aliyuncs.com/compatible-mode/v1',  model: 'qwen-plus' },
@@ -383,15 +382,27 @@
     function safeDel(k) {
       try { localStorage.removeItem(k); } catch (e) {}
     }
+    function isBlockedConfig(value) {
+      if (!value) return false;
+      if (String(value.provider || '').toLowerCase() === 'deepseek') return true;
+      if (/^deepseek(?:[-/]|$)/i.test(String(value.model || ''))) return true;
+      try {
+        var host = new URL(value.base).hostname.toLowerCase();
+        return host === 'deepseek.com' || /\.deepseek\.com$/.test(host);
+      } catch (e) { return false; }
+    }
     function loadCfg() {
       var raw = safeGet(LS_CFG);
       if (raw) {
         try {
           cfg = JSON.parse(raw);
-          if (cfg && typeof cfg === 'object' && cfg.base && cfg.model) return cfg;
+          if (isBlockedConfig(cfg)) {
+            safeDel(LS_CFG); // 清除已识别的旧 DeepSeek 配置及密钥。
+            cfg = null;
+          } else if (cfg && typeof cfg === 'object' && cfg.base && cfg.model) return cfg;
         } catch (e) {}
       }
-      cfg = { provider: 'deepseek', base: PRESETS[0].base, model: PRESETS[0].model, key: '' };
+      cfg = { provider: 'custom', base: '', model: '', key: '' };
       return cfg;
     }
     function saveCfg() {
@@ -505,9 +516,9 @@
         '<label class="ai-fld">服务商' +
         '<select class="ai-sel" data-ai-provider>' + optHtml + '</select></label>' +
         '<label class="ai-fld">接口地址 Base URL' +
-        '<input class="ai-inp" data-ai-base type="text" spellcheck="false" placeholder="https://api.deepseek.com/v1"></label>' +
+        '<input class="ai-inp" data-ai-base type="text" spellcheck="false" placeholder="https://你的服务商/v1"></label>' +
         '<label class="ai-fld">模型' +
-        '<input class="ai-inp" data-ai-model type="text" spellcheck="false" placeholder="deepseek-chat"></label>' +
+        '<input class="ai-inp" data-ai-model type="text" spellcheck="false" placeholder="模型名称"></label>' +
         '<label class="ai-fld">API Key' +
         '<span class="ai-keyrow"><input class="ai-inp ai-key" data-ai-key type="password" ' +
         'placeholder="sk-…" autocomplete="off" spellcheck="false">' +
@@ -690,6 +701,7 @@
     }
     function onSave() {
       var f = collectForm();
+      if (isBlockedConfig(f)) { setTestMsg('本站已停用 DeepSeek API 接入', 'fail'); return; }
       if (!f.base) { setTestMsg('请填写接口地址 Base URL', 'fail'); return; }
       if (!f.model) { setTestMsg('请填写模型名', 'fail'); return; }
       if (!f.key) { setTestMsg('API Key 为空：可以保存，但发消息前需要填 Key', 'warn'); }
@@ -701,6 +713,7 @@
     }
     function onTest() {
       var f = collectForm();
+      if (isBlockedConfig(f)) { setTestMsg('本站已停用 DeepSeek API 接入', 'fail'); return; }
       if (!f.base || !f.model) { setTestMsg('请先填写接口地址与模型名', 'fail'); return; }
       if (!f.key) { setTestMsg('请先填写 API Key', 'fail'); return; }
       setTestMsg('连接测试中…', 'pending');
@@ -782,6 +795,7 @@
       return msgs;
     }
     function sendToApi(c, text) {
+      if (isBlockedConfig(c)) { setMeta('本站已停用 DeepSeek API 接入'); return; }
       setMeta('正在生成…（点「停止」可中断）');
       sendBtn.textContent = '停止';
       streaming = true;

@@ -2,7 +2,7 @@
 """RSS 新闻更新：按国内外筛选、归档，联动首页。
 
 默认保留中文标题、摘要和可点击来源；仅模型名等专有名词允许英文。
---no-ai 或 WB_DISABLE_AI=1 使用免费规则筛选；有新候选才写入。
+始终使用免费规则筛选，不读取 API 密钥，不调用模型接口；有新候选才写入。
 精编工具 fetch_daily.py / apply_daily.py 复用本文件的抓取与渲染接口。
 """
 
@@ -316,53 +316,7 @@ def is_roundup(title: str) -> bool:
     return bool(re.search(r'[｜|]', t))
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# v21 线上 AI 精编（CI 侧语义判断）
-# ───────────────────────────────────────────────────────────────────────────
-# 背景：用户否掉了纯关键词选稿（"效果不好"），要的是「能直接用的模型情报」，
-# 且明确不要在本地跑定时任务（本机关机就断了）。因此把「精编」这一步搬到
-# GitHub Actions 里：runner 上跑本脚本时，若仓库配置了 DEEPSEEK_API_KEY
-# （daily-update.yml 已注入，update_content.py 也在用同一个 secret），
-# 就调 DeepSeek 按用户口径做语义选稿 + 中文标题；没有 Key 或调用失败时，
-# 自动退回上面的关键词加权选稿（select_items），保证「每天线上必有产出」。
-# 链接永远由脚本从 RSS 按编号回填，AI 无权提供 URL，杜绝编造。
-# ═══════════════════════════════════════════════════════════════════════════
-DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
-DEEPSEEK_MODEL = "deepseek-chat"
-
-CURATE_PROMPT = """你在为一位中文 AI 从业者做每日情报精编。他每天只想知道**能直接用的模型情报**。
-
-【收录口径】只收读了能立刻动手做决定的信息：
-1. 模型发布 / 版本更新（新模型、新版本、能力升级、权重新开源、上下文或参数变化）
-2. API 定价 / 倍率 / 限免 / 免费额度 / 订阅政策变动（涨价降价、倍率调整、暂停某档订阅、免费开放）
-3. 工具与 Agent 产品上线或更新（新客户端、新功能、新插件、新 API 能力、接入某模型）
-4. 模型实测跑分 / 基准对比（能据此判断该选哪个模型）
-
-【明确不收】用户说过这些是次要面：
-- 产业面：融资 / IPO / 并购 / 财报 / 市值 / 战略合作 / 签约
-- 基建面：数据中心 / 算力集群 / 电力 / 机房
-- 监管面：调查 / 反垄断 / 法案 / 制裁 / 诉讼
-- 观点面：高管发言 / 演讲 / 访谈 / 行业大会峰会论坛
-- 泛论面："AI 将如何改变世界"式的评论、与模型使用无关的社会趣闻
-判据：**能动手的 > 能围观的**。拿不准时，问自己"读完这条我能改代码 / 改订阅 / 换模型吗"。
-另外：早报晚报类多主题合集、消费电子整机（AirPods / watchOS 更新日志 / 手机发布）都不要。
-
-现在是「{region}」候选，请从下面 {total} 条里挑出最值得看的，最多 {cap} 条。
-宁缺毋滥——只挑得出 2 条就给 2 条，一条都不够格就给空数组。
-
-【输出格式】只输出 JSON，不要任何解释：
-{{"items":[{{"i":候选编号,"title":"中文标题"}}]}}
-- 编号 i 必须是上面候选列表里的数字，不许自造。
-- title 一律用中文（英文候选请翻译成准确的中文），控制在 40 字内，客观陈述，不加"重磅""炸裂"等形容词。
-- 中文候选若原标题已经很好，可原样返回。
-- 不要补充候选里没有的信息。
-- **去重是硬要求**：若候选讲的是「已收录列表」里的同一件事（同一个模型的发布/版本更新、
-  同一个产品的上线、同一次定价调整），即使来源不同、标题措辞不同，也必须跳过。
-
-{avoid_block}候选列表：
-{listing}"""
-
-
+# 免费规则选稿与跨天防重；不读取密钥，不调用模型接口。
 def recent_titles(limit=80):
     """读 news.html 中已收录的标题（页内新块在前 ⇒ 大致新→旧），用于跨天防重。
 
@@ -385,105 +339,6 @@ def recent_titles(limit=80):
     return out
 
 
-def ai_curate(items, region_label, cap=6, avoid=None):
-    """调 DeepSeek 按用户口径做语义选稿。
-
-    avoid：近两天已收录的标题（跨天防重，写进 prompt 让 AI 主动避开）。
-    返回挑中的条目列表（顺序即 AI 给的优先级）；未配置 Key / 调用失败 / 输出不合法
-    时返回 None，由调用方退回关键词规则选稿（select_items）。
-    """
-    key = os.environ.get("DEEPSEEK_API_KEY")
-    if not key:
-        print(f"    [{region_label}] 未配置 DEEPSEEK_API_KEY → 退回关键词规则选稿")
-        return None
-    if not items:
-        return None
-
-    # 去重（同标题只留一条），保持原始顺序；顺序即候选编号顺序
-    cand, seen = [], set()
-    for it in items:
-        t = (it.get("title") or "").strip()
-        if not t or t in seen:
-            continue
-        seen.add(t)
-        cand.append(it)
-    if not cand:
-        return None
-
-    def line(n, it):
-        s = (it.get("summary") or "").strip().replace("\n", " ")
-        s = f" — {s[:70]}" if s else ""
-        return f'{n}. [{it.get("source", "?")}] {it["title"]}{s}'
-
-    listing = "\n".join(line(n, it) for n, it in enumerate(cand, 1))
-    avoid = [t for t in (avoid or [])][:24]
-    avoid_block = ""
-    if avoid:
-        avoid_block = ("【近两天已收录，请勿重复选择（同一事件换来源/换标题也算重复）】\n"
-                       + "\n".join(f"- {t[:56]}" for t in avoid) + "\n\n")
-    prompt = CURATE_PROMPT.format(region=region_label, total=len(cand), cap=cap,
-                                  listing=listing, avoid_block=avoid_block)
-
-    payload = {
-        "model": DEEPSEEK_MODEL,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.2,
-        "max_tokens": 1200,
-        "response_format": {"type": "json_object"},
-    }
-    req = urllib.request.Request(
-        DEEPSEEK_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=90) as r:
-            body = json.loads(r.read().decode("utf-8"))
-        content = body["choices"][0]["message"]["content"]
-    except Exception as e:
-        print(f"    [{region_label}] DeepSeek 调用失败：{e} → 退回关键词规则选稿")
-        return None
-
-    try:
-        data = json.loads(content)
-    except Exception:
-        m = re.search(r"\{[\s\S]*\}", content or "")
-        if not m:
-            print(f"    [{region_label}] AI 返回非 JSON → 退回关键词规则选稿")
-            return None
-        try:
-            data = json.loads(m.group(0))
-        except Exception:
-            print(f"    [{region_label}] AI 返回 JSON 解析失败 → 退回关键词规则选稿")
-            return None
-
-    raw_items = data.get("items")
-    if not isinstance(raw_items, list):
-        print(f"    [{region_label}] AI 输出缺 items 列表 → 退回关键词规则选稿")
-        return None
-
-    out, used = [], set()
-    for ent in raw_items:
-        if not isinstance(ent, dict):
-            continue
-        try:
-            idx = int(ent.get("i"))
-        except (TypeError, ValueError):
-            continue
-        if not (1 <= idx <= len(cand)) or idx in used:
-            continue
-        title = re.sub(r"\s+", " ", str(ent.get("title") or "")).strip()
-        if not title or len(title) > 60:      # 过长视为不合规，丢弃（防 AI 塞长段落）
-            continue
-        used.add(idx)
-        out.append(dict(cand[idx - 1], title=title, ai_curated=True))
-        if len(out) >= cap:
-            break
-
-    if not out:
-        print(f"    [{region_label}] AI 未挑出合适条目（可能就是今天没料）→ 不写入")
-        return []
-    return out
 
 
 def is_release_item(item) -> bool:
@@ -935,12 +790,7 @@ def _find_section(content, marker):
 def module_has_date(marker, date_label, content=None):
     """只读判断：marker 区段内是否已含 date_label。找不到 marker / 文件 → False。
 
-    ★ 用途：在调用 ai_curate **之前**先判重 —— 当天该时段的块已存在时直接跳过，
-      省掉一次 AI 调用。
-      ⚠️ 老实现是「先调 ai_curate → 再在 insert_module 里防重」，而 CI 每天 4 班
-      （同一时段有主班 + 补班），补班每次都白调一次 AI，结果全被防重丢弃。
-      2026-09-24 改为前置判重：调用量降到约 1/4，兜底能力不变（主班没跑时，
-      补班本身就是当天第一次，仍会正常调 AI）。
+    同日已有区块时使用补充标签，插入函数仍按区段防止重复写入。
     """
     if content is None:
         content = Path("news.html").read_text(encoding="utf-8")
@@ -1033,9 +883,7 @@ def main():
     """入口：显式关闭 AI；错误交由工作流报告并继续其它更新步骤。"""
     parser = argparse.ArgumentParser()
     parser.add_argument('--no-ai', action='store_true', help='关闭 AI，免费规则筛选')
-    args = parser.parse_args()
-    if args.no_ai or os.environ.get('WB_DISABLE_AI') == '1':
-        os.environ.pop('DEEPSEEK_API_KEY', None)
+    parser.parse_args()  # --no-ai 保留为兼容参数；无参数也只走免费规则。
     _main_inner()
 
 
@@ -1070,16 +918,15 @@ def _main_inner():
         print(f"  [{key}] 候选 {len(buckets[key])} 条")
 
     # 每个模块独立选稿 + 插入（防重按区段）；首页代表 = 国内/国外各取前 2
-    curate_mode = "DeepSeek AI 精编" if os.environ.get("DEEPSEEK_API_KEY") else "关键词规则选稿"
-    print(f"选稿模式：{curate_mode}")
-    # 跨天防重：页面上已收录过的标题，AI 侧写进 prompt 请其避开，规则侧直接剔除
+    print("选稿模式：免费关键词规则（不支持付费 API）")
+    # 跨天防重：规则侧直接剔除页面上已收录过的标题。
     avoid = recent_titles(limit=80)
     state_path = Path('data/news-seen.json')
     try:
         seen_urls = set(json.loads(state_path.read_text(encoding='utf-8')))
     except (OSError, ValueError, TypeError):
         seen_urls = set()
-    # 页面历史链接也算已处理；状态文件记录曾被筛掉的候选，避免补班重复调用 AI。
+    # 页面历史链接也算已处理；状态文件记录曾被筛掉的候选，避免补班重复处理。
     existing_urls = set(re.findall(r'<h4><a href="([^"]+)"', Path('news.html').read_text(encoding='utf-8')))
     if avoid:
         print(f"  跨天防重参考：页面已有 {len(avoid)} 条历史标题")
@@ -1090,23 +937,15 @@ def _main_inner():
         bucket = [it for it in buckets.get(key, [])
                   if it.get('link') not in seen_urls and it.get('link') not in existing_urls]
         if not bucket:
-            print(f"· {label} 无新候选，跳过 AI 调用")
+            print(f"· {label} 无新候选，跳过")
             continue
-        ai_sel = ai_curate(bucket, label, cap=6, avoid=avoid)
-        # AI 明确给空数组代表无值得收录的新闻；只有调用失败或未配置时才规则兜底。
-        if ai_sel is not None:
-            sel, mode = ai_sel, "AI 精编"
-        else:
-            pool = deduplicate(bucket, avoid)
-            sel, mode = select_items(pool, cap=6, min_score=3), "规则兜底"
+        pool = deduplicate(bucket, avoid)
+        sel, mode = select_items(pool, cap=6, min_score=3), "免费规则"
         if not sel:
-            if not os.environ.get('DEEPSEEK_API_KEY'):
-                processed_urls.update(it['link'] for it in bucket)
-            if ai_sel is not None:
-                processed_urls.update(it['link'] for it in bucket)
+            processed_urls.update(it['link'] for it in bucket)
             print(f"· {label}（{key}）今日无合适内容，跳过")
             continue
-        # 审计日志：打印实际选中的条目（即使后面因防重跳过写入，也能在 CI 日志里看到 AI 的判断）
+        # 审计日志：打印实际选中的条目（即使后面因防重跳过写入，也能在 CI 日志里看到规则的选择）
         for it in sel:
             print(f"    · [{mode}] {it['title'][:64]}")
         # 动态区模块本身已限定单边（国内桶全为国内、国外桶全为国外），块内不再重复 region 标签

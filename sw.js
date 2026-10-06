@@ -1,7 +1,7 @@
 /* AI 学习工作台：Network First，离线回退缓存。
  * 导航请求使用 no-cache；激活时清理旧缓存并接管页面。
- * 本次只精简说明；递增缓存版本以分发共享脚本，历史说明见项目记录与备份。 */
-var CACHE_VERSION = 'ai-wb-v32';
+ * 递增缓存版本以分发共享脚本；DeepSeek 接入已停用，历史说明见项目记录。 */
+var CACHE_VERSION = 'ai-wb-v33';
 var STATIC_CACHE = CACHE_VERSION + '-static';
 var PAGE_CACHE = CACHE_VERSION + '-pages';
 
