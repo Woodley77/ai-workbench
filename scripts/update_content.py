@@ -1,41 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-模型页 + 智能体应用页 + 百科（Agent Skills / MCP）每日内容更新脚本
-================================================================================
-用途：为 models.html / wiki-skills.html / wiki-mcp.html 页面的「最新动态」区块追加
-      当天检索到的实质变化；只有新增条目时才更新动态区的最近收录日期。
+"""更新模型、Skills、MCP 动态，以及模型和智能体的每周待核实提醒。
 
-      （v17 起：agents.html 的「Agent 赛道每日更新」已并入 news.html 动态区
-       「智能体动态」模块，由 update_news.py 统一维护；本脚本仅继续为 agents.html
-       刷新页脚日期，不再写任何动态块。）
-
-流程：
-  1. 从国内可直连媒体源池（量子位 / 爱范儿 / IT之家 / 极客公园）抓取近 N 小时条目，
-     按标题中的明确主题词初筛（2026-09-09 起弃用 Google News 检索：其链接为
-     news.google.com 跳转壳，国内用户无法打开）
-  2. 按时间窗过滤 + 与页面已有条目去重
-  3. 调 DeepSeek 判断哪些是"实质变化"，并提炼成严格 JSON
-  4. Python 侧严格校验（字段白名单 / URL 合法性 / 长度 / HTML 转义）
-  5. 由 Python（不是 AI）生成 HTML 并写入标记处
-
-★ 安全铁律（不可违反）★
-  - AI 只输出 JSON，绝不生成任何 HTML 标签。所有 HTML 由本脚本渲染。
-  - 所有写入页面的文本必须经 html.escape() 转义，杜绝注入。
-  - category 必须是白名单内的取值，URL 必须是 http(s) 开头。
-  - 本脚本只往「最新动态」标记处追加，并在有新条目时改动态区日期；
-    绝不改动 MODEL_SCORES、AGENTS、价格表、概念长文等主体内容（那些需人工核实）。
-
-用法：
-  python scripts/update_content.py                 # 正常跑（需要 DEEPSEEK_API_KEY）
-  python scripts/update_content.py --dry-run       # 只打印不写文件
-  python scripts/update_content.py --no-ai         # 跳过 AI，用关键词粗筛兜底（无 key 时也能跑）
-  python scripts/update_content.py --hours 72      # 自定义时间窗（默认 72 小时）
-
-环境变量：
-  DEEPSEEK_API_KEY   DeepSeek API 密钥（GitHub Actions 里从 secrets 注入）。
-                    未配置时自动降级为关键词粗筛兜底——仍能产出更新，但质量低于 AI 筛选。
-================================================================================
+RSS 标题初筛、链接和标题去重后，由 Python 转义并渲染 HTML。
+只追加动态区、核对区及动态更新日期，不改模型评分、价格表或概念正文。
+--no-ai / WB_DISABLE_AI=1 使用免费规则；无密钥时同样退回规则筛选。
+--dry-run 只预览，--hours 控制动态候选时间窗（默认 72 小时）。
+每周核对查看至少 168 小时的消息，成功空结果也记录完成，失败保留重试。
 """
 
 import os
@@ -196,70 +167,32 @@ def _strip_html(s):
     return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", s or "")).strip()
 
 
-def parse_price_table(html_text):
-    """解析 models.html 价格表 tbody，返回结构化快照。"""
-    m = re.search(r'<tbody[^>]*id="price-tbody"[^>]*>(.*?)</tbody>', html_text, re.DOTALL)
-    if not m:
+def _parse_table(html_text, pattern, fields):
+    """按原定位规则提取表格；短行跳过，多余单元格忽略。"""
+    match = re.search(pattern, html_text, re.DOTALL)
+    if not match:
         return []
-    rows = re.findall(r"<tr[^>]*>(.*?)</tr>", m.group(1), re.DOTALL)
-    out = []
-    for row in rows:
+    result = []
+    for row in re.findall(r"<tr[^>]*>(.*?)</tr>", match.group(1), re.DOTALL):
         cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.DOTALL)
-        if len(cells) < 6:
-            continue
-        out.append({
-            "model": _strip_html(cells[0]),
-            "ctx": _strip_html(cells[1]),
-            "in": _strip_html(cells[2]),
-            "out": _strip_html(cells[3]),
-            "open": _strip_html(cells[4]),
-            "note": _strip_html(cells[5]),
-        })
-    return out
+        if len(cells) >= len(fields):
+            result.append({field: _strip_html(cell) for field, cell in zip(fields, cells)})
+    return result
+
+
+def parse_price_table(html_text):
+    '解析 models.html 价格表 tbody，返回结构化快照。'
+    return _parse_table(html_text, '<tbody[^>]*id="price-tbody"[^>]*>(.*?)</tbody>', ('model', 'ctx', 'in', 'out', 'open', 'note'))
 
 
 def parse_spec_table(html_text):
-    """解析 D 旗舰规格速查 tbody（按 h2 锚点定位）。"""
-    m = re.search(r'<h2>📋\s*旗舰规格速查</h2>.*?<tbody>(.*?)</tbody>', html_text, re.DOTALL)
-    if not m:
-        return []
-    rows = re.findall(r"<tr[^>]*>(.*?)</tr>", m.group(1), re.DOTALL)
-    out = []
-    for row in rows:
-        cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.DOTALL)
-        if len(cells) < 7:
-            continue
-        out.append({
-            "model": _strip_html(cells[0]),
-            "vendor": _strip_html(cells[1]),
-            "date": _strip_html(cells[2]),
-            "ctx": _strip_html(cells[3]),
-            "modal": _strip_html(cells[4]),
-            "strength": _strip_html(cells[5]),
-            "weakness": _strip_html(cells[6]),
-        })
-    return out
+    '解析 D 旗舰规格速查 tbody（按 h2 锚点定位）。'
+    return _parse_table(html_text, '<h2>📋\\s*旗舰规格速查</h2>.*?<tbody>(.*?)</tbody>', ('model', 'vendor', 'date', 'ctx', 'modal', 'strength', 'weakness'))
 
 
 def parse_plan_table(html_text):
-    """解析 C 订阅套餐 国内服务 tbody（按 h3 锚点定位）。"""
-    m = re.search(r'<h3[^>]*>🇨🇳\s*国内服务</h3>.*?<tbody>(.*?)</tbody>', html_text, re.DOTALL)
-    if not m:
-        return []
-    rows = re.findall(r"<tr[^>]*>(.*?)</tr>", m.group(1), re.DOTALL)
-    out = []
-    for row in rows:
-        cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.DOTALL)
-        if len(cells) < 5:
-            continue
-        out.append({
-            "service": _strip_html(cells[0]),
-            "plan": _strip_html(cells[1]),
-            "monthly": _strip_html(cells[2]),
-            "annual": _strip_html(cells[3]),
-            "feature": _strip_html(cells[4]),
-        })
-    return out
+    '解析 C 订阅套餐 国内服务 tbody（按 h3 锚点定位）。'
+    return _parse_table(html_text, '<h3[^>]*>🇨🇳\\s*国内服务</h3>.*?<tbody>(.*?)</tbody>', ('service', 'plan', 'monthly', 'annual', 'feature'))
 
 
 def parse_agents_snapshot(text):
@@ -1103,12 +1036,9 @@ def main():
 
     # ---- v28 数据核对（独立流程：读快照 + AI 比对 + 写提醒）----
     # 与 model topic 不同：model 找的是「已确认新闻」，verify 找的是「快照 vs 新闻」的疑点。
-    if not args.dry_run:
-        for page in run_verify(args):
-            if page not in changed:
-                changed.append(page)
-    else:
-        run_verify(args)  # dry-run 也跑，输出预览
+    for page in run_verify(args):
+        if not args.dry_run and page not in changed:
+            changed.append(page)
 
     print("=== 完成 ===")
     print("变更文件：" + (", ".join(changed) if changed else "无"))

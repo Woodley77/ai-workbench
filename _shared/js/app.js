@@ -631,22 +631,27 @@
     }
 
     /* ---------- 设置面板 ---------- */
+    function setupFields() {
+      return {
+        provider: setupView.querySelector('[data-ai-provider]'),
+        base: setupView.querySelector('[data-ai-base]'),
+        model: setupView.querySelector('[data-ai-model]'),
+        key: setupView.querySelector('[data-ai-key]')
+      };
+    }
     function fillSetupForm() {
       loadCfg();
-      var sel = setupView.querySelector('[data-ai-provider]');
-      var base = setupView.querySelector('[data-ai-base]');
-      var model = setupView.querySelector('[data-ai-model]');
-      var key = setupView.querySelector('[data-ai-key]');
+      var fields = setupFields();
       var useCustom = true;
       for (var i = 0; i < PRESETS.length; i++) {
         if (PRESETS[i].id === cfg.provider && PRESETS[i].base === cfg.base) {
-          sel.value = cfg.provider; useCustom = false; break;
+          fields.provider.value = cfg.provider; useCustom = false; break;
         }
       }
-      if (useCustom) sel.value = 'custom';
-      base.value = cfg.base || '';
-      model.value = cfg.model || '';
-      key.value = cfg.key || '';
+      if (useCustom) fields.provider.value = 'custom';
+      fields.base.value = cfg.base || '';
+      fields.model.value = cfg.model || '';
+      fields.key.value = cfg.key || '';
       clearTestMsg();
     }
     function onProviderChange() {
@@ -664,15 +669,12 @@
       clearTestMsg();
     }
     function collectForm() {
-      var sel = setupView.querySelector('[data-ai-provider]');
-      var base = setupView.querySelector('[data-ai-base]');
-      var model = setupView.querySelector('[data-ai-model]');
-      var key = setupView.querySelector('[data-ai-key]');
+      var fields = setupFields();
       return {
-        provider: sel.value,
-        base: base.value.trim().replace(/\/+$/, ''),
-        model: model.value.trim(),
-        key: key.value.trim()
+        provider: fields.provider.value,
+        base: fields.base.value.trim().replace(/\/+$/, ''),
+        model: fields.model.value.trim(),
+        key: fields.key.value.trim()
       };
     }
     function clearTestMsg() {
@@ -691,7 +693,7 @@
       if (!f.base) { setTestMsg('请填写接口地址 Base URL', 'fail'); return; }
       if (!f.model) { setTestMsg('请填写模型名', 'fail'); return; }
       if (!f.key) { setTestMsg('API Key 为空：可以保存，但发消息前需要填 Key', 'warn'); }
-      cfg = { provider: f.provider, base: f.base, model: f.model, key: f.key };
+      cfg = f;
       saveCfg();
       showChat();
       setMeta('已保存「' + (f.model) + '」配置');

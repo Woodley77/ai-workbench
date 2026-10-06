@@ -227,20 +227,19 @@
     });
   }
 
+  function disposeChart(id) {
+    try { instances[id].dispose(); } catch (e) {}
+    delete instances[id];
+  }
+
   function rebuildAll() {
-    Object.keys(instances).forEach(function (id) {
-      try { instances[id].dispose(); } catch (e) {}
-      delete instances[id];
-    });
+    Object.keys(instances).forEach(disposeChart);
     ensureVisible();
   }
 
   /* 重新构建某一个图表（分组切换时用） */
   function rebuild(id) {
-    if (instances[id]) {
-      try { instances[id].dispose(); } catch (e) {}
-      delete instances[id];
-    }
+    if (instances[id]) disposeChart(id);
     return ensure(id);
   }
 

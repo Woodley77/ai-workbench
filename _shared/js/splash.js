@@ -98,9 +98,7 @@
   }
 
   function boot() {
-    if (!isMobile()) return;
-    if (prefersReducedMotion()) return;
-    if (alreadySeen()) return;
+    if (!isMobile() || prefersReducedMotion() || alreadySeen()) return;
     run();
   }
 
