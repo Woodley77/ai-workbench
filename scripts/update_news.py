@@ -136,6 +136,8 @@ import json
 import os
 import re
 import urllib.request
+import argparse
+from news_rules import deduplicate
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -789,7 +791,8 @@ def fetch_news(feeds=None, keep_english=False):
     items = []
     noise_cnt = 0
     now = datetime.now(timezone.utc)
-    cutoff = now - timedelta(hours=24)
+    cutoff = now - timedelta(hours=48)
+    successful_feeds = 0
 
     for feed_info in feeds:
         try:
@@ -804,6 +807,7 @@ def fetch_news(feeds=None, keep_english=False):
             if feed.bozo and not feed.entries:
                 print(f"  [警告] RSS 源异常: {feed_info['name']}")
                 continue
+            successful_feeds += 1
             for entry in feed.entries:
                 published = None
                 for attr in ("published_parsed", "updated_parsed"):
@@ -871,7 +875,11 @@ def fetch_news(feeds=None, keep_english=False):
         except Exception as e:
             print(f"  [错误] {feed_info['name']}: {e}")
 
+    print(f"  RSS 成功 {successful_feeds}/{len(feeds)} 个；时间窗 48 小时")
+    if not successful_feeds:
+        raise RuntimeError("全部 RSS 源抓取失败，不能认定为今天无新闻")
     items.sort(key=lambda x: x["published"], reverse=True)
+    items = deduplicate(items)
     if noise_cnt:
         print(f"  [滤噪] 边缘弱相关 AI 新闻滤除 {noise_cnt} 条（智能汽车/消费数码/泛娱乐等）")
     return items
@@ -1147,10 +1155,12 @@ def update_homepage(items, date_label):
 
 def main():
     """入口：整体容错——任何意外错误只打印，不让 CI job 中断（否则 update_content 不会执行）。"""
-    try:
-        _main_inner()
-    except Exception as e:
-        print(f"✗ update_news 意外错误（已跳过，update_content 将继续）: {e}")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--no-ai', action='store_true', help='关闭 AI，免费规则筛选')
+    args = parser.parse_args()
+    if args.no_ai or os.environ.get('WB_DISABLE_AI') == '1':
+        os.environ.pop('DEEPSEEK_API_KEY', None)
+    _main_inner()
 
 
 def _main_inner():
@@ -1211,9 +1221,11 @@ def _main_inner():
         if ai_sel is not None:
             sel, mode = ai_sel, "AI 精编"
         else:
-            pool = [i for i in bucket if (i.get("title") or "").strip() not in avoid]
+            pool = deduplicate(bucket, avoid)
             sel, mode = select_items(pool, cap=6, min_score=3), "规则兜底"
         if not sel:
+            if not os.environ.get('DEEPSEEK_API_KEY'):
+                processed_urls.update(it['link'] for it in bucket)
             if ai_sel is not None:
                 processed_urls.update(it['link'] for it in bucket)
             print(f"· {label}（{key}）今日无合适内容，跳过")
@@ -1252,6 +1264,13 @@ def _main_inner():
                 continue
             seen_titles.add(it["title"])
             uniq.append(it)
+        archive_page = Path('news.html').read_text(encoding='utf-8')
+        span = _find_section(archive_page, f'<!-- {mk}')
+        archive_titles = []
+        if span:
+            archive_titles = [html.unescape(re.sub(r'<[^>]+>', '', title)) for title in
+                              re.findall(r'<h4><a[^>]*>(.*?)</a>', archive_page[span[0]:span[1]], re.DOTALL)]
+        uniq = deduplicate(uniq, archive_titles)
         sel = select_items(uniq, cap=cap)
         if not sel:
             print(f"· {label}（{key}）无合适内容，跳过")

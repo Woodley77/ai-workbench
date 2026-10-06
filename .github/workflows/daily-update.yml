@@ -1,67 +1,51 @@
-name: AI 内容更新（每日动态 · 早晚双班）
-
+name: AI 内容免费更新（早晚双班）
 on:
   schedule:
-    # ⚠️ 背景与对策（2026-09-11 排查）：GitHub 免费版 schedule 是低优先级任务，
-    #    实测系统性延后 4~4.5 小时才执行（近 6 次定时触发全部如此，非偶发排队）。
-    #    对策：目标时刻（北京时间 06:00 / 18:00）前后各布一班，脚本全部幂等
-    #    （两个脚本按已处理链接防重，同日有新候选可补充），
-    #    补班跑一遍无新内容会自动跳过提交，多布班没有副作用；
-    #    另保留 workflow_dispatch 供 API 即时触发（实测 0 秒排队）。
-    # 北京时间 05:55 · 主班（早）：新闻动态 + 模型页/百科动态
+    # 北京时间 05:55 / 17:55；GitHub 定时任务可能延迟。
     - cron: '55 21 * * *'
-    # 北京时间 07:10 · 补班（早）：主班被 GitHub 延后或失败时兜底
-    - cron: '10 23 * * *'
-    # 北京时间 17:55 · 主班（晚）：新闻动态 + 模型页/百科动态
     - cron: '55 9 * * *'
-    # 北京时间 19:10 · 补班（晚）：主班被 GitHub 延后或失败时兜底（含 update_content）
-    - cron: '10 11 * * *'
   workflow_dispatch:
-
-# 相邻班次重叠时排队执行（不取消），避免两个运行并发 push 互相冲突
 concurrency:
   group: daily-update
   cancel-in-progress: false
-
 permissions:
   contents: write
-
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # 不注入付费密钥，同时显式关闭 AI，防止误用账户余额。
+      WB_DISABLE_AI: '1'
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
-      - name: 安装依赖
+      - name: 安装 RSS 解析依赖
         run: pip install feedparser
-
-      # 新闻动态（news.html / index.html / agents.html）：每班都跑，脚本幂等
-      - name: 抓取并更新 AI 新闻
-        env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-        run: python scripts/update_news.py
-
-      # 模型页 / 百科（Agent Skills、MCP）动态：早/晚班与手动触发都跑
-      # 脚本按已处理链接防重；
-      # v28 verify 流程是读快照独立比对，多跑无副作用），所以晚班也跑一致更稳。
-      # v28 起去掉晚班 if 跳过：晚 18 点刚好覆盖国产大模型当日动态高峰。
-      - name: 抓取并更新模型与百科（早晚班一致）
-        env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-        run: python scripts/update_content.py
-
-      - name: 提交并推送
+      - name: 免费抓取与筛选新闻
+        id: news
+        continue-on-error: true
+        run: python scripts/update_news.py --no-ai
+      - name: 免费更新主题动态与每周核对
+        id: content
+        continue-on-error: true
+        run: python scripts/update_content.py --no-ai
+      - name: 提交已成功生成的更新
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add news.html index.html agents.html models.html wiki-skills.html wiki-mcp.html data/news-seen.json data/content-seen.json
+          if [ -f data/verify-state.json ]; then git add data/verify-state.json; fi
           if git diff --staged --quiet; then
             echo "无变更，跳过提交"
           else
-            git commit -m "AI 内容自动更新 $(TZ=Asia/Shanghai date +%Y-%m-%d_%H:%M) 北京时间"
+            git commit -m "AI 内容免费更新 $(TZ=Asia/Shanghai date +%Y-%m-%d_%H:%M) 北京时间"
             git push
           fi
+      - name: 检查抓取结果
+        if: steps.news.outcome == 'failure' || steps.content.outcome == 'failure'
+        run: |
+          echo "::error::至少一项更新失败；成功部分已提交，请检查日志并按需手动重跑。"
+          exit 1

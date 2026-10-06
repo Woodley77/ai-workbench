@@ -46,6 +46,7 @@ import html
 import argparse
 import urllib.request
 import urllib.error
+from news_rules import deduplicate
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
@@ -534,7 +535,7 @@ def render_verify_block(topic, items):
         )
         rows.append(
             '        <div class="verify-item">\n'
-            f'          <div class="vi-label">{e(it["category"])} · 置信度 {e(conf_label.get(it["confidence"], "🟢 低"))}</div>\n'
+            f'          <div class="vi-label">待核实 · {e(it["category"])} · 置信度 {e(conf_label.get(it["confidence"], "🟢 低"))}</div>\n'
             f'          <div class="vi-title">{e(it["model"])} · {e(it["field"])}</div>\n'
             f'          <div class="vi-evidence">当前：{e(it["current"]) or "（无）"}　→　疑似：{e(it["suspect"])}<br>{ev_html}</div>\n'
             '        </div>'
@@ -583,15 +584,15 @@ def _run_one_verify(topic, args):
         return False
     snap = load_snapshot(topic)
     if not snap or not any(snap.values()):
-        print("    快照为空，跳过\n")
-        return False
+        raise RuntimeError('页面快照为空，本周核对未完成')
 
-    feed_topic = next((t for t in TOPICS if t["key"] == topic.get("feed_key")), None)
+    feed_topic = ({'key': 'agents'} if topic.get('kind') == 'agents' else
+                  next((t for t in TOPICS if t["key"] == topic.get("feed_key")), None))
     if not feed_topic:
         print("    未找到 feed topic 配置，跳过\n")
         return False
 
-    entries = fetch_entries(feed_topic, args.hours)
+    entries = fetch_entries(feed_topic, max(args.hours, 168))
     if not entries:
         print("    无候选新闻，跳过\n")
         return False
@@ -621,12 +622,28 @@ def _run_one_verify(topic, args):
 def run_verify(args):
     """遍历所有核对主题。返回被改动的页面列表。"""
     changed = []
+    state_path = Path(ROOT) / 'data' / 'verify-state.json'
+    try:
+        state = json.loads(state_path.read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        state = {}
+    week = datetime.now(CST).strftime('%G-W%V')
     for topic in VERIFY_TOPICS:
+        if not args.dry_run and state.get(topic['key']) == week:
+            print(f"    {topic['label']} 本周已核对，跳过")
+            continue
         try:
             if _run_one_verify(topic, args):
                 changed.append(topic["page"])
+            # 成功且无变化也记入完成；异常保留给下次重试。
+            if not args.dry_run:
+                state[topic['key']] = week
         except Exception as e:
             print(f"    [错误] {topic['key']} 数据核对失败：{e}\n")
+            raise
+    if not args.dry_run:
+        state_path.parent.mkdir(exist_ok=True)
+        state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     return changed
 
 
@@ -643,6 +660,7 @@ def load_pool(hours):
 
     cutoff = now - timedelta(hours=hours)
     seen, raw = set(), []
+    successful_feeds = 0
     for fi in CN_FEEDS:
         try:
             req = urllib.request.Request(
@@ -652,6 +670,9 @@ def load_pool(hours):
             )
             with urllib.request.urlopen(req, timeout=FEED_TIMEOUT) as r:
                 feed = feedparser.parse(r.read().decode("utf-8", "ignore"))
+                if feed.bozo and not feed.entries:
+                    raise ValueError('RSS 内容无效')
+                successful_feeds += 1
         except Exception as e:
             print(f"    [跳过] 源抓取失败 {fi['name']} → {e}")
             continue
@@ -673,6 +694,10 @@ def load_pool(hours):
             raw.append({"title": title, "summary": summary, "url": link,
                         "source": fi["name"], "published": pub})
 
+    print(f"    RSS 成功 {successful_feeds}/{len(CN_FEEDS)} 个")
+    if not successful_feeds:
+        raise RuntimeError('全部主题 RSS 源失败，不能认定为没有变化')
+    raw = deduplicate(raw)
     _POOL.update(at=now, hours=hours, entries=raw)
     return raw
 
@@ -694,6 +719,9 @@ def topic_relevant(topic, entry):
     """在 AI 前后都使用的保守主题门槛，避免摘要里的泛词造成串区。"""
     title = entry['title'].lower()
     key = topic['key']
+    if key == 'agents':
+        return bool(re.search(r'agent|智能体|助手|chatgpt|gemini|claude|codex|manus|豆包|千问|办公|openclaw|trae', title)) and bool(
+            re.search(r'发布|上线|更新|功能|用户|月活|规模|排名|榜单|改名|整合|并入|停服|停止|品牌', title))
     if key == 'mcp':
         return bool(re.search(r'(?<![a-z])mcp(?![a-z])|model context protocol', title))
     if key == 'skills':
@@ -1000,6 +1028,10 @@ def main():
     ap.add_argument("--no-ai", action="store_true", help="跳过 AI，用关键词兜底")
     ap.add_argument("--hours", type=int, default=72, help="RSS 时间窗（小时）")
     args = ap.parse_args()
+    if os.environ.get('WB_DISABLE_AI') == '1':
+        args.no_ai = True
+    if args.no_ai:
+        os.environ.pop('DEEPSEEK_API_KEY', None)
 
     print(f"=== 模型页 / 智能体应用页 / 百科每日更新 {TODAY} ===")
     print(f"模式：{'演练（不写文件）' if args.dry_run else '正式写入'}　"
@@ -1018,6 +1050,9 @@ def main():
         existing = set(re.findall(r'<h4><a href="([^"]+)"', page_text))
         old_seen = set(seen_by_topic.get(topic['key'], []))
         fresh = [e for e in entries if e['url'] not in old_seen and e['url'] not in existing]
+        history = [html.unescape(re.sub(r'<[^>]+>', '', title)) for title in
+                   re.findall(r'<h4><a[^>]*>(.*?)</a>', page_text, re.DOTALL)]
+        fresh = deduplicate(fresh, history)
         entries = fresh
         if not entries:
             print("    无新候选，跳过 AI 调用\n")
