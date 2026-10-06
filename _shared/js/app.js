@@ -1108,4 +1108,5 @@
   initMaintenanceInfo();
 
   // 立即构建（script 位于 body 末尾，body 已存在；与 ensureBottomNav 同策略）
-  ChatBot.ensure();
+  ChatBot.ensure();
+})();
