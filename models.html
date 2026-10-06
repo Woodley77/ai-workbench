@@ -949,7 +949,7 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
 <!-- ============ v28 模型页动态 + 数据核对（CI 自动维护） ============ -->
 <section class="sec">
   <div class="sec-head"><h2>📡 模型页最新动态</h2><div class="rule"></div><span class="hint">每天从国内权威源选稿 · 仅国产模型</span></div>
-  <p class="sec-note">从量子位 / 爱范儿 / IT之家 / 极客公园抓取近 72 小时的国产大模型实质变化（发布 / 调价 / 评测），由 DeepSeek 选稿。与下方「数据核对提醒」的区别：本区是已确认的新闻；提醒区是「疑似变化 · 待人工核实」。</p>
+  <p class="sec-note">从量子位 / 爱范儿 / IT之家 / 极客公园抓取近 72 小时的国产大模型实质变化（发布 / 调价 / 评测），由免费关键词规则筛选，不调用付费模型 API。本区为媒体报道，未逐条人工核实；下方提醒区用于提示核心数据可能需要人工复查。</p>
   <div class="feed-scroll" id="model-feed">
     <!-- __MODEL_DAILY_INSERT__ -->
       <div class="news-day">
@@ -1696,8 +1696,8 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
 </section>
 
 <section class="sec">
-  <div class="sec-head"><h2>🔍 数据核对提醒 · 疑似变化</h2><div class="rule"></div><span class="hint">AI 比对发现 · 待人工核实</span></div>
-  <p class="sec-note">每天 CI 解析本页「API 按量单价 / 订阅套餐 / 旗舰规格」三大数据表的当前快照，与当天 AI 新闻交叉比对，发现「疑似变化」写入此处。<b>AI 不直接修改核心数据</b>——所有数据修改需人工在 commit / PR 中确认。MODEL_SCORES（能力评分）永不自动改。</p>
+  <div class="sec-head"><h2>🔍 数据核对提醒 · 疑似变化</h2><div class="rule"></div><span class="hint">规则匹配发现 · 待人工核实</span></div>
+  <p class="sec-note">每周 CI 解析本页「API 按量单价 / 订阅套餐 / 旗舰规格」三大数据表的当前快照，与近 7 天新闻按免费规则匹配，发现「疑似变化」写入此处。规则可能漏报或误报，<b>自动流程不直接修改核心数据</b>——所有数据修改需人工在 commit / PR 中确认。MODEL_SCORES（能力评分）永不自动改。</p>
   <div class="feed-scroll" id="model-verify">
     <!-- __MODEL_VERIFY_INSERT__ -->
       <div class="verify-day">

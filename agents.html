@@ -504,8 +504,8 @@
 
     <!-- ---- ⑫ 数据核对提醒（CI 自动维护，v29） ---- -->
     <section class="sec">
-      <div class="sec-head"><h2>🔍 数据核对提醒 · 疑似变化</h2><div class="rule"></div><span class="hint">AI 比对发现 · 待人工核实</span></div>
-      <p class="sec-note">每天 CI 解析本页「应用图鉴（应用清单 / 热度 / 综合指数）」的当前快照，与当天 AI 新闻交叉比对，发现「疑似变化」写入此处。<b>AI 不直接修改核心数据</b>——应用清单与热度数据均需人工核实后在 commit / PR 中确认。热度榜为第三方快照，波动大，提醒仅供排查线索。</p>
+      <div class="sec-head"><h2>🔍 数据核对提醒 · 疑似变化</h2><div class="rule"></div><span class="hint">规则匹配发现 · 待人工核实</span></div>
+      <p class="sec-note">每周 CI 解析本页「应用图鉴（应用清单 / 热度 / 综合指数）」的当前快照，与近 7 天新闻按免费规则匹配，发现「疑似变化」写入此处。规则可能漏报或误报，<b>自动流程不直接修改核心数据</b>——应用清单与热度数据均需人工核实后在 commit / PR 中确认。热度榜为第三方快照，波动大，提醒仅供排查线索。</p>
       <div class="feed-scroll" id="agents-verify">
         <!-- __AGENTS_VERIFY_INSERT__ -->
       <div class="verify-day">
