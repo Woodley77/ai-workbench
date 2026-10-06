@@ -954,6 +954,20 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
     <!-- __MODEL_DAILY_INSERT__ -->
       <div class="news-day">
         <div class="dhead">
+          <span class="ddate">2026-10-06</span>
+          <span class="dbadge">1 条更新</span>
+        </div>
+        <div class="news-item">
+          <span class="cat c-model">发布</span>
+          <div class="body">
+            <h4><a href="https://www.ithome.com/1/009/946.htm" target="_blank" rel="noopener">智谱GLM-5.3上架亚马逊AWS Bedrock</a></h4>
+            <p>GLM-5.3接入AWS大模型平台Bedrock，AWS按调用量与智谱收入分成，并已与阿里云、华为云等达成类似合作。</p>
+            <span class="src">来源：<a href="https://www.ithome.com/1/009/946.htm" target="_blank" rel="noopener">IT之家</a></span>
+          </div>
+        </div>
+      </div>
+      <div class="news-day">
+        <div class="dhead">
           <span class="ddate">2026-10-05</span>
           <span class="dbadge">1 条更新</span>
         </div>
@@ -2748,7 +2762,7 @@ function renderStatBar() {
     { v: MODELS.length, l: '收录模型' },
     { v: Object.keys(vendors).length, l: '覆盖厂商' },
     { v: Object.keys(cats).length, l: '阵营分类' },
-    { v: '2026-10-05', l: '动态更新日期' }
+    { v: '2026-10-06', l: '动态更新日期' }
   ];
   bar.innerHTML = items.map(function (it) {
     return '<div class="stat-item"><div class="sv">' + it.v + '</div><div class="sl">' + it.l + '</div></div>';
