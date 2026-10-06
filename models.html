@@ -949,7 +949,7 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
 <!-- ============ v28 模型页动态 + 数据核对（CI 自动维护） ============ -->
 <section class="sec">
   <div class="sec-head"><h2>📡 模型页最新动态</h2><div class="rule"></div><span class="hint">每天从国内权威源选稿 · 仅国产模型</span></div>
-  <p class="sec-note">从量子位 / 爱范儿 / IT之家 / 极客公园抓取近 72 小时的国产大模型实质变化（发布 / 调价 / 评测），由免费关键词规则筛选，不调用付费模型 API。本区为媒体报道，未逐条人工核实；下方提醒区用于提示核心数据可能需要人工复查。</p>
+  <p class="sec-note">从国内媒体、OpenAI 官方及 Hugging Face 平台博客抓取近 72 小时的国产大模型相关变化（发布 / 调价 / 评测），由免费关键词规则筛选，不调用付费模型 API。本区为媒体报道，未逐条人工核实；下方提醒区用于提示核心数据可能需要人工复查。</p>
   <div class="feed-scroll" id="model-feed">
     <!-- __MODEL_DAILY_INSERT__ -->
       <div class="news-day">
@@ -2900,10 +2900,3 @@ renderBang();
       if (host) {
         switchPane(host.getAttribute('data-mpane'));
         setTimeout(function () { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 80);
-      }
-    }
-  }
-})();
-</script>
-</body>
-</html>

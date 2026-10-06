@@ -8,6 +8,9 @@ on:
       - 'scripts/update_news.py'
       - 'scripts/update_content.py'
       - 'scripts/news_rules.py'
+      - 'scripts/maintenance.py'
+      - 'scripts/check_news_rules.py'
+      - 'data/news-rule-cases.json'
   schedule:
     # 北京时间 05:55 / 17:55；GitHub 定时任务可能延迟。
     - cron: '55 21 * * *'
@@ -32,6 +35,8 @@ jobs:
           python-version: '3.12'
       - name: 安装 RSS 解析依赖
         run: pip install feedparser
+      - name: 检查新闻分类与去重样本
+        run: python scripts/check_news_rules.py
       - name: 免费抓取与筛选新闻
         id: news
         continue-on-error: true
@@ -44,7 +49,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add news.html index.html agents.html models.html wiki-skills.html wiki-mcp.html data/news-seen.json data/content-seen.json
+          git add news.html index.html agents.html models.html wiki-skills.html wiki-mcp.html data/news-seen.json data/content-seen.json data/site-status.json
+          if [ -f data/news-archive.jsonl ]; then git add data/news-archive.jsonl; fi
           if [ -f data/verify-state.json ]; then git add data/verify-state.json; fi
           if git diff --staged --quiet; then
             echo "无变更，跳过提交"

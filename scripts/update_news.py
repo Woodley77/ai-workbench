@@ -14,6 +14,7 @@ import re
 import urllib.request
 import argparse
 from news_rules import deduplicate
+from maintenance import OFFICIAL_FEEDS, safe_url, priority, now_iso, headline_links, record_run, read_json, write_json, seen_records, remember, archive_old_blocks
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -35,6 +36,9 @@ FEEDS = [
 
 FEED_UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
            '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36')
+FEEDS += OFFICIAL_FEEDS
+FEED_RESULTS = {}
+
 FEED_TIMEOUT = 20  # 单源抓取超时秒数：CI runner 在海外访问国内源，防个别源拖垮整个 job
 
 # ── AI 相关关键词 ────────────────────────────────────────────
@@ -342,22 +346,19 @@ def recent_titles(limit=80):
 
 
 def is_release_item(item) -> bool:
-    # 与 _release_form 共用同一判定：发布类信号词 + 模型名/版本号命中
-    return _release_form(item["title"])
+    return classify(item['title']) == '模型发布'
+
 
 
 def is_milestone_item(item) -> bool:
-    # 标题导向 + 要求长度足够（过滤一句话新闻），避免把琐碎社会新闻当大事
-    t = item["title"].lower()
-    return len(item["title"]) >= 18 and any(k in t for k in MILESTONE_KW)
+    return classify(item['title']) == '行业动态'
+
 
 
 def is_paper_item(item) -> bool:
-    # 严格标题导向：只收明确学术形态的条目（论文/技术报告/系统卡/基准/学术）
-    t = item["title"].lower()
-    return any(k in t for k in ["论文", "arxiv", "技术报告", "系统卡", "benchmark",
-                                "基准测试", "学术", "预印本", "研究发现", "研究团队",
-                                "发布研究", "研究称"])
+    t = item['title'].lower()
+    return any(k in t for k in ['论文','arxiv','技术报告','系统卡','预印本','研究团队','研究发现','paper','学术'])
+
 
 
 def archive_for(key: str) -> str:
@@ -369,22 +370,34 @@ def archive_for(key: str) -> str:
 
 
 def classify(title: str) -> str:
-    """根据标题关键词分类新闻。"""
+    """以明确事件类型分类；论文/评测不再被泛化的模型关键词抢占。"""
     t = title.lower()
-    for kw in MODEL_KW:
-        if kw in t:
-            return "模型"
-    for kw in PAPER_KW:
-        if kw in t:
-            return "论文"
-    for kw in INDUSTRY_KW:
-        if kw in t:
-            return "行业"
-    return "热点"
+    if is_unconfirmed(title):
+        return '其他'
+    if any(k in t for k in ['论文','arxiv','技术报告','系统卡','预印本','研究团队','研究发现','paper']):
+        return '评测与研究'
+    if any(k in t for k in ['定价','调价','价格','降价','涨价','计费','额度','限免','免费开放','订阅','pricing','price cut','rate limit']):
+        return '价格与额度'
+    if any(k in t for k in ['论文','arxiv','技术报告','系统卡','预印本','研究团队','研究发现','paper','benchmark','基准','评测','跑分','实测','测评']):
+        return '评测与研究'
+    if any(k in t for k in ['agent','智能体','工作台','工作流','客户端','桌面端','harness','manus','插件','skill','mcp','claude code','codex','copilot','工具','应用','浏览器','cli','ide','sdk']):
+        return '工具与智能体'
+    if _release_form(title) or any(k in t for k in ['模型发布','model release','introducing gpt','introducing claude']):
+        return '模型发布'
+    if any(k in t for k in MILESTONE_KW):
+        return '行业动态'
+    return '其他'
+
+
+def is_unconfirmed(title):
+    return bool(re.search(r'泄露|爆料|传闻|疑似|据传', title))
+
 
 
 # 分类标签 → CSS 类名映射
 CAT_CSS = {
+    '模型发布':'c-model', '价格与额度':'c-event', '工具与智能体':'c-news',
+    '评测与研究':'c-paper', '行业动态':'c-event', '其他':'c-news',
     "模型": "c-model",
     "热点": "c-news",
     "行业": "c-event",
@@ -519,13 +532,19 @@ def fetch_news(feeds=None, keep_english=False):
         精编时由判断者译成中文标题录入；CI 规则版保持 False 以便页面全中文）。
     """
     feeds = feeds if feeds is not None else FEEDS
+    unique_feeds = {}
+    for row in feeds:
+        unique_feeds.setdefault(row['url'], row)
+    feeds = list(unique_feeds.values())
     items = []
     noise_cnt = 0
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=48)
     successful_feeds = 0
+    FEED_RESULTS.clear()
 
     for feed_info in feeds:
+        FEED_RESULTS[feed_info['url']] = {'name':feed_info['name'],'url':feed_info['url'],'ok':False}
         try:
             req = urllib.request.Request(
                 feed_info["url"],
@@ -539,6 +558,7 @@ def fetch_news(feeds=None, keep_english=False):
                 print(f"  [警告] RSS 源异常: {feed_info['name']}")
                 continue
             successful_feeds += 1
+            FEED_RESULTS[feed_info['url']]['ok'] = True
             for entry in feed.entries:
                 published = None
                 for attr in ("published_parsed", "updated_parsed"):
@@ -549,6 +569,7 @@ def fetch_news(feeds=None, keep_english=False):
                         except Exception:
                             pass
                         break
+                published_known = published is not None
                 if published is None:
                     published = now
 
@@ -558,16 +579,22 @@ def fetch_news(feeds=None, keep_english=False):
                 title = entry.get("title", "").strip()
                 link = entry.get("link", "").strip()
                 summary = entry.get("summary", "")
-                if not title or not link:
+                if not title or not safe_url(link):
                     continue
                 if not is_ai_related(title, summary):
                     continue
                 if is_roundup(title):
                     continue
+                if is_unconfirmed(title):
+                    continue
 
                 # 英文新闻翻译处理
                 is_en = feed_info["lang"] == "en" or not contains_chinese(title)
-                if is_en:
+                if is_en and feed_info.get("official"):
+                    # 官方英文原文保持原意，不经过关键词替换式翻译。
+                    title = clean_title(title)
+                    summary = clean_summary(summary)
+                elif is_en:
                     zh_title, zh_summary = translate_to_chinese(title, summary)
                     if zh_title:
                         title, summary = zh_title, zh_summary
@@ -594,6 +621,8 @@ def fetch_news(feeds=None, keep_english=False):
                     "summary": summary,
                     "source": feed_info["name"],
                     "published": published,
+                    "published_known": published_known,
+                    "official": bool(feed_info.get("official")),
                     "category": classify(title),
                     "is_chinese": contains_chinese(title),
                     "lang": "zh" if contains_chinese(title) else "en",
@@ -609,7 +638,7 @@ def fetch_news(feeds=None, keep_english=False):
     print(f"  RSS 成功 {successful_feeds}/{len(feeds)} 个；时间窗 48 小时")
     if not successful_feeds:
         raise RuntimeError("全部 RSS 源抓取失败，不能认定为今天无新闻")
-    items.sort(key=lambda x: x["published"], reverse=True)
+    items.sort(key=priority, reverse=True)
     items = deduplicate(items)
     if noise_cnt:
         print(f"  [滤噪] 边缘弱相关 AI 新闻滤除 {noise_cnt} 条（智能汽车/消费数码/泛娱乐等）")
@@ -617,80 +646,22 @@ def fetch_news(feeds=None, keep_english=False):
 
 
 def select_items(items, cap=6, min_score=None):
-    """对单个模块桶做选稿：侧重加权 + 源均衡(cap2/源) + 国内优先 + 国内 ≥ 国外 + 总量 cap。
-
-    min_score：v21 新增门槛。只保留侧重分 ≥ min_score 的条目（None = 不设门槛）。
-    每日动态用它做「少而准」——够不上「可操作情报」的条目宁可不收，也不凑数。
-
-    v20 侧重：先按「主流公司(+2) / 模型发布·重磅形态(+1)」降序排序（同权内新者在前），
-    后续各轮均衡对已排序列表先到先得 ⇒ 高权重条目优先占满 cap、普通条目垫底。
-    最终顺序仍按时间倒序 + 国内在前展示，改动只影响「谁被选中」。
-
-    注意：v19 起动态区桶已按国内外拆开（domestic 桶全为国内、foreign 桶全为国外），
-    桶内再分国内外时仅单边有内容，此处的均衡约束自动退化为「单边选满 cap」。
-    ARCHIVES 三 tab 仍按混合桶调用（速报/大事记/论文含国内外条目），均衡约束继续生效。
-    返回按时间倒序的最终列表（domestic 在前）。
-    """
-    per_source_cap = 2
-
-    if min_score is not None:
-        items = [i for i in items if _priority_score(i) >= min_score]
-
-    # v20 加权排序：先按时间倒序（新者在前），再按侧重分稳定排序 ⇒
-    # 高权重条目优先入选、同权重内仍保持「新者优先」（sorted 稳定）。
-    items = sorted(items, key=lambda x: x["published"], reverse=True)
-    items = sorted(items, key=lambda x: -_priority_score(x))
-
-    def balanced(arr):
-        cnt = {}
-        out = []
-        for it in arr:  # arr 已按时间倒序，先到先得 = 优先取最新
-            if cnt.get(it["source"], 0) >= per_source_cap:
-                continue
-            out.append(it)
-            cnt[it["source"]] = cnt.get(it["source"], 0) + 1
-        return out
-
-    chinese_items = [i for i in items if i.get("is_chinese")]
-    translated_items = [i for i in items if not i.get("is_chinese")]
-
-    domestic_chinese = balanced([i for i in chinese_items if i.get("is_domestic")])
-    foreign_chinese = balanced([i for i in chinese_items if not i.get("is_domestic")])
-
-    selected = []
-    # 第一轮：国内中文条目（按原分类轮询，每类至多 2，保证覆盖面）
-    for cat in ("模型", "热点", "行业", "论文"):
-        cat_items = [i for i in domestic_chinese if i["category"] == cat and i not in selected]
-        selected.extend(cat_items[:2])
-    # 第二轮：国内中文条目填充剩余名额
-    for item in domestic_chinese:
-        if len(selected) >= cap:
-            break
-        if item not in selected:
+    """按事件价值、官方来源与时间排序；限制单一来源，优先覆盖不同类别。"""
+    def score(item):
+        return _priority_score(item) + (3 if item.get('official') else 0)
+    pool = [item for item in items if min_score is None or score(item)>=min_score]
+    pool.sort(key=lambda item:(score(item),item['published']),reverse=True)
+    selected, sources, categories = [], {}, {}
+    for category_limit in (2, None):
+        for item in pool:
+            if len(selected)>=cap:break
+            if item in selected or sources.get(item['source'],0)>=2:continue
+            if category_limit and categories.get(item['category'],0)>=category_limit:continue
             selected.append(item)
-    # 第三轮：国外中文条目补充（桶内无国内条目时允许全国外，否则国外 ≤ 国内）
-    domestic_count = len(selected)
-    for item in foreign_chinese:
-        if len(selected) >= cap:
-            break
-        if domestic_count > 0 and len(selected) - domestic_count >= domestic_count:
-            break
-        if item not in selected:
-            selected.append(item)
-    # 第四轮：翻译英文条目兜底（英文源已弃用，保留以防未来恢复）
-    domestic_count = sum(1 for i in selected if i.get("is_domestic"))
-    foreign_count = len(selected) - domestic_count
-    for item in translated_items:
-        if len(selected) >= cap:
-            break
-        if not item.get("is_domestic") and foreign_count >= domestic_count:
-            continue
-        if item not in selected:
-            selected.append(item)
-            if not item.get("is_domestic"):
-                foreign_count += 1
-    # 稳定：国内在前
-    return sorted(selected[:cap], key=lambda x: (not x.get("is_domestic"), x["published"]), reverse=True)
+            sources[item['source']] = sources.get(item['source'],0)+1
+            categories[item['category']] = categories.get(item['category'],0)+1
+    return sorted(selected,key=lambda item:(bool(item.get('is_domestic')),item['published']),reverse=True)
+
 
 
 def generate_block(items, date_str, with_region=True):
@@ -721,11 +692,13 @@ def generate_block(items, date_str, with_region=True):
         cat_css = CAT_CSS.get(item["category"], "c-model")
         title = html.escape(item["title"])
         summary = html.escape(item["summary"])
-        link = item["link"]
-        source = item["source"]
+        link = html.escape(item["link"], quote=True) if safe_url(item["link"]) else '#'
+        source = html.escape(item["source"])
+        date = item['published'].strftime('%Y-%m-%d %H:%M UTC') if item.get('published_known') else '原文日期未提供'
+        source += ' · ' + date + (' · 官方原文' if item.get('official') else ' · 媒体报道')
         return [
             '      <div class="news-item">',
-            f'        <span class="cat {cat_css}">{item["category"]}</span>',
+            f'        <span class="cat {cat_css}">{html.escape(item["category"])}</span>',
             '        <div class="body">',
             f'          <h4><a href="{link}" target="_blank" rel="noopener">{title}</a></h4>',
             f'          <p>{summary}</p>',
@@ -860,7 +833,7 @@ def update_homepage(items, date_label):
         title = html.escape(item["title"][:60])
         lis.append(
             f'        <li><b>{item["category"]}</b> · {region}：'
-            f'<a href="{item["link"]}" target="_blank" rel="noopener">{title}</a></li>'
+            f'<a href="{html.escape(item["link"], quote=True) if safe_url(item["link"]) else "#"}" target="_blank" rel="noopener">{title}</a></li>'
         )
     card = "      <ul>\n" + "\n".join(lis) + "\n      </ul>"
 
@@ -884,7 +857,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--no-ai', action='store_true', help='关闭 AI，免费规则筛选')
     parser.parse_args()  # --no-ai 保留为兼容参数；无参数也只走免费规则。
-    _main_inner()
+    root = Path.cwd()
+    before = headline_links(root)
+    started = now_iso()
+    try:
+        _main_inner()
+        archive_old_blocks(root)
+    except Exception:
+        record_run(root, 'news', started, FEED_RESULTS, before, error=True)
+        raise
+    record_run(root, 'news', started, FEED_RESULTS, before)
 
 
 def _main_inner():
@@ -922,10 +904,8 @@ def _main_inner():
     # 跨天防重：规则侧直接剔除页面上已收录过的标题。
     avoid = recent_titles(limit=80)
     state_path = Path('data/news-seen.json')
-    try:
-        seen_urls = set(json.loads(state_path.read_text(encoding='utf-8')))
-    except (OSError, ValueError, TypeError):
-        seen_urls = set()
+    seen = seen_records(read_json(state_path, {}))
+    seen_urls = set(seen)
     # 页面历史链接也算已处理；状态文件记录曾被筛掉的候选，避免补班重复处理。
     existing_urls = set(re.findall(r'<h4><a href="([^"]+)"', Path('news.html').read_text(encoding='utf-8')))
     if avoid:
@@ -961,14 +941,19 @@ def _main_inner():
         picks.extend(sel[:2])  # 各模块最多取 2 条代表（模块已写或已存在都取同一条，保证首页与页面一致）
 
     state_path.parent.mkdir(exist_ok=True)
-    seen_urls.update(processed_urls)
-    state_path.write_text(json.dumps(sorted(seen_urls), ensure_ascii=False) + '\n', encoding='utf-8')
+    write_json(state_path, remember(seen, processed_urls))
 
     # 三个归档区（速报/大事记/论文）：有命中才更新，无命中跳过
     archive_fns = {"release": is_release_item, "milestone": is_milestone_item, "paper": is_paper_item}
     for mk, key, label, cap, fn_name in ARCHIVES:
         fn = archive_fns[key]
-        cand = [it for it in items if fn(it)]
+        # 学术优先，其次模型发布，最后行业；每条只进入一个专项归档。
+        def destination(it):
+            if is_paper_item(it): return 'paper'
+            if is_release_item(it): return 'release'
+            if is_milestone_item(it): return 'milestone'
+            return None
+        cand = [it for it in items if destination(it) == key]
         if not cand:
             print(f"· {label}（{key}）今日无命中条目，跳过")
             continue

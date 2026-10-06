@@ -17,6 +17,7 @@ import html
 import argparse
 import urllib.request
 from news_rules import deduplicate
+from maintenance import OFFICIAL_FEEDS, safe_url, priority, now_iso, headline_links, record_run, read_json, write_json, seen_records, remember, archive_old_blocks
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
@@ -42,6 +43,8 @@ CN_FEEDS = [
 ]
 FEED_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
            "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+CN_FEEDS += OFFICIAL_FEEDS
+FEED_RESULTS = {}
 FEED_TIMEOUT = 20
 
 # 抓取缓存：多主题共享一次源池抓取
@@ -408,7 +411,7 @@ def load_pool(hours):
     must_kw 初筛 + 免费关键词规则挑出真正的实质变化。
     """
     now = datetime.now(CST)
-    if (_POOL["entries"] and _POOL["hours"] == hours and _POOL["at"]
+    if (_POOL["hours"] == hours and _POOL["at"]
             and (now - _POOL["at"]).total_seconds() < 300):
         return _POOL["entries"]
 
@@ -416,6 +419,7 @@ def load_pool(hours):
     seen, raw = set(), []
     successful_feeds = 0
     for fi in CN_FEEDS:
+        FEED_RESULTS[fi['url']] = {'name':fi['name'],'url':fi['url'],'ok':False}
         try:
             req = urllib.request.Request(
                 fi["url"],
@@ -427,6 +431,7 @@ def load_pool(hours):
                 if feed.bozo and not feed.entries:
                     raise ValueError('RSS 内容无效')
                 successful_feeds += 1
+                FEED_RESULTS[fi['url']]['ok'] = True
         except Exception as e:
             print(f"    [跳过] 源抓取失败 {fi['name']} → {e}")
             continue
@@ -434,23 +439,25 @@ def load_pool(hours):
         for e in feed.entries:
             title = (e.get("title") or "").strip()
             link = (e.get("link") or "").strip()
-            if not title or not link or link in seen:
+            if not title or not safe_url(link) or link in seen:
                 continue
 
             pub = None
-            if getattr(e, "published_parsed", None):
-                pub = datetime(*e.published_parsed[:6], tzinfo=timezone.utc).astimezone(CST)
+            parsed_date = getattr(e,"published_parsed",None) or getattr(e,"updated_parsed",None)
+            if parsed_date:
+                pub = datetime(*parsed_date[:6], tzinfo=timezone.utc).astimezone(CST)
                 if pub < cutoff:
                     continue
 
             summary = re.sub(r"<[^>]+>", "", e.get("summary") or "")[:300].strip()
             seen.add(link)
             raw.append({"title": title, "summary": summary, "url": link,
-                        "source": fi["name"], "published": pub})
+                        "source": fi["name"], "published": pub, "official": bool(fi.get("official"))})
 
     print(f"    RSS 成功 {successful_feeds}/{len(CN_FEEDS)} 个")
     if not successful_feeds:
         raise RuntimeError('全部主题 RSS 源失败，不能认定为没有变化')
+    raw.sort(key=priority, reverse=True)
     raw = deduplicate(raw)
     _POOL.update(at=now, hours=hours, entries=raw)
     return raw
@@ -464,7 +471,7 @@ def fetch_entries(topic, hours):
         if not topic_relevant(topic, it):
             continue
         picked.append(it)
-    picked.sort(key=lambda x: x["published"] or datetime.min.replace(tzinfo=CST), reverse=True)
+    picked.sort(key=priority, reverse=True)
     print(f"    抓到 {len(picked)} 条候选（{hours} 小时内，标题主题筛选）")
     return picked[:50]
 
@@ -657,7 +664,7 @@ def update_stamp(page):
 # ─────────────────────────────────────────────────────────────────────────────
 # main
 # ─────────────────────────────────────────────────────────────────────────────
-def main():
+def _main_inner():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true", help="只打印不写文件")
     ap.add_argument("--no-ai", action="store_true", help="跳过 AI，用关键词兜底")
@@ -667,6 +674,7 @@ def main():
     print(f"模式：{'演练（不写文件）' if args.dry_run else '正式写入'}　"
           "筛选：免费关键词规则（不支持付费 API）\n")
 
+    FEED_RESULTS.clear()
     changed = []
     state_path = Path(ROOT) / 'data' / 'content-seen.json'
     try:
@@ -678,7 +686,8 @@ def main():
         entries = fetch_entries(topic, args.hours)
         page_text = _read_page(topic['page']) or ''
         existing = set(re.findall(r'<h4><a href="([^"]+)"', page_text))
-        old_seen = set(seen_by_topic.get(topic['key'], []))
+        records = seen_records(seen_by_topic.get(topic['key'], {}))
+        old_seen = set(records)
         fresh = [e for e in entries if e['url'] not in old_seen and e['url'] not in existing]
         history = [html.unescape(re.sub(r'<[^>]+>', '', title)) for title in
                    re.findall(r'<h4><a[^>]*>(.*?)</a>', page_text, re.DOTALL)]
@@ -693,7 +702,7 @@ def main():
 
         if not items:
             if not args.dry_run:
-                seen_by_topic[topic['key']] = sorted(old_seen | {e['url'] for e in entries})[-2000:]
+                seen_by_topic[topic['key']] = remember(records, [e['url'] for e in entries])
             print("    无合适内容\n")
             continue
 
@@ -707,12 +716,12 @@ def main():
         if insert_block(topic, block):
             changed.append(topic["page"])
             update_stamp(topic['page'])
-            seen_by_topic[topic['key']] = sorted(old_seen | {e['url'] for e in entries})[-2000:]
+            seen_by_topic[topic['key']] = remember(records, [e['url'] for e in entries])
         print()
 
     if not args.dry_run:
         state_path.parent.mkdir(exist_ok=True)
-        state_path.write_text(json.dumps(seen_by_topic, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        write_json(state_path, seen_by_topic)
 
     # ---- v28 数据核对（独立流程：读快照 + 规则比对 + 写提醒）----
     # 与 model topic 不同：model 找的是「已确认新闻」，verify 找的是「快照 vs 新闻」的疑点。
@@ -727,5 +736,19 @@ def main():
         f.write(f"changed={len(changed)}\n")
 
 
+def main():
+    before = headline_links(ROOT)
+    started = now_iso()
+    dry_run = '--dry-run' in sys.argv
+    try:
+        _main_inner()
+        if not dry_run:
+            archive_old_blocks(ROOT)
+    except Exception:
+        if not dry_run: record_run(ROOT,'content',started,FEED_RESULTS,before,error=True)
+        raise
+    if not dry_run: record_run(ROOT,'content',started,FEED_RESULTS,before)
+
+
 if __name__ == "__main__":
-    main()
+    

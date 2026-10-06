@@ -1200,3 +1200,22 @@ body::before {
   /* 图表前的说明文字在移动端压缩行距，减少滚动距离 */
   .sec-note { font-size: 13px; line-height: 1.62; }
 }
+
+/* 更新状态、来源记录与历史搜索 */
+.wb-maintenance { margin: 12px 0; border: 1px solid var(--rule); border-radius: 12px; background: var(--bg2); color: var(--ink); }
+.wb-maintenance summary { padding: 12px 16px; cursor: pointer; font-weight: 600; }
+.wb-maintenance-body { padding: 0 16px 16px; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.wb-maintenance-body p { margin: 6px 0; }
+.wb-source-row { border-top: 1px solid var(--rule); padding: 12px 0; }
+.wb-review-warning { color: var(--muted); }
+.wb-maintenance input[type="search"] { box-sizing: border-box; width: 100%; padding: 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.news-item .body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+/* 更新状态、来源记录与历史搜索 */
+.wb-maintenance { margin: 12px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--bg2); color: var(--text); }
+.wb-maintenance summary { padding: 12px 16px; cursor: pointer; font-weight: 600; }
+.wb-maintenance-body { padding: 0 16px 16px; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.wb-maintenance-body p { margin: 6px 0; }
+.wb-source-row { border-top: 1px solid var(--line); padding: 12px 0; }
+.wb-review-warning { color: var(--muted); }
+.wb-maintenance input[type="search"] { box-sizing: border-box; width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }

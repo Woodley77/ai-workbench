@@ -992,7 +992,120 @@
     return { ensure: ensure };
   })();
 
-  // 立即构建（script 位于 body 末尾，body 已存在；与 ensureBottomNav 同策略）
-  ChatBot.ensure();
-})();
+  function maintenanceLink(url) {
+    try {
+      var parsed = new URL(url);
+      return /^(https?:)$/.test(parsed.protocol) && !parsed.username && !parsed.password;
+    } catch (e) { return false; }
+  }
+  function maintenanceDate(value) {
+    if (!value) return '尚未记录';
+    var parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? '日期未知' : parsed.toLocaleString('zh-CN');
+  }
+  function loadMaintenanceJson(path) {
+    return fetch(path, { cache: 'no-store' }).then(function (res) {
+      if (!res.ok) throw new Error('记录暂不可用');
+      return res.json();
+    });
+  }
+  function initMaintenanceInfo() {
+    var main = document.querySelector('main') || document.querySelector('.wrap');
+    if (!main) return;
+    var page = location.pathname.split('/').pop() || 'index.html';
+    var box = document.createElement('details');
+    box.className = 'wb-maintenance';
+    var summary = document.createElement('summary');
+    summary.textContent = '更新状态与数据核对';
+    box.appendChild(summary);
+    var status = document.createElement('div');
+    status.className = 'wb-maintenance-body';
+    status.textContent = '正在读取更新记录…';
+    box.appendChild(status);
+    var pageHead = main.querySelector('.page-head');
+    main.insertBefore(box, pageHead ? pageHead.nextSibling : main.firstChild);
+    function note(parent, text) {
+      var p = document.createElement('p'); p.textContent = text; parent.appendChild(p); return p;
+    }
+    loadMaintenanceJson('data/site-status.json').then(function (data) {
+      status.textContent = '';
+      var labels = { news: '新闻抓取', content: '主题动态与每周核对' };
+      var results = { updated: '有新增内容', no_change: '检查成功，无新增', partial: '部分来源失败', failed: '本次更新失败' };
+      var primary = data.channels && data.channels[(page === 'index.html' || page === 'news.html') ? 'news' : 'content'];
+      summary.textContent = '更新状态：' + (primary ? (results[primary.result] || '状态未知') + ' · 最近成功 ' + maintenanceDate(primary.last_success) : '尚无记录');
+      Object.keys(labels).forEach(function (key) {
+        var row = data.channels && data.channels[key];
+        if (!row) { note(status, labels[key] + '：尚无抓取记录'); return; }
+        note(status, labels[key] + '：' + (results[row.result] || '状态未知') + ' · 来源成功 ' + row.source_successes + '/' + row.source_total);
+        note(status, '最近尝试：' + maintenanceDate(row.last_attempt) + '；最近成功：' + maintenanceDate(row.last_success));
+        note(status, '最近新增：' + maintenanceDate(row.last_new_content));
+        if (row.last_success && Date.now() - new Date(row.last_success).getTime() > 36 * 3600000) {
+          note(status, '超过 36 小时没有成功记录，内容可能已过期。').className = 'wb-review-warning';
+        }
+        (row.sources || []).filter(function (source) { return !source.ok; }).forEach(function (source) {
+          note(status, '暂未抓取成功：' + source.name);
+        });
+      });
+      note(status, '记录时间：' + maintenanceDate(data.as_of) + '。离线时可能显示缓存记录；检查成功不代表价格或规格已人工核实。');
+      var feedback = document.createElement('a');
+      feedback.href = 'https://github.com/Woodley77/ai-workbench/issues/new?title=' + encodeURIComponent('新闻分类或内容纠错');
+      feedback.textContent = '反馈分类或内容问题'; feedback.target = '_blank'; feedback.rel = 'noopener'; status.appendChild(feedback);
+    }).catch(function () { status.textContent = '暂时无法读取更新状态，请联网后重试；不能据此认定今天没有新内容。'; });
+    if (page === 'models.html' || page === 'agents.html') {
+      loadMaintenanceJson('data/core-sources.json').then(function (data) {
+        var ledger = document.createElement('details'); ledger.className = 'wb-maintenance';
+        var title = document.createElement('summary'); title.textContent = '逐条数据来源与核对记录'; ledger.appendChild(title);
+        var body = document.createElement('div'); body.className = 'wb-maintenance-body'; ledger.appendChild(body);
+        var inherited = data.pages && data.pages[page];
+        title.textContent = '逐条来源与核对：页面原注记 ' + (inherited ? inherited.inherited_review_date : '日期未知') + ' · 展开查看待核实条目';
+        note(body, '页面原注记的人工核对日期：' + (inherited ? inherited.inherited_review_date : '未知') + '。逐条核对日期以各条记录为准，新闻更新不会刷新此日期。');
+        note(body, '参考链接是迁移自页面的待核实线索；产品官网不等于价格、规格或热度的直接证据。示意评分与综合指数不属于官方基准。').className = 'wb-review-warning';
+        (data.items || []).filter(function (row) { return row.page === page; }).forEach(function (row) {
+          var item = document.createElement('div'); item.className = 'wb-source-row';
+          var name = document.createElement('strong'); name.textContent = row.group + ' · ' + row.name; item.appendChild(name);
+          note(item, row.value);
+          note(item, '原文发布日期：' + (row.evidence_published_at || '未补充') + '；逐条人工核对：' + (row.reviewed_at || '待核对'));
+          if (row.reviewed_at && Date.now() - new Date(row.reviewed_at).getTime() > 30 * 86400000) note(item, '超过 30 天未复核，选型前请确认最新信息。').className = 'wb-review-warning';
+          if (maintenanceLink(row.reference_url)) {
+            var link = document.createElement('a'); link.href = row.reference_url; link.textContent = row.reference_label;
+            link.target = '_blank'; link.rel = 'noopener'; item.appendChild(link);
+          } else note(item, '尚未建立逐条来源');
+          body.appendChild(item);
+        });
+        main.insertBefore(ledger, box.nextSibling);
+      }).catch(function () { note(status, '逐条来源记录暂不可用。'); });
+    }
+    if (page === 'news.html') {
+      var archive = document.createElement('details'); archive.className = 'wb-maintenance';
+      var heading = document.createElement('summary'); heading.textContent = '查看历史归档（当前栏目保留最近 90 天、最多 60 块）'; archive.appendChild(heading);
+      var entries = document.createElement('div'); entries.className = 'wb-maintenance-body'; archive.appendChild(entries);
+      var loaded = false;
+      archive.addEventListener('toggle', function () {
+        if (!archive.open || loaded) return;
+        loaded = true; entries.textContent = '正在读取历史归档…';
+        fetch('data/news-archive.jsonl', { cache: 'no-store' }).then(function (res) {
+          if (!res.ok) throw new Error('归档暂不可用'); return res.text();
+        }).then(function (text) {
+          entries.textContent = '';
+          var search = document.createElement('input'); search.type = 'search'; search.placeholder = '搜索历史标题'; search.setAttribute('aria-label', '搜索历史新闻标题'); entries.appendChild(search);
+          var rows = [];
+          text.split('\n').filter(Boolean).map(function (line) { return JSON.parse(line); }).reverse().forEach(function (row) {
+            var parsed = new DOMParser().parseFromString(row.html, 'text/html');
+            Array.prototype.forEach.call(parsed.querySelectorAll('h4 a'), function (source) {
+              var item = document.createElement('p'); item.textContent = (row.date || '日期未知') + ' · ';
+              var link = document.createElement('a'); link.textContent = source.textContent;
+              var url = source.getAttribute('href'); if (maintenanceLink(url)) { link.href = url; link.target = '_blank'; link.rel = 'noopener'; }
+              item.appendChild(link); entries.appendChild(item); rows.push(item);
+            });
+          });
+          if (!rows.length) note(entries, '暂无已移入历史归档的新闻。');
+          search.addEventListener('input', function () { var value = search.value.toLowerCase(); rows.forEach(function (row) { row.hidden = row.textContent.toLowerCase().indexOf(value) < 0; }); });
+        }).catch(function () { loaded = false; entries.textContent = '历史归档暂不可用，联网后可收起并重新打开。'; });
+      });
+      main.insertBefore(archive, box.nextSibling);
+    }
+  }
+  initMaintenanceInfo();
 
+  // 立即构建（script 位于 body 末尾，body 已存在；与 ensureBottomNav 同策略）
+  ChatBot.ensure();

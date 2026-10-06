@@ -1,0 +1,12 @@
+[
+  {"title":"Reflection AI 发布首款开放权重模型 Beam","category":"模型发布","eligible":true},
+  {"title":"DeepSeek V4.1 Flash 发力，中美顶尖模型 LiveBench 跑分差距缩至 3%","category":"评测与研究","eligible":true},
+  {"title":"蚂蚁百灵发布 Ling-3.1-flash 模型：560B 总参数、25B 激活、1M 上下文","category":"模型发布","eligible":true},
+  {"title":"Kimi K3 接入 Codex 企业通道，进入 OpenAI 企业付费结算体系","category":"工具与智能体","eligible":true},
+  {"title":"openJiuwen workSwarm 发布：全双工多模态 Agent 交互，昇腾原生亲和","category":"工具与智能体","eligible":true},
+  {"title":"DeepSeek Harness 桌面端预览版 v0.2 发布，支持插件与自动化任务","category":"工具与智能体","eligible":true},
+  {"title":"Kimi K3.1 前端标识泄露，预计近期发布","category":"其他","eligible":false},
+  {"title":"Manus 2.0 面向海外发布，国内版产品团队组建中","category":"工具与智能体","eligible":true},
+  {"title":"DeepSeek 公开 Agent 训练新论文，梁文锋署名","category":"评测与研究","eligible":true},
+  {"title":"DeepSeek 调整计费：调休周末与法定节假日全天按空闲时段计费","category":"价格与额度","eligible":true}
+]
