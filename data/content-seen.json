@@ -162,9 +162,15 @@
       "legacy": true
     }
   },
-  "skills": [
-    "https://www.qbitai.com/2026/09/497075.html"
-  ],
+  "skills": {
+    "https://www.ithome.com/1/011/432.htm": {
+      "processed_at": "2026-10-10T23:35:27+08:00"
+    },
+    "https://www.qbitai.com/2026/09/497075.html": {
+      "processed_at": "2026-10-10T23:35:27+08:00",
+      "legacy": true
+    }
+  },
   "mcp": [
     "https://www.ithome.com/1/008/528.htm"
   ]
