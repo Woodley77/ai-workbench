@@ -954,6 +954,28 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
     <!-- __MODEL_DAILY_INSERT__ -->
       <div class="news-day">
         <div class="dhead">
+          <span class="ddate">2026-10-17</span>
+          <span class="dbadge">2 条更新</span>
+        </div>
+        <div class="news-item">
+          <span class="cat c-model">发布</span>
+          <div class="body">
+            <h4><a href="https://www.ithome.com/1/014/372.htm" target="_blank" rel="noopener">开发者将破解后的索尼 PS5 当作本地 AI 服务器：利用 GPU 加速运行 27B 参数 Qwen3.8-27B 模型</a></h4>
+            <p>IT之家 10 月 17 日消息，据外媒 Wccftech 报道，开发者 abhi245y 基于资深 AI 工程师 Mert Cobanov 的 PS5LM（llama.cpp 移植项目），开发了原生 GPU 应用 PS5LM Plus，让经过破解的 PS5 主机能够在本地运行 </p>
+            <span class="src">来源：<a href="https://www.ithome.com/1/014/372.htm" target="_blank" rel="noopener">IT之家</a></span>
+          </div>
+        </div>
+        <div class="news-item">
+          <span class="cat c-event">调价</span>
+          <div class="body">
+            <h4><a href="https://www.ithome.com/1/014/328.htm" target="_blank" rel="noopener">DeepSeek V4.1 Flash-1017 新版本发布：性能提升、耗时缩短，许愿式编程一键成真</a></h4>
+            <p>IT之家 10 月 17 日消息，DeepSeek V4.1 Flash 现已更新至 V4.1-Flash-1017 版本，官方网页端、APP 与 API 模型已同步变更为新模型（API 调用方式与价格保持不变，仍使用 deepseek-flash 即可访问最新模型）。据深度求索</p>
+            <span class="src">来源：<a href="https://www.ithome.com/1/014/328.htm" target="_blank" rel="noopener">IT之家</a></span>
+          </div>
+        </div>
+      </div>
+      <div class="news-day">
+        <div class="dhead">
           <span class="ddate">2026-10-16</span>
           <span class="dbadge">2 条更新</span>
         </div>
@@ -3058,7 +3080,7 @@ function renderStatBar() {
     { v: MODELS.length, l: '收录模型' },
     { v: Object.keys(vendors).length, l: '覆盖厂商' },
     { v: Object.keys(cats).length, l: '阵营分类' },
-    { v: '2026-10-16', l: '动态更新日期' }
+    { v: '2026-10-17', l: '动态更新日期' }
   ];
   bar.innerHTML = items.map(function (it) {
     return '<div class="stat-item"><div class="sv">' + it.v + '</div><div class="sl">' + it.l + '</div></div>';
