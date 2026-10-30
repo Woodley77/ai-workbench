@@ -954,6 +954,28 @@ th.sortable.asc .sort-ico, th.sortable.desc .sort-ico { opacity:1; font-weight:7
     <!-- __MODEL_DAILY_INSERT__ -->
       <div class="news-day">
         <div class="dhead">
+          <span class="ddate">2026-10-31</span>
+          <span class="dbadge">2 条更新</span>
+        </div>
+        <div class="news-item">
+          <span class="cat c-model">发布</span>
+          <div class="body">
+            <h4><a href="https://www.ithome.com/1/020/346.htm" target="_blank" rel="noopener">小米开源 0.8B 参数 OCR 小模型：打通文档解析与视觉问答，支持 Markdown 与 JSON 输出</a></h4>
+            <p>IT之家 10 月 30 日消息，小米官方今日宣布开源轻量级文档理解模型 Xiaomi-OCR-0，模型权重与推理代码已同步上线 Hugging Face 和 GitHub。官方给出的参数规模为 0.8B，定位是单一模型同时覆盖文档解析、关键信息抽取与 OCR 视觉问答三类任务。</p>
+            <span class="src">来源：<a href="https://www.ithome.com/1/020/346.htm" target="_blank" rel="noopener">IT之家</a></span>
+          </div>
+        </div>
+        <div class="news-item">
+          <span class="cat c-model">发布</span>
+          <div class="body">
+            <h4><a href="https://www.qbitai.com/2026/10/506743.html" target="_blank" rel="noopener">英伟达团队基于 MiniMax H3 开源视频增强方案，最高支持 4K 重生成</a></h4>
+            <p>英伟达与麻省理工学院团队，在 Hugging Face 发布了视频增强项目 Open-H3-Regenerate-2K 的模型权重</p>
+            <span class="src">来源：<a href="https://www.qbitai.com/2026/10/506743.html" target="_blank" rel="noopener">量子位</a></span>
+          </div>
+        </div>
+      </div>
+      <div class="news-day">
+        <div class="dhead">
           <span class="ddate">2026-10-30</span>
           <span class="dbadge">4 条更新</span>
         </div>
@@ -3473,7 +3495,7 @@ function renderStatBar() {
     { v: MODELS.length, l: '收录模型' },
     { v: Object.keys(vendors).length, l: '覆盖厂商' },
     { v: Object.keys(cats).length, l: '阵营分类' },
-    { v: '2026-10-30', l: '动态更新日期' }
+    { v: '2026-10-31', l: '动态更新日期' }
   ];
   bar.innerHTML = items.map(function (it) {
     return '<div class="stat-item"><div class="sv">' + it.v + '</div><div class="sl">' + it.l + '</div></div>';
