@@ -1,8 +1,8 @@
 {
   "channels": {
     "news": {
-      "last_attempt": "2026-10-31T23:31:27+08:00",
-      "started_at": "2026-10-31T23:31:02+08:00",
+      "last_attempt": "2026-11-01T08:32:00+08:00",
+      "started_at": "2026-11-01T08:30:29+08:00",
       "sources": [
         {
           "name": "量子位",
@@ -17,7 +17,7 @@
         {
           "name": "IT之家",
           "url": "https://www.ithome.com/rss/",
-          "ok": true
+          "ok": false
         },
         {
           "name": "极客公园",
@@ -50,16 +50,16 @@
           "ok": true
         }
       ],
-      "source_successes": 9,
+      "source_successes": 8,
       "source_total": 9,
-      "new_links": 12,
-      "result": "updated",
-      "last_success": "2026-10-31T23:31:27+08:00",
+      "new_links": 0,
+      "result": "partial",
+      "last_success": "2026-11-01T08:32:00+08:00",
       "last_new_content": "2026-10-31T23:31:27+08:00"
     },
     "content": {
-      "last_attempt": "2026-10-31T23:31:40+08:00",
-      "started_at": "2026-10-31T23:31:27+08:00",
+      "last_attempt": "2026-11-01T08:32:14+08:00",
+      "started_at": "2026-11-01T08:32:00+08:00",
       "sources": [
         {
           "name": "量子位",
@@ -96,9 +96,9 @@
       "source_total": 6,
       "new_links": 2,
       "result": "updated",
-      "last_success": "2026-10-31T23:31:40+08:00",
-      "last_new_content": "2026-10-31T23:31:40+08:00"
+      "last_success": "2026-11-01T08:32:14+08:00",
+      "last_new_content": "2026-11-01T08:32:14+08:00"
     }
   },
-  "as_of": "2026-10-31T23:31:40+08:00"
+  "as_of": "2026-11-01T08:32:14+08:00"
 }
