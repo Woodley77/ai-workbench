@@ -1,4 +1,37 @@
 {
+  "https://openai.com/business/customer-stories/shield": {
+    "processed_at": "2026-11-14T09:53:06+08:00"
+  },
+  "https://www.ithome.com/1/027/005.htm": {
+    "processed_at": "2026-11-14T09:53:06+08:00"
+  },
+  "https://www.ithome.com/1/027/004.htm": {
+    "processed_at": "2026-11-14T09:53:06+08:00"
+  },
+  "https://www.ithome.com/1/027/001.htm": {
+    "processed_at": "2026-11-14T09:53:06+08:00"
+  },
+  "https://www.ithome.com/1/027/011.htm": {
+    "processed_at": "2026-11-14T09:53:06+08:00"
+  },
+  "https://www.ithome.com/1/027/033.htm": {
+    "processed_at": "2026-11-14T09:53:06+08:00"
+  },
+  "https://www.ithome.com/1/027/037.htm": {
+    "processed_at": "2026-11-14T09:53:06+08:00"
+  },
+  "https://www.ithome.com/1/027/008.htm": {
+    "processed_at": "2026-11-14T09:53:06+08:00"
+  },
+  "https://www.ithome.com/1/027/009.htm": {
+    "processed_at": "2026-11-14T09:53:06+08:00"
+  },
+  "https://www.ithome.com/1/027/038.htm": {
+    "processed_at": "2026-11-14T09:53:06+08:00"
+  },
+  "https://www.ithome.com/1/027/019.htm": {
+    "processed_at": "2026-11-14T09:53:06+08:00"
+  },
   "https://www.ithome.com/1/026/931.htm": {
     "processed_at": "2026-11-14T01:24:27+08:00"
   },
@@ -6098,50 +6131,6 @@
     "legacy": true
   },
   "https://www.infoq.cn/article/fOuaRtwuySyZsS0iGg7N?utm_source=rss&utm_medium=article": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "https://www.infoq.cn/article/ftFzzJ6jgxha7grHHLjf?utm_source=rss&utm_medium=article": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "https://www.infoq.cn/article/gk4rWsQg09PWTFTZlJE3?utm_source=rss&utm_medium=article": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "https://www.infoq.cn/article/he0zFgEyStxF9kOh70AP?utm_source=rss&utm_medium=article": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "https://www.infoq.cn/article/hrmb2p18iKEwl24OMvcv?utm_source=rss&utm_medium=article": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "https://www.infoq.cn/article/hw3PpM2ZlCmCArsNo1y7?utm_source=rss&utm_medium=article": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "https://www.infoq.cn/article/jJAcfJO5e0ElPhIxwwxo?utm_source=rss&utm_medium=article": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "https://www.infoq.cn/article/jJIXCaLHUvPgswTOZ1uQ?utm_source=rss&utm_medium=article": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "https://www.infoq.cn/article/lh6Z5E9Zkr33bOeHQGky?utm_source=rss&utm_medium=article": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "https://www.infoq.cn/article/mDiczbGJpHNMU6e0qBX1?utm_source=rss&utm_medium=article": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "https://www.infoq.cn/article/sFUUaaIQZH3ecXb14WVs?utm_source=rss&utm_medium=article": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "https://www.infoq.cn/article/sQV4EomjPP0J3hM3lyF9?utm_source=rss&utm_medium=article": {
     "processed_at": "2026-10-06T20:08:27+08:00",
     "legacy": true
   }
