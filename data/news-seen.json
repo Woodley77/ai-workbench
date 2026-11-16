@@ -1,4 +1,31 @@
 {
+  "http://www.geekpark.net/news/373994": {
+    "processed_at": "2026-11-16T09:27:37+08:00"
+  },
+  "https://www.ithome.com/1/027/487.htm": {
+    "processed_at": "2026-11-16T09:27:37+08:00"
+  },
+  "https://www.ithome.com/1/027/484.htm": {
+    "processed_at": "2026-11-16T09:27:37+08:00"
+  },
+  "https://www.ithome.com/1/027/465.htm": {
+    "processed_at": "2026-11-16T09:27:37+08:00"
+  },
+  "https://openai.com/index/step-toward-defining-the-standard-model": {
+    "processed_at": "2026-11-16T09:27:37+08:00"
+  },
+  "https://www.ithome.com/1/027/490.htm": {
+    "processed_at": "2026-11-16T09:27:37+08:00"
+  },
+  "https://www.infoq.cn/article/myl5Mcw3iyCYv3ZJ3hwQ?utm_source=rss&utm_medium=article": {
+    "processed_at": "2026-11-16T09:27:37+08:00"
+  },
+  "https://www.ithome.com/1/027/469.htm": {
+    "processed_at": "2026-11-16T09:27:37+08:00"
+  },
+  "https://openai.com/index/our-new-blog-for-science": {
+    "processed_at": "2026-11-16T09:27:37+08:00"
+  },
   "https://www.ithome.com/1/027/414.htm": {
     "processed_at": "2026-11-16T00:39:14+08:00"
   },
@@ -6046,42 +6073,6 @@
     "legacy": true
   },
   "http://www.geekpark.net/news/371445": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "http://www.geekpark.net/news/371446": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "http://www.geekpark.net/news/371448": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "http://www.geekpark.net/news/371451": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "http://www.geekpark.net/news/371493": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "http://www.geekpark.net/news/371850": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "http://www.geekpark.net/news/371994": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "http://www.geekpark.net/news/372000": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "http://www.geekpark.net/news/372003": {
-    "processed_at": "2026-10-06T20:08:27+08:00",
-    "legacy": true
-  },
-  "http://www.geekpark.net/news/372064": {
     "processed_at": "2026-10-06T20:08:27+08:00",
     "legacy": true
   }
