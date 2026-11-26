@@ -1,4 +1,115 @@
 {
+  "https://www.ithome.com/1/033/124.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ithome.com/1/033/126.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://huggingface.co/blog/training-swarms": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ithome.com/1/033/088.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ithome.com/1/033/054.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ithome.com/1/033/121.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ithome.com/1/033/116.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.qbitai.com/2026/11/512897.html": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://huggingface.co/blog/nvidia/building-on-nemotron-35-parse-open-data-fine-tunin": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ithome.com/1/033/118.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.qbitai.com/2026/11/512916.html": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.qbitai.com/2026/11/512981.html": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ithome.com/1/033/131.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ithome.com/1/033/125.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ithome.com/1/033/050.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ithome.com/1/033/057.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.infoq.cn/article/xA3g2i0VtTZIOVePMedY?utm_source=rss&utm_medium=article": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://sspai.com/post/116773": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "http://www.geekpark.net/news/374536": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.qbitai.com/2026/11/512942.html": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.oschina.net/news/503836": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ifanr.com/1695555?utm_source=rss&utm_medium=rss&utm_campaign": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.infoq.cn/article/z9IwzAY8hP15oDa2VKi6?utm_source=rss&utm_medium=article": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ithome.com/1/033/078.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ithome.com/1/033/066.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ithome.com/1/033/101.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.qbitai.com/2026/11/513021.html": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.qbitai.com/2026/11/512840.html": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.oschina.net/news/503823": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.oschina.net/news/503832/libreboot-drops-anti-ai-policy-slop-reduction": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "http://www.geekpark.net/news/374532": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ithome.com/1/033/070.htm": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.infoq.cn/article/vfmBDlfQRRfHq4Jyi5b6?utm_source=rss&utm_medium=article": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://www.ifanr.com/1695482?utm_source=rss&utm_medium=rss&utm_campaign": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://sspai.com/post/119563": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://huggingface.co/blog/ggml-org/llamacpp-amd-bench": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
+  "https://sspai.com/post/117510": {
+    "processed_at": "2026-11-27T03:18:22+08:00"
+  },
   "https://www.ithome.com/1/032/614.htm": {
     "processed_at": "2026-11-26T11:49:36+08:00"
   },
@@ -5887,116 +5998,5 @@
   },
   "https://www.ithome.com/1/014/622.htm": {
     "processed_at": "2026-10-19T07:45:32+08:00"
-  },
-  "https://www.ithome.com/1/014/627.htm": {
-    "processed_at": "2026-10-19T07:45:32+08:00"
-  },
-  "https://www.ithome.com/1/014/589.htm": {
-    "processed_at": "2026-10-18T21:37:14+08:00"
-  },
-  "https://www.oschina.net/news/503070": {
-    "processed_at": "2026-10-18T21:37:14+08:00"
-  },
-  "https://www.ithome.com/1/014/595.htm": {
-    "processed_at": "2026-10-18T21:37:14+08:00"
-  },
-  "https://www.ithome.com/1/014/587.htm": {
-    "processed_at": "2026-10-18T21:37:14+08:00"
-  },
-  "https://www.ithome.com/1/014/519.htm": {
-    "processed_at": "2026-10-18T21:37:14+08:00"
-  },
-  "https://www.ithome.com/1/014/540.htm": {
-    "processed_at": "2026-10-18T21:37:14+08:00"
-  },
-  "https://www.ithome.com/1/014/522.htm": {
-    "processed_at": "2026-10-18T21:37:14+08:00"
-  },
-  "https://www.infoq.cn/article/qZPH971CbfHkaCfgG0cb?utm_source=rss&utm_medium=article": {
-    "processed_at": "2026-10-18T21:37:14+08:00"
-  },
-  "https://www.oschina.net/news/503072": {
-    "processed_at": "2026-10-18T21:37:14+08:00"
-  },
-  "https://www.ithome.com/1/014/574.htm": {
-    "processed_at": "2026-10-18T21:37:14+08:00"
-  },
-  "https://www.ithome.com/1/014/577.htm": {
-    "processed_at": "2026-10-18T21:37:14+08:00"
-  },
-  "https://www.qbitai.com/2026/10/504067.html": {
-    "processed_at": "2026-10-18T07:33:41+08:00"
-  },
-  "https://www.qbitai.com/2026/10/503910.html": {
-    "processed_at": "2026-10-18T07:33:41+08:00"
-  },
-  "https://www.qbitai.com/2026/10/503935.html": {
-    "processed_at": "2026-10-18T07:33:41+08:00"
-  },
-  "https://www.ithome.com/1/014/419.htm": {
-    "processed_at": "2026-10-18T07:33:41+08:00"
-  },
-  "https://www.infoq.cn/article/AF1qxLVCRls3R6MdWwBh?utm_source=rss&utm_medium=article": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.qbitai.com/2026/10/503865.html": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.qbitai.com/2026/10/503701.html": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.ithome.com/1/014/371.htm": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.ithome.com/1/014/317.htm": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.ithome.com/1/014/328.htm": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.ithome.com/1/014/370.htm": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.oschina.net/news/503067/magpie-0-1-14-released-windows-ver": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.ithome.com/1/014/382.htm": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.ithome.com/1/014/310.htm": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.qbitai.com/2026/10/503815.html": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.ithome.com/1/014/376.htm": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.qbitai.com/2026/10/503843.html": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.ithome.com/1/014/398.htm": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.ithome.com/1/014/341.htm": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.qbitai.com/2026/10/503861.html": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.qbitai.com/2026/10/503880.html": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.oschina.net/news/503066/nocobase-updated": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.infoq.cn/article/JMZ6WUx4a4cVqAwhwviU?utm_source=rss&utm_medium=article": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.ithome.com/1/014/390.htm": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
-  },
-  "https://www.ithome.com/1/014/387.htm": {
-    "processed_at": "2026-10-17T21:16:48+08:00"
   }
 }
